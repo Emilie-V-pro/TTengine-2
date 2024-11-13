@@ -1,9 +1,10 @@
 
 #include "device.hpp"
+#include <vulkan/vulkan_core.h>
 
 namespace TTe {
 
-Device::Device(Window &window) {
+Device::Device(Window &window){
     createInstance();
     selectPhysicalDevice(window);
 }
@@ -27,12 +28,14 @@ void Device::createInstance() {
 }
 
 void Device::selectPhysicalDevice(Window &window) {
+    this->surface = window.getSurface(vkbInstance);
     vkb::PhysicalDeviceSelector phys_device_selector(vkbInstance);
-    phys_device_selector.set_surface(window.getSurface(vkbInstance));
+    phys_device_selector.set_surface(surface);
 }
 
 Device::~Device() {
     // volkFinalize();
+    vkb::destroy_surface(vkbInstance, surface);
     vkb::destroy_instance(vkbInstance);
 }
 

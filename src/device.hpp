@@ -1,6 +1,7 @@
 #pragma once
 
 #include <volk.h>
+#include <vulkan/vulkan_core.h>
 #define VK_NO_PROTOTYPES
 #include "VkBootstrap.h"
 #include "window.hpp"
@@ -29,6 +30,7 @@ class Device {
     void selectPhysicalDevice(Window  &window);
 
     VkDevice device;
+    VkSurfaceKHR surface;
     vkb::Instance vkbInstance;
 
     // disable validation on release build type to get full performance
