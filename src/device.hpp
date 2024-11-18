@@ -28,10 +28,20 @@ class Device {
    private:
     void createInstance();
     void selectPhysicalDevice(Window  &window);
+    void createLogicialDevice();
+    void setRequiredFeatures(vkb::PhysicalDeviceSelector &phys_device_selector);
+    void setRequiredExtensions(vkb::PhysicalDeviceSelector &phys_device_selector);
 
-    VkDevice device;
-    VkSurfaceKHR surface;
+    VkDevice device = VK_NULL_HANDLE;
+    VkSurfaceKHR surface = VK_NULL_HANDLE;
+
+    VkQueue renderQueue;
+    VkQueue computeQueue;
+    VkQueue transferQueue;
+
     vkb::Instance vkbInstance;
+    vkb::PhysicalDevice vkbPhysicalDevice;
+    vkb::Device vkbDevice;
 
     // disable validation on release build type to get full performance
 #ifdef NDEBUG
