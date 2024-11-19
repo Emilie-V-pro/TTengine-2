@@ -8,6 +8,10 @@ namespace TTe {
 void App::init() {
     Window w{1280,720, "mon napli"};
     Device d = Device(w);
+    while (true) {
+        glfwPollEvents();
+    
+    }
 }
 
 void App::run() {
