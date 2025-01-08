@@ -52,6 +52,8 @@ void Device::createLogicialDevice() {
         throw std::runtime_error(dev_ret.error().message());
     }
     vkbDevice = std::move(dev_ret.value());
+
+    
     vkGetDeviceQueue(vkbDevice.device, vkbDevice.get_queue_index(vkb::QueueType::graphics).value(), 0, &renderQueue);
     vkGetDeviceQueue(vkbDevice.device, vkbDevice.get_queue_index(vkb::QueueType::compute).value(), 0, &computeQueue);
     vkGetDeviceQueue(vkbDevice.device, vkbDevice.get_queue_index(vkb::QueueType::transfer).value(), 0, &transferQueue);
@@ -117,6 +119,6 @@ Device::~Device() {
     vkb::destroy_instance(vkbInstance);
 }
 
-const VkDevice &Device::operator()() { return device; }
+
 
 }  // namespace TTe
