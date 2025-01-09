@@ -1,12 +1,13 @@
 
 #include "fence.hpp"
 
-#include "volk.h"
-
+#include <vulkan/vulkan_core.h>
 
 #include <limits>
 #include <vector>
+
 #include "../structs_vk.hpp"
+#include "volk.h"
 
 namespace TTe {
 
@@ -20,12 +21,24 @@ Fence::Fence(const Device *device, bool signaled) : device(device) {
     }
 }
 
+Fence::Fence(Fence &&other) : vk_Fence(other.vk_Fence), device(other.device){
+    other.vk_Fence = VK_NULL_HANDLE;
+}
+
+Fence &Fence::operator=(Fence &&other) {
+    if (this != &other) {
+        this->~Fence();
+        this->vk_Fence = other.vk_Fence;
+        other.vk_Fence = VK_NULL_HANDLE;
+    }
+    return *this;
+}
+
 Fence::~Fence() {
-    if(vk_Fence != VK_NULL_HANDLE) {
+    if (vk_Fence != VK_NULL_HANDLE) {
         vkDestroyFence(device->device(), vk_Fence, nullptr);
     }
 }
-
 
 VkResult Fence::getFenceStatus() const {
     VkResult returnValue;
@@ -44,20 +57,23 @@ void Fence::resetFence() {
 
 VkResult Fence::waitForFence() { return waitForFences(device, {this}, true, nullptr); }
 
-VkResult Fence::waitForFences(const Device *device, std::vector<Fence*> &fences, bool waitAllFence, size_t *fenceSignaled) {
-    if(fenceSignaled!= nullptr) *fenceSignaled = -1;
+VkResult Fence::waitForFences(const Device *device, const std::vector<Fence *> &fences, bool waitAllFence, size_t *fenceSignaled) {
+    if (fenceSignaled != nullptr) *fenceSignaled = -1;
     std::vector<VkFence> fencesList(fences.size());
-    for (int i = 0; i < fences.size(); i++) fencesList[i] = fences[i].vkFence;
+    for (unsigned int i = 0; i < fences.size(); i++) fencesList[i] = fences[i]->fence();
+
     VkBool32 waitAll = (waitAllFence) ? VK_TRUE : VK_FALSE;
+
     VkResult returnValue =
         vkWaitForFences(device->device(), fencesList.size(), fencesList.data(), waitAll, std::numeric_limits<uint64_t>::max());
-    if (returnValue != VK_SUCCESS &&  returnValue != VK_TIMEOUT) {
+
+    if (returnValue != VK_SUCCESS && returnValue != VK_TIMEOUT) {
         std::runtime_error("Failed to wait Fences");
     }
     if ((returnValue == VK_SUCCESS) && !waitAllFence && fenceSignaled != nullptr) {
         int i = 0;
         for (auto &fence : fences) {
-            if (fence.getFenceStatus() == VK_SUCCESS) {
+            if (fence->getFenceStatus() == VK_SUCCESS) {
                 *fenceSignaled = i;
                 break;
             }
@@ -67,4 +83,4 @@ VkResult Fence::waitForFences(const Device *device, std::vector<Fence*> &fences,
 
     return returnValue;
 }
-}  // namespace vk_stage
+}  // namespace TTe

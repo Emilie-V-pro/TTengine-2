@@ -1,5 +1,6 @@
 #pragma once
 
+
 #include "volk.h"
 #include <vector>
 
@@ -25,7 +26,7 @@ class Fence {
     VkResult waitForFence();
     void resetFence();
 
-
+    VkFence operator()() const {return vk_Fence;}
     VkFence fence() const { return vk_Fence; }
     static VkResult waitForFences(const Device *vkDevice, const std::vector<Fence*> &fences, bool waitAllFence, size_t *firstFenceSignaled);
 

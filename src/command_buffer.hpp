@@ -4,6 +4,7 @@
 #include <vector>
 #include "destroyable.hpp"
 #include "device.hpp"
+#include "synchronisation/fence.hpp"
 #include "volk.h"
 namespace TTe {
 class CommandBuffer;
@@ -25,11 +26,12 @@ class CommandBufferPool {
 
     std::vector<CommandBuffer> createCommandBuffer(unsigned int commandBufferCount) const;
     void resetPool();
+    VkQueue queue() const { return vk_queue;}
 
 
    private:
     std::vector<CommandBuffer> commandBuffers;
-    VkQueue queue = VK_NULL_HANDLE;
+    VkQueue vk_queue = VK_NULL_HANDLE;
     VkCommandPool vk_cmdPool = VK_NULL_HANDLE;
     const Device* device = nullptr;
 };
@@ -54,10 +56,10 @@ class CommandBuffer {
 
     void beginCommandBuffer() const;
     void endCommandBuffer() const;
-    void submitCommandBuffer();
+    void submitCommandBuffer(const std::vector<VkSemaphoreSubmitInfo> &waitSemaphores, const std::vector<VkSemaphoreSubmitInfo> &signalSemaphores,  Fence &vk_fence, bool waitForExecution = false);
 
     void addRessourceToDestroy(Destroyable* ressource);
-
+    static void waitAndDestroy(CommandBuffer & cmdBuffer, Fence &fence);
    private:
     
     std::vector<Destroyable*> ressourcesToDestroy;
