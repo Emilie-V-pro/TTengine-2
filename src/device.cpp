@@ -1,17 +1,19 @@
 
 #include "device.hpp"
-
-#include <vulkan/vulkan_core.h>
-
 #include "VkBootstrap.h"
 #include "structs_vk.hpp"
 
+#define VMA_IMPLEMENTATION
+#include "vk_mem_alloc.h"
+
+#include <volk.h>
 namespace TTe {
 
 Device::Device(Window &window) {
     createInstance();
     selectPhysicalDevice(window);
     createLogicialDevice();
+    initVMA();
 }
 
 void Device::createInstance() {
@@ -53,10 +55,47 @@ void Device::createLogicialDevice() {
     }
     vkbDevice = std::move(dev_ret.value());
 
+    renderQueueFamilyIndex = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
+    computeQueueFamilyIndex = vkbDevice.get_queue_index(vkb::QueueType::compute).value();
+    transferQueueFamilyIndex = vkbDevice.get_queue_index(vkb::QueueType::transfer).value();
+    vkGetDeviceQueue(vkbDevice.device, renderQueueFamilyIndex, 0, &renderQueue);
+    vkGetDeviceQueue(vkbDevice.device, computeQueueFamilyIndex, 0, &computeQueue);
+    vkGetDeviceQueue(vkbDevice.device, transferQueueFamilyIndex, 0, &transferQueue);
+
+    vk_device = vkbDevice.device;
+}
+
+void Device::initVMA() {
+    VmaAllocatorCreateInfo allocatorInfo = {};
+    allocatorInfo.physicalDevice = vkbPhysicalDevice.physical_device;
+    allocatorInfo.device = *this;
+    allocatorInfo.instance = vkbInstance.instance;
+    allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_3;
+
     
-    vkGetDeviceQueue(vkbDevice.device, vkbDevice.get_queue_index(vkb::QueueType::graphics).value(), 0, &renderQueue);
-    vkGetDeviceQueue(vkbDevice.device, vkbDevice.get_queue_index(vkb::QueueType::compute).value(), 0, &computeQueue);
-    vkGetDeviceQueue(vkbDevice.device, vkbDevice.get_queue_index(vkb::QueueType::transfer).value(), 0, &transferQueue);
+    vma_vulkan_func.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
+    vma_vulkan_func.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
+
+    vma_vulkan_func.vkAllocateMemory = vkAllocateMemory;
+    vma_vulkan_func.vkBindBufferMemory = vkBindBufferMemory;
+    vma_vulkan_func.vkBindImageMemory = vkBindImageMemory;
+    vma_vulkan_func.vkCreateBuffer = vkCreateBuffer;
+    vma_vulkan_func.vkCreateImage = vkCreateImage;
+    vma_vulkan_func.vkDestroyBuffer = vkDestroyBuffer;
+    vma_vulkan_func.vkDestroyImage = vkDestroyImage;
+    vma_vulkan_func.vkFlushMappedMemoryRanges = vkFlushMappedMemoryRanges;
+    vma_vulkan_func.vkFreeMemory = vkFreeMemory;
+    vma_vulkan_func.vkGetBufferMemoryRequirements = vkGetBufferMemoryRequirements;
+    vma_vulkan_func.vkGetImageMemoryRequirements = vkGetImageMemoryRequirements;
+    vma_vulkan_func.vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties;
+    vma_vulkan_func.vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties;
+    vma_vulkan_func.vkInvalidateMappedMemoryRanges = vkInvalidateMappedMemoryRanges;
+    vma_vulkan_func.vkMapMemory = vkMapMemory;
+    vma_vulkan_func.vkUnmapMemory = vkUnmapMemory;
+    vma_vulkan_func.vkCmdCopyBuffer = vkCmdCopyBuffer;
+
+    allocatorInfo.pVulkanFunctions = &vma_vulkan_func;
+    vmaCreateAllocator(&allocatorInfo, &_allocator);
 }
 
 void setRequiredExtensionsFeatures(vkb::PhysicalDeviceSelector &phys_device_selector) {
@@ -98,6 +137,7 @@ void setRequiredFeatures13(vkb::PhysicalDeviceSelector &phys_device_selector) {
     auto required_features13 = make<VkPhysicalDeviceVulkan13Features>();
     required_features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
     required_features13.dynamicRendering = true;
+    required_features13.synchronization2 = true;
 
     phys_device_selector.set_required_features_13(required_features13);
 }
@@ -114,11 +154,10 @@ void Device::setRequiredExtensions(vkb::PhysicalDeviceSelector &phys_device_sele
 }
 
 Device::~Device() {
+    vmaDestroyAllocator(_allocator);
     vkb::destroy_device(vkbDevice);
     vkb::destroy_surface(vkbInstance, surface);
     vkb::destroy_instance(vkbInstance);
 }
-
-
 
 }  // namespace TTe

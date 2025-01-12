@@ -1,5 +1,7 @@
 
 #include "command_buffer.hpp"
+#include <iostream>
+#include <thread>
 
 #include "structs_vk.hpp"
 #include "synchronisation/fence.hpp"
@@ -11,7 +13,10 @@ CommandBufferPool::CommandBufferPool(const Device* device, const VkQueue& vk_que
     auto createInfo = make<VkCommandPoolCreateInfo>();
     createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
     createInfo.queueFamilyIndex = device->getRenderQueueFamilyIndexFromQueu(vk_queue);
-    if (vkCreateCommandPool(device->device(), &createInfo, nullptr, &vk_cmdPool) != VK_SUCCESS) {
+
+    
+
+    if (vkCreateCommandPool(*device, &createInfo, nullptr, &vk_cmdPool) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create command pool");
     }
 }
@@ -20,7 +25,7 @@ CommandBufferPool::CommandBufferPool(const CommandBufferPool& cmdPool) : vk_queu
     auto createInfo = make<VkCommandPoolCreateInfo>();
     createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
     createInfo.queueFamilyIndex = device->getRenderQueueFamilyIndexFromQueu(vk_queue);
-    if (vkCreateCommandPool(device->device(), &createInfo, nullptr, &vk_cmdPool) != VK_SUCCESS) {
+    if (vkCreateCommandPool(*device, &createInfo, nullptr, &vk_cmdPool) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create command pool");
     }
 }
@@ -36,7 +41,7 @@ CommandBufferPool::CommandBufferPool(CommandBufferPool&& cmdPool) {
 
 CommandBufferPool::~CommandBufferPool() {
     if (vk_cmdPool != VK_NULL_HANDLE) {
-        vkDestroyCommandPool(device->device(), vk_cmdPool, nullptr);
+        vkDestroyCommandPool(*device, vk_cmdPool, nullptr);
     }
     for (auto& cmdBuffer : commandBuffers) {
         cmdBuffer.vk_cmdBuffer = VK_NULL_HANDLE;
@@ -53,7 +58,7 @@ CommandBufferPool& CommandBufferPool::operator=(const CommandBufferPool& cmdPool
         auto createInfo = make<VkCommandPoolCreateInfo>();
         createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
         createInfo.queueFamilyIndex = device->getRenderQueueFamilyIndexFromQueu(vk_queue);
-        if (vkCreateCommandPool(device->device(), &createInfo, nullptr, &vk_cmdPool) != VK_SUCCESS) {
+        if (vkCreateCommandPool(*device, &createInfo, nullptr, &vk_cmdPool) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create command pool");
         }
     }
@@ -61,7 +66,7 @@ CommandBufferPool& CommandBufferPool::operator=(const CommandBufferPool& cmdPool
 }
 
 CommandBufferPool& CommandBufferPool::operator=(CommandBufferPool&& cmdPoolHandler) {
-    if(this != &cmdPoolHandler) {
+    if (this != &cmdPoolHandler) {
         this->~CommandBufferPool();
         commandBuffers = std::move(cmdPoolHandler.commandBuffers);
         vk_queue = cmdPoolHandler.vk_queue;
@@ -80,7 +85,7 @@ std::vector<CommandBuffer> CommandBufferPool::createCommandBuffer(unsigned int c
     allocInfo.commandPool = vk_cmdPool;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocInfo.commandBufferCount = commandBufferCount;
-    if (vkAllocateCommandBuffers(device->device(), &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
+    if (vkAllocateCommandBuffers(*device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
         throw std::runtime_error("Failed to allocate command buffers");
     }
 
@@ -91,22 +96,19 @@ std::vector<CommandBuffer> CommandBufferPool::createCommandBuffer(unsigned int c
 }
 
 void CommandBufferPool::resetPool() {
-    if (vkResetCommandPool(device->device(), vk_cmdPool, VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT) != VK_SUCCESS) {
+    if (vkResetCommandPool(*device, vk_cmdPool, VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT) != VK_SUCCESS) {
         throw std::runtime_error("Failed to reset command pool");
     }
 }
-}
+}  // namespace TTe
 
 // CommandBuffer
 namespace TTe {
 
-CommandBuffer::CommandBuffer() {
-}
+CommandBuffer::CommandBuffer() {}
 
 CommandBuffer::CommandBuffer(const Device* device, const CommandBufferPool* CommandBufferPool, const VkCommandBuffer& cmdBuffer)
-    :  cmdBufferPool(CommandBufferPool), vk_cmdBuffer(cmdBuffer), device(device) {}
-
-
+    : cmdBufferPool(CommandBufferPool), vk_cmdBuffer(cmdBuffer), device(device) {}
 
 CommandBuffer::CommandBuffer(CommandBuffer&& cmdBuffer) {
     cmdBufferPool = cmdBuffer.cmdBufferPool;
@@ -119,16 +121,15 @@ CommandBuffer::CommandBuffer(CommandBuffer&& cmdBuffer) {
 
 CommandBuffer::~CommandBuffer() {
     if (vk_cmdBuffer != VK_NULL_HANDLE) {
-        vkFreeCommandBuffers(device->device(), cmdBufferPool->operator()(), 1, &vk_cmdBuffer);
+        vkFreeCommandBuffers(*device, cmdBufferPool->operator()(), 1, &vk_cmdBuffer);
     }
     for (auto& ressource : ressourcesToDestroy) {
-        ressource->destroy();
+        delete ressource;
     }
 }
 
-
 CommandBuffer& CommandBuffer::operator=(CommandBuffer&& cmdPoolHandler) {
-    if(this != &cmdPoolHandler) {
+    if (this != &cmdPoolHandler) {
         this->~CommandBuffer();
 
         ressourcesToDestroy = std::move(cmdPoolHandler.ressourcesToDestroy);
@@ -155,10 +156,20 @@ void CommandBuffer::endCommandBuffer() const {
     }
 }
 
-void CommandBuffer::submitCommandBuffer(const std::vector<VkSemaphoreSubmitInfo> &waitSemaphores, const std::vector<VkSemaphoreSubmitInfo> &signalSemaphores, Fence &fence, bool waitForExecution) {
+void CommandBuffer::submitCommandBuffer(
+    const std::vector<VkSemaphoreSubmitInfo>& waitSemaphores,
+    const std::vector<VkSemaphoreSubmitInfo>& signalSemaphores,
+    Fence* fence,
+    bool waitForExecution) {
+
+    if (fence == nullptr){
+        fence = new Fence(device, false);
+        addRessourceToDestroy(fence);
+    }
+
     auto cmdInfo = make<VkCommandBufferSubmitInfo>();
     cmdInfo.commandBuffer = this->vk_cmdBuffer;
-    
+
     auto submitInfo = make<VkSubmitInfo2>();
     submitInfo.waitSemaphoreInfoCount = waitSemaphores.size();
     submitInfo.pWaitSemaphoreInfos = waitSemaphores.data();
@@ -167,19 +178,27 @@ void CommandBuffer::submitCommandBuffer(const std::vector<VkSemaphoreSubmitInfo>
     submitInfo.commandBufferInfoCount = 1;
     submitInfo.pCommandBufferInfos = &cmdInfo;
 
-    
-
-    if (vkQueueSubmit2(this->cmdBufferPool->queue(), 1, &submitInfo, fence()) != VK_SUCCESS) {
+    if (vkQueueSubmit2(this->cmdBufferPool->queue(), 1, &submitInfo, *fence) != VK_SUCCESS) {
         throw std::runtime_error("Failed to submit commandBuffer");
     }
 
-    if(waitForExecution){
-        
+    if (waitForExecution) {
+        waitAndDestroy(*this, fence);
+    } else {
+        std::thread(CommandBuffer::waitAndDestroy, std::ref(*this), fence).detach();
     }
-
-
 }
 
-void CommandBuffer::addRessourceToDestroy(Destroyable* ressource) {}
+void CommandBuffer::waitAndDestroy(CommandBuffer& cmdBuffer, Fence* fence) {
+    fence->waitForFence();
+    for (auto& ressource : cmdBuffer.ressourcesToDestroy) {
+        delete ressource;
+    }
+    cmdBuffer.ressourcesToDestroy.clear();
+}
+
+void CommandBuffer::addRessourceToDestroy(Destroyable* ressource) {
+    ressourcesToDestroy.push_back(ressource);
+}
 
 }  // namespace TTe

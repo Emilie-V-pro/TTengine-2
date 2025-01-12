@@ -51,17 +51,17 @@ class CommandBuffer {
     CommandBuffer& operator=(CommandBuffer&& cmdPoolHandler);
 
     
-    const VkCommandBuffer &operator()() const { return vk_cmdBuffer; }
+    operator VkCommandBuffer() const { return vk_cmdBuffer; }
 
 
     void beginCommandBuffer() const;
     void endCommandBuffer() const;
-    void submitCommandBuffer(const std::vector<VkSemaphoreSubmitInfo> &waitSemaphores, const std::vector<VkSemaphoreSubmitInfo> &signalSemaphores,  Fence &vk_fence, bool waitForExecution = false);
+    void submitCommandBuffer(const std::vector<VkSemaphoreSubmitInfo> &waitSemaphores, const std::vector<VkSemaphoreSubmitInfo> &signalSemaphores,  Fence* vk_fence = nullptr, bool waitForExecution = false);
 
     void addRessourceToDestroy(Destroyable* ressource);
-    static void waitAndDestroy(CommandBuffer & cmdBuffer, Fence &fence);
    private:
     
+    static void waitAndDestroy(CommandBuffer & cmdBuffer, Fence *fence);
     std::vector<Destroyable*> ressourcesToDestroy;
     const CommandBufferPool* cmdBufferPool = nullptr;
     VkCommandBuffer vk_cmdBuffer = VK_NULL_HANDLE;

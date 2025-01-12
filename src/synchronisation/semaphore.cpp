@@ -10,25 +10,22 @@
 
 namespace TTe {
 
-
-
 Semaphore::Semaphore(Device* device, VkSemaphoreType vkSemaphoreType) : vkSemaphoreType(vkSemaphoreType), device(device) {
     auto typeCreateInfo = make<VkSemaphoreTypeCreateInfo>();
     typeCreateInfo.semaphoreType = vkSemaphoreType;
     typeCreateInfo.initialValue = 0;
 
     auto createInfo = make<VkSemaphoreCreateInfo>();
-    // createInfo.pNext = &typeCreateInfo;
+    createInfo.pNext = &typeCreateInfo;
 
-    if (vkCreateSemaphore(device->device(), &createInfo, nullptr, &vksemaphore) != VK_SUCCESS) {
+    if (vkCreateSemaphore(*device, &createInfo, nullptr, &vksemaphore) != VK_SUCCESS) {
         std::runtime_error("Failed to create Semaphore");
     }
 }
 
-Semaphore::~Semaphore() { 
-    if (vksemaphore != VK_NULL_HANDLE)
-        vkDestroySemaphore(device->device(), vksemaphore, nullptr); 
-    }
+Semaphore::~Semaphore() {
+    if (vksemaphore != VK_NULL_HANDLE) vkDestroySemaphore(*device, vksemaphore, nullptr);
+}
 
 Semaphore::Semaphore(Semaphore&& semaphore) : vkSemaphoreType(semaphore.vkSemaphoreType), device(semaphore.device) {
     vksemaphore = semaphore.vksemaphore;
@@ -47,7 +44,7 @@ Semaphore& Semaphore::operator=(Semaphore&& semaphore) {
 uint64_t Semaphore::getTimeLineSemaphoreCountValue() const {
     uint64_t returnValue;
     assert(vkSemaphoreType != VK_SEMAPHORE_TYPE_TIMELINE && "the Semaphore must be a TIMELINE Semaphore to use this function");
-    if (vkGetSemaphoreCounterValue(device->device(), vksemaphore, &returnValue) != VK_SUCCESS) {
+    if (vkGetSemaphoreCounterValue(*device, vksemaphore, &returnValue) != VK_SUCCESS) {
         std::runtime_error("Failed to get Semaphore count value");
     }
     return returnValue;
@@ -60,7 +57,7 @@ void Semaphore::signalTimeLineSemaphore(uint64_t signalValue) const {
     auto signalInfo = make<VkSemaphoreSignalInfo>();
     signalInfo.semaphore = vksemaphore;
     signalInfo.value = signalValue;
-    if (vkSignalSemaphore(device->device(), &signalInfo) != VK_SUCCESS) {
+    if (vkSignalSemaphore(*device, &signalInfo) != VK_SUCCESS) {
         std::runtime_error("Failed to signal Timeline Semaphore");
     }
 }
@@ -78,8 +75,7 @@ VkResult Semaphore::waitTimeLineSemaphores(
     waitInfo.pValues = waitValues.data();
     waitInfo.flags = (waitForFirstSemaphore) ? VK_SEMAPHORE_WAIT_ANY_BIT : 0;
 
-
-    VkResult r = vkWaitSemaphores(device->device(), &waitInfo, std::numeric_limits<uint64_t>::max());
+    VkResult r = vkWaitSemaphores(*device, &waitInfo, std::numeric_limits<uint64_t>::max());
 
     if (!(r & VK_SUCCESS & VK_TIMEOUT)) {
         std::runtime_error("Failed to wait Timeline Semaphore");

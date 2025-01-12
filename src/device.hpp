@@ -1,11 +1,16 @@
 #pragma once
 
 #include <volk.h>
-#include <vulkan/vulkan_core.h>
 #include <cstdint>
 #define VK_NO_PROTOTYPES
 #include "VkBootstrap.h"
 #include "window.hpp"
+
+
+
+#include "vk_mem_alloc.h"
+
+
 namespace TTe {
 class Device {
    public:
@@ -35,9 +40,10 @@ class Device {
     const VkQueue& getComputeQueue() const { return computeQueue; }
     const VkQueue& getTransferQueue() const { return transferQueue; }
 
+    const VmaAllocator& getAllocator() const { return _allocator; } 
+
     //get device
-    const VkDevice& operator()() const { return vkDevice; }
-    const VkDevice& device() const { return vkDevice; }
+    operator VkDevice() const { return vk_device; }
 
    private:
     void createInstance();
@@ -45,16 +51,19 @@ class Device {
     void createLogicialDevice();
     void setRequiredFeatures(vkb::PhysicalDeviceSelector &phys_device_selector);
     void setRequiredExtensions(vkb::PhysicalDeviceSelector &phys_device_selector);
+    void initVMA();
 
-    VkDevice vkDevice = VK_NULL_HANDLE;
+    VkDevice vk_device = VK_NULL_HANDLE;
     VkSurfaceKHR surface = VK_NULL_HANDLE;
+    VmaAllocator _allocator ;
+     VmaVulkanFunctions vma_vulkan_func{};
 
-    VkQueue renderQueue;
-    uint32_t renderQueueFamilyIndex;
-    VkQueue computeQueue;
-    uint32_t computeQueueFamilyIndex;
-    VkQueue transferQueue;
-    uint32_t transferQueueFamilyIndex;
+    VkQueue renderQueue = VK_NULL_HANDLE;
+    uint32_t renderQueueFamilyIndex = -1;
+    VkQueue computeQueue = VK_NULL_HANDLE;
+    uint32_t computeQueueFamilyIndex = -1;
+    VkQueue transferQueue = VK_NULL_HANDLE;
+    uint32_t transferQueueFamilyIndex = -1;
 
     vkb::Instance vkbInstance;
     vkb::PhysicalDevice vkbPhysicalDevice;
