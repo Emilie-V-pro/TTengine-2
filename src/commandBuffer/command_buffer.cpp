@@ -1,10 +1,10 @@
 
 #include "command_buffer.hpp"
-#include <iostream>
+
 #include <thread>
 
-#include "structs_vk.hpp"
-#include "synchronisation/fence.hpp"
+#include "../structs_vk.hpp"
+#include "../synchronisation/fence.hpp"
 
 // CommandBufferPool
 namespace TTe {
@@ -13,8 +13,6 @@ CommandBufferPool::CommandBufferPool(const Device* device, const VkQueue& vk_que
     auto createInfo = make<VkCommandPoolCreateInfo>();
     createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
     createInfo.queueFamilyIndex = device->getRenderQueueFamilyIndexFromQueu(vk_queue);
-
-    
 
     if (vkCreateCommandPool(*device, &createInfo, nullptr, &vk_cmdPool) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create command pool");
@@ -34,7 +32,7 @@ CommandBufferPool::CommandBufferPool(CommandBufferPool&& cmdPool) {
     vk_queue = cmdPool.vk_queue;
     device = cmdPool.device;
     vk_cmdPool = cmdPool.vk_cmdPool;
-    commandBuffers = std::move(cmdPool.commandBuffers);
+    nbCommandBuffers = cmdPool.nbCommandBuffers;
 
     cmdPool.vk_cmdPool = VK_NULL_HANDLE;
 }
@@ -42,10 +40,6 @@ CommandBufferPool::CommandBufferPool(CommandBufferPool&& cmdPool) {
 CommandBufferPool::~CommandBufferPool() {
     if (vk_cmdPool != VK_NULL_HANDLE) {
         vkDestroyCommandPool(*device, vk_cmdPool, nullptr);
-    }
-    for (auto& cmdBuffer : commandBuffers) {
-        cmdBuffer.vk_cmdBuffer = VK_NULL_HANDLE;
-        cmdBuffer.cmdBufferPool = nullptr;
     }
 }
 
@@ -68,7 +62,7 @@ CommandBufferPool& CommandBufferPool::operator=(const CommandBufferPool& cmdPool
 CommandBufferPool& CommandBufferPool::operator=(CommandBufferPool&& cmdPoolHandler) {
     if (this != &cmdPoolHandler) {
         this->~CommandBufferPool();
-        commandBuffers = std::move(cmdPoolHandler.commandBuffers);
+        nbCommandBuffers = cmdPoolHandler.nbCommandBuffers;
         vk_queue = cmdPoolHandler.vk_queue;
         device = cmdPoolHandler.device;
         vk_cmdPool = cmdPoolHandler.vk_cmdPool;
@@ -77,7 +71,7 @@ CommandBufferPool& CommandBufferPool::operator=(CommandBufferPool&& cmdPoolHandl
     return *this;
 }
 
-std::vector<CommandBuffer> CommandBufferPool::createCommandBuffer(unsigned int commandBufferCount) const {
+std::vector<CommandBuffer> CommandBufferPool::createCommandBuffer(unsigned int commandBufferCount) {
     std::vector<CommandBuffer> returnValue(commandBufferCount);
     std::vector<VkCommandBuffer> commandBuffers(commandBufferCount);
 
@@ -92,6 +86,7 @@ std::vector<CommandBuffer> CommandBufferPool::createCommandBuffer(unsigned int c
     for (unsigned int i = 0; i < commandBufferCount; i++) {
         returnValue[i] = CommandBuffer(device, this, commandBuffers[i]);
     }
+    nbCommandBuffers += commandBufferCount;
     return returnValue;
 }
 
@@ -107,7 +102,7 @@ namespace TTe {
 
 CommandBuffer::CommandBuffer() {}
 
-CommandBuffer::CommandBuffer(const Device* device, const CommandBufferPool* CommandBufferPool, const VkCommandBuffer& cmdBuffer)
+CommandBuffer::CommandBuffer(const Device* device, CommandBufferPool* CommandBufferPool, const VkCommandBuffer& cmdBuffer)
     : cmdBufferPool(CommandBufferPool), vk_cmdBuffer(cmdBuffer), device(device) {}
 
 CommandBuffer::CommandBuffer(CommandBuffer&& cmdBuffer) {
@@ -122,9 +117,7 @@ CommandBuffer::CommandBuffer(CommandBuffer&& cmdBuffer) {
 CommandBuffer::~CommandBuffer() {
     if (vk_cmdBuffer != VK_NULL_HANDLE) {
         vkFreeCommandBuffers(*device, cmdBufferPool->operator()(), 1, &vk_cmdBuffer);
-    }
-    for (auto& ressource : ressourcesToDestroy) {
-        delete ressource;
+        cmdBufferPool->nbCommandBuffers--;
     }
 }
 
@@ -161,8 +154,7 @@ void CommandBuffer::submitCommandBuffer(
     const std::vector<VkSemaphoreSubmitInfo>& signalSemaphores,
     Fence* fence,
     bool waitForExecution) {
-
-    if (fence == nullptr){
+    if (fence == nullptr) {
         fence = new Fence(device, false);
         addRessourceToDestroy(fence);
     }
@@ -183,22 +175,29 @@ void CommandBuffer::submitCommandBuffer(
     }
 
     if (waitForExecution) {
-        waitAndDestroy(*this, fence);
+        waitAndDestroy(this, fence);
     } else {
-        std::thread(CommandBuffer::waitAndDestroy, std::ref(*this), fence).detach();
+        std::thread(CommandBuffer::waitAndDestroy, this, fence).detach();
     }
 }
 
-void CommandBuffer::waitAndDestroy(CommandBuffer& cmdBuffer, Fence* fence) {
+void CommandBuffer::waitAndDestroy(CommandBuffer* cmdBuffer, Fence* fence) {
+    std::this_thread::get_id();
     fence->waitForFence();
-    for (auto& ressource : cmdBuffer.ressourcesToDestroy) {
+    bool autoCmdBufferDestroy = false;
+    for (auto& ressource : cmdBuffer->ressourcesToDestroy) {
+        if (ressource == cmdBuffer) {
+            autoCmdBufferDestroy = true;
+            continue;
+        }
         delete ressource;
     }
-    cmdBuffer.ressourcesToDestroy.clear();
+    cmdBuffer->ressourcesToDestroy.clear();
+    if (autoCmdBufferDestroy) {
+        delete cmdBuffer;
+    }
 }
 
-void CommandBuffer::addRessourceToDestroy(Destroyable* ressource) {
-    ressourcesToDestroy.push_back(ressource);
-}
+void CommandBuffer::addRessourceToDestroy(Destroyable* ressource) { ressourcesToDestroy.push_back(ressource); }
 
 }  // namespace TTe

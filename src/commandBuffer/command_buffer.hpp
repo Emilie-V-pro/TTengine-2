@@ -1,10 +1,9 @@
 #pragma once
 
-
 #include <vector>
-#include "destroyable.hpp"
-#include "device.hpp"
-#include "synchronisation/fence.hpp"
+#include "../destroyable.hpp"
+#include "../device.hpp"
+#include "../synchronisation/fence.hpp"
 #include "volk.h"
 namespace TTe {
 class CommandBuffer;
@@ -23,25 +22,29 @@ class CommandBufferPool {
     CommandBufferPool& operator=(CommandBufferPool&& cmdPoolHandler);
 
     const VkCommandPool &operator()() const { return vk_cmdPool; }
-
-    std::vector<CommandBuffer> createCommandBuffer(unsigned int commandBufferCount) const;
-    void resetPool();
     VkQueue queue() const { return vk_queue;}
+    unsigned int getNBCmBuffers() const { return nbCommandBuffers; }
 
+
+    std::vector<CommandBuffer> createCommandBuffer(unsigned int commandBufferCount) ;
+    void resetPool();
 
    private:
-    std::vector<CommandBuffer> commandBuffers;
+
+    unsigned int nbCommandBuffers = 0;
     VkQueue vk_queue = VK_NULL_HANDLE;
     VkCommandPool vk_cmdPool = VK_NULL_HANDLE;
     const Device* device = nullptr;
+
+    friend class CommandBuffer;
 };
 
 
 
-class CommandBuffer {
+class CommandBuffer : public Destroyable {
    public:
     CommandBuffer();
-    CommandBuffer(const Device* device, const CommandBufferPool* CommandBufferPool, const VkCommandBuffer& cmdBuffer);
+    CommandBuffer(const Device* device, CommandBufferPool* CommandBufferPool, const VkCommandBuffer& cmdBuffer);
     // Destructor
     ~CommandBuffer();
     // Copy/Move
@@ -61,9 +64,9 @@ class CommandBuffer {
     void addRessourceToDestroy(Destroyable* ressource);
    private:
     
-    static void waitAndDestroy(CommandBuffer & cmdBuffer, Fence *fence);
+    static void waitAndDestroy(CommandBuffer * cmdBuffer, Fence *fence);
     std::vector<Destroyable*> ressourcesToDestroy;
-    const CommandBufferPool* cmdBufferPool = nullptr;
+    CommandBufferPool* cmdBufferPool = nullptr;
     VkCommandBuffer vk_cmdBuffer = VK_NULL_HANDLE;
     const Device* device = nullptr;
 
