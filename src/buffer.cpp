@@ -1,7 +1,6 @@
 
 #include "buffer.hpp"
 
-#include <vulkan/vulkan_core.h>
 
 #include "commandBuffer/commandPool_handler.hpp"
 #include "commandBuffer/command_buffer.hpp"
@@ -137,7 +136,7 @@ VmaAllocationCreateFlags Buffer::getAllocationFlags(BufferType bufferType) const
 }
 
 void Buffer::writeToBuffer(void* data, VkDeviceSize size, VkDeviceSize offset) {
-    vmaCopyAllocationToMemory(device->getAllocator(), allocation, offset, data, size);
+    vmaCopyMemoryToAllocation(device->getAllocator(), data, allocation, offset, size);
 }
 
 void Buffer::copyBuffer(
@@ -158,7 +157,7 @@ void Buffer::copyBuffer(
     VkBufferCopy copyRegion{};
     copyRegion.srcOffset = src_offset;  // Optional
     copyRegion.dstOffset = dst_offset;  // Optional
-    
+
     copyRegion.size = (size == VK_WHOLE_SIZE) ? src_buffer.total_size : size;
     vkCmdCopyBuffer(*cmdBuffer, src_buffer, dst_buffer, 1, &copyRegion);
     if (extCmdBuffer == nullptr) {
@@ -166,6 +165,36 @@ void Buffer::copyBuffer(
         cmdBuffer->addRessourceToDestroy(cmdBuffer);
         cmdBuffer->submitCommandBuffer({}, {}, nullptr, false);
     }
+}
+
+void Buffer::copyToImage(Device* device, VkImage image, uint32_t width, uint32_t height, uint32_t layer, CommandBuffer* extCmdBuffer) {
+    CommandBuffer* cmdBuffer = extCmdBuffer;
+    if (cmdBuffer == nullptr) {
+        cmdBuffer =
+            new CommandBuffer(std::move(CommandPoolHandler::getCommandPool(device, device->getTransferQueue())->createCommandBuffer(1)[0]));
+        cmdBuffer->beginCommandBuffer();
+    }
+    VkBufferImageCopy region{};
+    region.bufferOffset = 0;
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.mipLevel = 0;
+    region.imageSubresource.baseArrayLayer = 0;
+    region.imageSubresource.layerCount = layer;
+
+    region.imageOffset = {0, 0, 0};
+    region.imageExtent = {width, height, 1};
+
+    vkCmdCopyBufferToImage(*cmdBuffer, *this, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+    if (extCmdBuffer == nullptr) {
+        cmdBuffer->endCommandBuffer();
+        cmdBuffer->addRessourceToDestroy(cmdBuffer);
+        cmdBuffer->submitCommandBuffer({}, {}, nullptr, false);
+    }
+
 }
 
 }  // namespace TTe

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <volk.h>
-#include <vulkan/vulkan_core.h>
 #include <cstdint>
 
 #include "commandBuffer/command_buffer.hpp"
@@ -9,7 +8,7 @@
 
 namespace TTe {
 
-class Buffer {
+class Buffer : public Destroyable {
 
    public:
     enum struct BufferType { GPU_ONLY, STAGING, READBACK, DYNAMIC, OTHER };
@@ -33,13 +32,17 @@ class Buffer {
 
 
     operator VkBuffer() const { return vk_buffer; }
-
-   private:
-    VkBufferUsageFlags getBufferUsageFlags(BufferType bufferType) const;
-    VmaAllocationCreateFlags getAllocationFlags(BufferType bufferType) const;
-
-    void writeToBuffer(void* data, VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
     
+    void writeToBuffer(void* data, VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+
+    void copyToImage(
+        Device* device,
+        VkImage image,
+        uint32_t width,
+        uint32_t height,
+        uint32_t layer = 1,
+        CommandBuffer* extCmdBuffer = nullptr);
+
     static void copyBuffer(
         Device* device,
         const Buffer & src_buffer,
@@ -48,6 +51,13 @@ class Buffer {
         VkDeviceSize size = VK_WHOLE_SIZE,
         VkDeviceSize src_offset = 0,
         VkDeviceSize dst_offset = 0);
+
+   private:
+    VkBufferUsageFlags getBufferUsageFlags(BufferType bufferType) const;
+    VmaAllocationCreateFlags getAllocationFlags(BufferType bufferType) const;
+
+    
+    
 
     VmaAllocationCreateInfo allocInfo = {};
     VkBufferCreateInfo bufferInfo = {};

@@ -1,0 +1,332 @@
+
+#include "image.hpp"
+
+#include <vulkan/vulkan_core.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include <cstddef>
+
+#include "buffer.hpp"
+#include "commandBuffer/commandPool_handler.hpp"
+#include "commandBuffer/command_buffer.hpp"
+#include "device.hpp"
+#include "stb_image.h"
+#include "structs_vk.hpp"
+#include "utils.hpp"
+
+namespace TTe {
+
+Image::Image(Device *device, ImageCreateInfo &imageCreateInfo, CommandBuffer *cmdBuffer)
+    : imageCreateInfo(imageCreateInfo),
+      width(imageCreateInfo.width),
+      height(imageCreateInfo.height),
+      layer(imageCreateInfo.layers),
+      imageFormat(imageCreateInfo.format),
+      imageLayout(imageCreateInfo.imageLayout),
+      device(device) {
+    if (!this->imageCreateInfo.filename.empty()) {
+        loadImageFromFile(imageCreateInfo.filename);
+    }
+    createImage();
+    createImageView();
+
+    if (this->imageCreateInfo.datas.size() > 0) {
+        loadImageToGPU(cmdBuffer);
+    }
+}
+
+Image::Image(Device *device, VkImage image, VkImageView imageView, VkFormat format, VkExtent2D swapChainExtent)
+    : width(swapChainExtent.width),
+      height(swapChainExtent.height),
+      layer(1),
+      imageFormat(format),
+      imageLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL),
+      actualImageLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL),
+      device(device),
+      image(image),
+      imageView(imageView),
+      isSwapchainImage(true) {}
+
+Image::Image(Image &other)
+    : imageCreateInfo(other.imageCreateInfo),
+      width(other.width),
+      height(other.height),
+      layer(other.layer),
+      mipLevels(other.mipLevels),
+      imageFormat(other.imageFormat),
+      imageLayout(other.imageLayout),
+      actualImageLayout(other.actualImageLayout),
+      device(other.device),
+      isSwapchainImage(other.isSwapchainImage) {
+    this->~Image();
+    createImage();
+    createImageView();
+    copyImage(device, other, *this);
+}
+
+Image::Image(Image &&other)
+    : imageCreateInfo(other.imageCreateInfo),
+      width(other.width),
+      height(other.height),
+      layer(other.layer),
+      mipLevels(other.mipLevels),
+      imageFormat(other.imageFormat),
+      imageLayout(other.imageLayout),
+      actualImageLayout(other.actualImageLayout),
+      device(other.device),
+      image(other.image),
+      imageView(other.imageView),
+      imageMemory(other.imageMemory),
+      isSwapchainImage(other.isSwapchainImage) {
+    other.image = VK_NULL_HANDLE;
+}
+
+Image::~Image() {
+    if (!isSwapchainImage) {
+        if (image != VK_NULL_HANDLE) {
+            vmaDestroyImage(device->getAllocator(), image, allocation);
+        }
+        if (imageView != VK_NULL_HANDLE) {
+            vkDestroyImageView(*device, imageView, nullptr);
+        }
+        if (imageMemory != VK_NULL_HANDLE) {
+            vkFreeMemory(*device, imageMemory, nullptr);
+        }
+    }
+}
+
+Image &Image::operator=(Image &other) {
+    if (this != &other) {
+        this->~Image();
+        imageCreateInfo = other.imageCreateInfo;
+        width = other.width;
+        height = other.height;
+        layer = other.layer;
+        mipLevels = other.mipLevels;
+        device = other.device;
+        imageFormat = other.imageFormat;
+        imageLayout = other.imageLayout;
+        actualImageLayout = other.actualImageLayout;
+        isSwapchainImage = other.isSwapchainImage;
+        createImage();
+        createImageView();
+        copyImage(device, other, *this);
+    }
+    return *this;
+}
+
+Image &Image::operator=(Image &&other) {
+    if (this != &other) {
+        this->~Image();
+        imageCreateInfo = other.imageCreateInfo;
+        width = other.width;
+        height = other.height;
+        layer = other.layer;
+        mipLevels = other.mipLevels;
+        device = other.device;
+        image = other.image;
+        imageMemory = other.imageMemory;
+        imageView = other.imageView;
+        imageFormat = other.imageFormat;
+        imageLayout = other.imageLayout;
+        actualImageLayout = other.actualImageLayout;
+        isSwapchainImage = other.isSwapchainImage;
+        other.image = VK_NULL_HANDLE;
+    }
+    return *this;
+}
+
+void Image::transitionImageLayout(VkImageLayout newLayout, CommandBuffer *extCmdBuffer) {
+    transitionImageLayout(actualImageLayout, newLayout, 0, this->mipLevels, extCmdBuffer);
+    actualImageLayout = newLayout;
+}
+
+void Image::transitionImageLayout(
+    VkImageLayout oldLayout, VkImageLayout newLayout, u_int32_t mipLevel, u_int32_t mipCount, CommandBuffer *extCmdBuffer) {
+    auto barrier = make<VkImageMemoryBarrier>();
+    barrier.oldLayout = oldLayout;                          // VK_IMAGE_LAYOUT_UNDEFINED
+    barrier.newLayout = newLayout;                          // VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;  // VK_QUEUE_FAMILY_IGNORED
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;  // VK_QUEUE_FAMILY_IGNORED
+    barrier.image = image;
+    if (imageFormat != VK_FORMAT_D32_SFLOAT) {  // https://discord.com/channels/231931740661350410/1140282527760781323
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;  // VK_IMAGE_ASPECT_COLOR_BIT
+    } else {
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    }
+    barrier.subresourceRange.baseMipLevel = mipLevel;
+    barrier.subresourceRange.levelCount = mipCount;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = layer;
+
+    barrier.srcAccessMask = getAccessFlagsFromLayout(oldLayout);
+    barrier.dstAccessMask = getAccessFlagsFromLayout(newLayout);
+
+    // TODO : GET CORRECT STATE FLAGS
+    VkPipelineStageFlags sourceStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    VkPipelineStageFlags destinationStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    CommandBuffer *cmdBuffer = extCmdBuffer;
+    if (extCmdBuffer == nullptr) {
+        cmdBuffer =
+            new CommandBuffer(std::move(CommandPoolHandler::getCommandPool(device, device->getTransferQueue())->createCommandBuffer(1)[0]));
+        cmdBuffer->beginCommandBuffer();
+    }
+
+    vkCmdPipelineBarrier(*cmdBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    if (extCmdBuffer == nullptr) {
+        cmdBuffer->endCommandBuffer();
+        cmdBuffer->addRessourceToDestroy(cmdBuffer);
+        cmdBuffer->submitCommandBuffer({}, {}, nullptr, false);
+    }
+}
+
+void Image::generateMipmaps() {}
+
+void Image::createImage() {
+    if (imageCreateInfo.enableMipMap) {
+        imageCreateInfo.usageFlags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(imageCreateInfo.width, imageCreateInfo.width)))) + 1;
+    }
+    auto imageInfo = make<VkImageCreateInfo>();
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageInfo.format = imageCreateInfo.format;
+
+    imageInfo.mipLevels = mipLevels;
+    imageInfo.arrayLayers = imageCreateInfo.layers;
+    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageInfo.usage = imageCreateInfo.usageFlags;
+    if (imageCreateInfo.datas.size() > 0) {
+        imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    }
+    imageInfo.extent = {imageCreateInfo.width, imageCreateInfo.height, 1};
+    // imageInfo.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+    if (imageCreateInfo.isCubeTexture) {
+        imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+    }
+
+    createImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    actualImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+}
+
+void Image::createImageWithInfo(const VkImageCreateInfo &imageInfo, VkMemoryPropertyFlags properties) {
+    VmaAllocationCreateInfo allocInfo = {};
+    allocInfo.requiredFlags = properties;
+    ;
+    allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+    vmaCreateImage(device->getAllocator(), &imageInfo, &allocInfo, &image, &allocation, nullptr);
+}
+
+void Image::createImageView() {
+    auto imageViewInfo = make<VkImageViewCreateInfo>();
+    if (imageCreateInfo.isCubeTexture) {
+        if ((imageCreateInfo.layers / 6) > 1) {
+            imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+        } else {
+            imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+        }
+    } else {
+        if (imageCreateInfo.layers > 1) {
+            imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+        } else {
+            imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;  // VK_IMAGE_VIEW_TYPE_2D
+        }
+    }
+
+    imageViewInfo.format = imageFormat;
+    imageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;  // VK_IMAGE_ASPECT_COLOR_BIT
+    if (imageCreateInfo.usageFlags & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+        imageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    }
+    imageViewInfo.subresourceRange.baseMipLevel = 0;
+    imageViewInfo.subresourceRange.baseArrayLayer = 0;
+    imageViewInfo.subresourceRange.layerCount = imageCreateInfo.layers;
+    imageViewInfo.subresourceRange.levelCount = mipLevels;
+    imageViewInfo.image = image;
+    vkCreateImageView(*device, &imageViewInfo, nullptr, &imageView);
+}
+
+void Image::loadImageFromFile(std::vector<std::string> &filename) {
+    // stbi_set_flip_vertically_on_load(true);
+    int nbOfchannel;
+    int width, height;
+
+    stbi_info(filename[0].c_str(), &width, &height, &nbOfchannel);
+    this->width = width;
+    this->height = height;
+    imageCreateInfo.width = width;
+    imageCreateInfo.height = height;
+    for (size_t i = 0; i < filename.size(); i++) {
+        imageCreateInfo.datas.push_back(stbi_load((filename[i]).c_str(), &width, &height, &nbOfchannel, 4));
+    }
+
+    if (imageCreateInfo.format == VK_FORMAT_UNDEFINED) {
+        this->imageFormat = VK_FORMAT_R8G8B8A8_SRGB;
+        imageCreateInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+    }
+}
+
+void Image::loadImageToGPU(CommandBuffer *extCmdBuffer) {
+    CommandBuffer *cmdBuffer = extCmdBuffer;
+    if (cmdBuffer == nullptr) {
+        cmdBuffer =
+            new CommandBuffer(std::move(CommandPoolHandler::getCommandPool(device, device->getTransferQueue())->createCommandBuffer(1)[0]));
+        cmdBuffer->beginCommandBuffer();
+    }
+    VkDeviceSize size = width * height * getPixelSizeFromFormat(imageFormat);
+    Buffer *b = new Buffer(
+        device, getPixelSizeFromFormat(imageFormat), static_cast<u_int32_t>(width * height * layer), 0, Buffer::BufferType::STAGING);
+    for (size_t i = 0; i < imageCreateInfo.datas.size(); i++) {
+        b->writeToBuffer(imageCreateInfo.datas[i], size, i * size);
+    }
+    if (imageCreateInfo.filename.size() > 0) {
+        for (size_t i = 0; i < imageCreateInfo.datas.size(); i++) {
+            stbi_image_free(imageCreateInfo.datas[i]);
+        }
+    }
+    transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, cmdBuffer);
+    b->copyToImage(device, *this, width, height, layer, cmdBuffer);
+    transitionImageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, cmdBuffer);
+
+
+    if (extCmdBuffer == nullptr) {
+        cmdBuffer->endCommandBuffer();
+        cmdBuffer->addRessourceToDestroy(cmdBuffer);
+        cmdBuffer->addRessourceToDestroy(b);
+        cmdBuffer->submitCommandBuffer({}, {}, nullptr, false);
+    }
+}
+
+void Image::copyImage(Device *device, Image &srcImage, Image &dstImage, CommandBuffer *extCmdBuffer) {
+    CommandBuffer *cmdBuffer = extCmdBuffer;
+    if (cmdBuffer == nullptr) {
+        cmdBuffer =
+            new CommandBuffer(std::move(CommandPoolHandler::getCommandPool(device, device->getTransferQueue())->createCommandBuffer(1)[0]));
+        cmdBuffer->beginCommandBuffer();
+    }
+
+    srcImage.transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, cmdBuffer);
+    dstImage.transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, cmdBuffer);
+
+    VkImageBlit blit{};
+    blit.srcOffsets[0] = {0, 0, 0};
+    blit.srcOffsets[1] = {(int32_t)srcImage.getWidth(), (int32_t)srcImage.getHeight(), 1};
+    blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blit.srcSubresource.mipLevel = 0;
+    blit.srcSubresource.baseArrayLayer = 0;
+    blit.srcSubresource.layerCount = srcImage.layer;
+    blit.dstOffsets[0] = {0, 0, 0};
+    blit.dstOffsets[1] = {(int32_t)srcImage.getWidth(), (int32_t)srcImage.getHeight(), 1};
+    blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blit.dstSubresource.mipLevel = 0;
+    blit.dstSubresource.baseArrayLayer = 0;
+    blit.dstSubresource.layerCount = srcImage.layer;
+
+    vkCmdBlitImage(
+        *cmdBuffer, srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit,
+        VK_FILTER_LINEAR);
+}
+
+}  // namespace TTe
