@@ -1,8 +1,6 @@
 
 #include "fence.hpp"
 
-
-
 #include <limits>
 #include <vector>
 
@@ -55,15 +53,14 @@ void Fence::resetFence() {
 
 VkResult Fence::waitForFence() { return waitForFences(device, {this}, true, nullptr); }
 
-VkResult Fence::waitForFences(const Device *device, const std::vector<Fence *> &fences, bool waitAllFence, size_t *fenceSignaled) {
+VkResult Fence::waitForFences(const Device *device, const std::vector<Fence *> &fences, bool waitAllFence, int *fenceSignaled) {
     if (fenceSignaled != nullptr) *fenceSignaled = -1;
     std::vector<VkFence> fencesList(fences.size());
     for (unsigned int i = 0; i < fences.size(); i++) fencesList[i] = *fences[i];
 
     VkBool32 waitAll = (waitAllFence) ? VK_TRUE : VK_FALSE;
 
-    VkResult returnValue =
-        vkWaitForFences(*device, fencesList.size(), fencesList.data(), waitAll, std::numeric_limits<uint64_t>::max());
+    VkResult returnValue = vkWaitForFences(*device, fencesList.size(), fencesList.data(), waitAll, std::numeric_limits<uint64_t>::max());
 
     if (returnValue != VK_SUCCESS && returnValue != VK_TIMEOUT) {
         std::runtime_error("Failed to wait Fences");

@@ -50,6 +50,22 @@ uint64_t Semaphore::getTimeLineSemaphoreCountValue() const {
     return returnValue;
 }
 
+VkSemaphoreSubmitInfo Semaphore::getSemaphoreSubmitSignalInfo() const {
+    auto submitInfo = make<VkSemaphoreSubmitInfo>();
+    submitInfo.semaphore = vksemaphore;
+    submitInfo.stageMask = signalStage;
+    submitInfo.value = 0;
+    return submitInfo;
+}
+
+VkSemaphoreSubmitInfo Semaphore::getSemaphoreSubmitWaittInfo() const {
+    auto submitInfo = make<VkSemaphoreSubmitInfo>();
+    submitInfo.semaphore = vksemaphore;
+    submitInfo.stageMask = waitStage;
+    submitInfo.value = 0;
+    return submitInfo;
+}
+
 VkResult Semaphore::waitTimeLineSemaphore(uint64_t waitValue) const { return waitTimeLineSemaphores(device, {this}, {waitValue}, false); }
 
 void Semaphore::signalTimeLineSemaphore(uint64_t signalValue) const {

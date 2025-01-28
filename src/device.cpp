@@ -58,6 +58,7 @@ void Device::createLogicialDevice() {
     renderQueueFamilyIndex = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
     computeQueueFamilyIndex = vkbDevice.get_queue_index(vkb::QueueType::compute).value();
     transferQueueFamilyIndex = vkbDevice.get_queue_index(vkb::QueueType::transfer).value();
+    presentQueue = vkbDevice.get_queue(vkb::QueueType::present).value();
     vkGetDeviceQueue(vkbDevice.device, renderQueueFamilyIndex, 0, &renderQueue);
     vkGetDeviceQueue(vkbDevice.device, computeQueueFamilyIndex, 0, &computeQueue);
     vkGetDeviceQueue(vkbDevice.device, transferQueueFamilyIndex, 0, &transferQueue);

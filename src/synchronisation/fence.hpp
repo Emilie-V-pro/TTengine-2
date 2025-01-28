@@ -26,8 +26,7 @@ class Fence : public Destroyable {
     void resetFence();
 
     operator VkFence() const { return vk_Fence; }
-    static VkResult waitForFences(
-        const Device *vkDevice, const std::vector<Fence *> &fences, bool waitAllFence, size_t *firstFenceSignaled);
+    static VkResult waitForFences(const Device *vkDevice, const std::vector<Fence *> &fences, bool waitAllFence, int *firstFenceSignaled);
 
    private:
     VkFence vk_Fence = VK_NULL_HANDLE;

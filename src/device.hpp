@@ -39,8 +39,11 @@ class Device {
     const VkQueue& getRenderQueue() const { return renderQueue; }
     const VkQueue& getComputeQueue() const { return computeQueue; }
     const VkQueue& getTransferQueue() const { return transferQueue; }
+    const VkQueue& getPresentQueue() const { return presentQueue; }
 
     const VmaAllocator& getAllocator() const { return _allocator; } 
+
+    const vkb::Device &getVkbDevice() const { return vkbDevice; }
 
     //get device
     operator VkDevice() const { return vk_device; }
@@ -64,6 +67,8 @@ class Device {
     uint32_t computeQueueFamilyIndex = -1;
     VkQueue transferQueue = VK_NULL_HANDLE;
     uint32_t transferQueueFamilyIndex = -1;
+
+    VkQueue presentQueue = VK_NULL_HANDLE;
 
     vkb::Instance vkbInstance;
     vkb::PhysicalDevice vkbPhysicalDevice;
