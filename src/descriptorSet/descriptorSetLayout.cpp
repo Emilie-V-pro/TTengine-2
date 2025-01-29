@@ -67,4 +67,14 @@ std::shared_ptr<DescriptorSetLayout> DescriptorSetLayout::createDescriptorSetLay
     return descriptorSetLayoutCache[id].lock();
 }
 
+void DescriptorSetLayout::getLayoutSizeAndOffsets() {
+    vkGetDescriptorSetLayoutSizeEXT(*device, descriptorSetLayout, &layoutSize);
+    layoutSize = alignedVkSize(layoutSize, device->getDeviceDescProps().descriptorBufferOffsetAlignment);
+    for(auto &binding : layoutBindings) {
+        VkDeviceSize offset = 0;
+        vkGetDescriptorSetLayoutBindingOffsetEXT(*device, descriptorSetLayout, binding.first, &offset);
+        layoutOffsets[binding.first] =  offset;
+    }
+}
+
 }  // namespace vk_stage

@@ -45,6 +45,8 @@ class Device {
 
     const vkb::Device &getVkbDevice() const { return vkbDevice; }
 
+    const VkPhysicalDeviceDescriptorBufferPropertiesEXT &getDeviceDescProps() const { return deviceDescProps; }
+
     //get device
     operator VkDevice() const { return vk_device; }
 
@@ -55,6 +57,8 @@ class Device {
     void setRequiredFeatures(vkb::PhysicalDeviceSelector &phys_device_selector);
     void setRequiredExtensions(vkb::PhysicalDeviceSelector &phys_device_selector);
     void initVMA();
+
+    void queryPhysicalDeviceProperties();
 
     VkDevice vk_device = VK_NULL_HANDLE;
     VkSurfaceKHR surface = VK_NULL_HANDLE;
@@ -69,6 +73,9 @@ class Device {
     uint32_t transferQueueFamilyIndex = -1;
 
     VkQueue presentQueue = VK_NULL_HANDLE;
+
+    VkPhysicalDeviceProperties2KHR deviceProps2;
+    VkPhysicalDeviceDescriptorBufferPropertiesEXT deviceDescProps;
 
     vkb::Instance vkbInstance;
     vkb::PhysicalDevice vkbPhysicalDevice;

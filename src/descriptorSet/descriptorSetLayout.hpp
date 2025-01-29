@@ -28,24 +28,29 @@ class DescriptorSetLayout {
 
     ~DescriptorSetLayout();
     
-    
+    // Getters
     operator const VkDescriptorSetLayout&() const { return descriptorSetLayout; }
     
     std::map<uint32_t, VkDescriptorSetLayoutBinding> getLayoutBindings() { return layoutBindings; }
-    
+    const VkDeviceSize& getLayoutSize() { return layoutSize; }
+    const std::unordered_map<uint32_t, VkDeviceSize> &getLayoutOffsets() { return layoutOffsets; }
     
 
    private:
 
-    std::vector<uint32_t> getId() { return id; }
     static std::unordered_map<std::vector<uint32_t>, std::weak_ptr<DescriptorSetLayout>> descriptorSetLayoutCache;
 
     DescriptorSetLayout(Device *device, std::map<uint32_t, VkDescriptorSetLayoutBinding> layoutBindings, std::vector<uint32_t> id);
+    void getLayoutSizeAndOffsets();
+    
     Device *device;
 
     VkDescriptorSetLayout descriptorSetLayout;
 
     std::map<uint32_t, VkDescriptorSetLayoutBinding> layoutBindings;
     std::vector<uint32_t> id;
+
+    VkDeviceSize layoutSize = 0;
+    std::unordered_map<uint32_t, VkDeviceSize> layoutOffsets;
 };
 }  // namespace TTe

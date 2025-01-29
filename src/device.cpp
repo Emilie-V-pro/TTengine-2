@@ -1,12 +1,13 @@
 
 #include "device.hpp"
+
 #include "VkBootstrap.h"
 #include "structs_vk.hpp"
 
 #define VMA_IMPLEMENTATION
-#include "vk_mem_alloc.h"
-
 #include <volk.h>
+
+#include "vk_mem_alloc.h"
 namespace TTe {
 
 Device::Device(Window &window) {
@@ -73,7 +74,6 @@ void Device::initVMA() {
     allocatorInfo.instance = vkbInstance.instance;
     allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_3;
 
-    
     vma_vulkan_func.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
     vma_vulkan_func.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
 
@@ -104,7 +104,12 @@ void setRequiredExtensionsFeatures(vkb::PhysicalDeviceSelector &phys_device_sele
     shaderObjFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT;
     shaderObjFeature.shaderObject = true;
 
+    VkPhysicalDeviceDescriptorBufferFeaturesEXT descriptorBufferFeature{};
+    descriptorBufferFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT;
+    descriptorBufferFeature.descriptorBuffer = true;
+
     phys_device_selector.add_required_extension_features(shaderObjFeature);
+    phys_device_selector.add_required_extension_features(descriptorBufferFeature);
 }
 
 // Features paramater
@@ -152,6 +157,15 @@ void Device::setRequiredFeatures(vkb::PhysicalDeviceSelector &phys_device_select
 
 void Device::setRequiredExtensions(vkb::PhysicalDeviceSelector &phys_device_selector) {
     phys_device_selector.add_required_extension("VK_EXT_shader_object");
+    phys_device_selector.add_required_extension("VK_EXT_descriptor_buffer");
+}
+
+void Device::queryPhysicalDeviceProperties() {
+    deviceProps2 = make<VkPhysicalDeviceProperties2KHR>();
+    deviceDescProps = make<VkPhysicalDeviceDescriptorBufferPropertiesEXT>();
+
+    deviceProps2.pNext = &deviceDescProps;
+    vkGetPhysicalDeviceProperties2KHR(vkbPhysicalDevice.physical_device, &deviceProps2);
 }
 
 Device::~Device() {

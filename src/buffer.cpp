@@ -31,6 +31,8 @@ Buffer::Buffer(
     vmaCreateBuffer(device->getAllocator(), &bufferInfo, &allocInfo, &vk_buffer, &allocation, nullptr);
 }
 
+Buffer::Buffer(){}
+
 Buffer::~Buffer() {
     if (vk_buffer != VK_NULL_HANDLE) vmaDestroyBuffer(device->getAllocator(), vk_buffer, allocation);
 }
@@ -135,9 +137,19 @@ VmaAllocationCreateFlags Buffer::getAllocationFlags(BufferType bufferType) const
     }
 }
 
+
+
+uint64_t Buffer::getBufferDeviceAddress(uint32_t offset) const {
+    auto bufferDeviceAI = make<VkBufferDeviceAddressInfo>();
+    bufferDeviceAI.buffer = vk_buffer;
+    return vkGetBufferDeviceAddress(*device, &bufferDeviceAI) + offset;
+
+}
+
 void Buffer::writeToBuffer(void* data, VkDeviceSize size, VkDeviceSize offset) {
     vmaCopyMemoryToAllocation(device->getAllocator(), data, allocation, offset, size);
 }
+
 
 void Buffer::copyBuffer(
     Device* device,
@@ -166,6 +178,8 @@ void Buffer::copyBuffer(
         cmdBuffer->submitCommandBuffer({}, {}, nullptr, false);
     }
 }
+
+
 
 void Buffer::copyToImage(Device* device, VkImage image, uint32_t width, uint32_t height, uint32_t layer, CommandBuffer* extCmdBuffer) {
     CommandBuffer* cmdBuffer = extCmdBuffer;

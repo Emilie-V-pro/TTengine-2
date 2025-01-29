@@ -21,6 +21,7 @@ class Buffer : public Destroyable {
         BufferType bufferType,
         VkMemoryPropertyFlags requiredProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
+    Buffer();
     // Destructor
     ~Buffer();
 
@@ -32,6 +33,15 @@ class Buffer : public Destroyable {
 
 
     operator VkBuffer() const { return vk_buffer; }
+    operator uint64_t() const { return getBufferDeviceAddress(); }
+
+    void * mapMemory() const {
+        void * data;
+        vmaMapMemory(device->getAllocator(), allocation, &data);
+        return data;
+    };
+
+    uint64_t getBufferDeviceAddress(uint32_t offset = 0) const;
     
     void writeToBuffer(void* data, VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
 

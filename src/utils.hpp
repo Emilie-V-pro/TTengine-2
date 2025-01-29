@@ -635,8 +635,10 @@ inline VkAccessFlags getAccessFlagsFromLayout(VkImageLayout layout) {
     }
 }
 
+// from Vulkan Samples
+inline VkDeviceSize alignedVkSize(VkDeviceSize value, VkDeviceSize alignment) { return (value + alignment - 1) & ~(alignment - 1); }
 
-}  // namespace vk_stage
+}  // namespace TTe
 
 namespace std {
 template <>
@@ -652,4 +654,4 @@ struct hash<vector<uint32_t>> {
         return seed;
     }
 };
-}
+}  // namespace std
