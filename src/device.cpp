@@ -15,6 +15,7 @@ Device::Device(Window &window) {
     selectPhysicalDevice(window);
     createLogicialDevice();
     initVMA();
+    queryPhysicalDeviceProperties();
 }
 
 void Device::createInstance() {
@@ -161,11 +162,12 @@ void Device::setRequiredExtensions(vkb::PhysicalDeviceSelector &phys_device_sele
 }
 
 void Device::queryPhysicalDeviceProperties() {
-    deviceProps2 = make<VkPhysicalDeviceProperties2KHR>();
+    deviceProps2 = make<VkPhysicalDeviceProperties2>();
     deviceDescProps = make<VkPhysicalDeviceDescriptorBufferPropertiesEXT>();
 
     deviceProps2.pNext = &deviceDescProps;
-    vkGetPhysicalDeviceProperties2KHR(vkbPhysicalDevice.physical_device, &deviceProps2);
+    vkGetPhysicalDeviceProperties2(vkbPhysicalDevice.physical_device, &deviceProps2);
+    int x = 0;
 }
 
 Device::~Device() {

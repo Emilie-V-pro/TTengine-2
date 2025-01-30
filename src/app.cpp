@@ -1,6 +1,7 @@
 
 #include "app.hpp"
 #include <glm/fwd.hpp>
+#include <iostream>
 #include "buffer.hpp"
 
 #include "commandBuffer/commandPool_handler.hpp"
@@ -39,6 +40,9 @@ void App::init() {
     ici.filename.push_back("../textures/negy.jpg");
     ici.filename.push_back("../textures/posz.jpg");
     ici.filename.push_back("../textures/negz.jpg");
+    for(auto f : ici.filename) {
+        std::cout << f << std::endl;
+    }
     ici.isCubeTexture = true;
     ici.layers = 6;
     Image im(&d, ici);
@@ -46,7 +50,7 @@ void App::init() {
     
     vkDeviceWaitIdle(d);
     CommandPoolHandler::cleanUnusedPools(); 
-    int i = 1;
+    int i = 2;
 }
 
 void App::run() {

@@ -12,6 +12,7 @@
 namespace TTe {
 class DescriptorSetLayout {
    public:
+    DescriptorSetLayout(Device *device, std::map<uint32_t, VkDescriptorSetLayoutBinding> layoutBindings, std::vector<uint32_t> id);
 
     static std::shared_ptr<DescriptorSetLayout> createDescriptorSetLayout(
         Device *device,
@@ -31,16 +32,18 @@ class DescriptorSetLayout {
     // Getters
     operator const VkDescriptorSetLayout&() const { return descriptorSetLayout; }
     
-    std::map<uint32_t, VkDescriptorSetLayoutBinding> getLayoutBindings() { return layoutBindings; }
-    const VkDeviceSize& getLayoutSize() { return layoutSize; }
-    const std::unordered_map<uint32_t, VkDeviceSize> &getLayoutOffsets() { return layoutOffsets; }
+    std::map<uint32_t, VkDescriptorSetLayoutBinding> getLayoutBindings() const { return layoutBindings; }
+    const VkDeviceSize& getLayoutSize() const { return layoutSize; }
+    std::unordered_map<uint32_t, VkDeviceSize> &getLayoutOffsets() { return layoutOffsets; }
     
+    
+    const size_t &getSizeOfDescriptorType(VkDescriptorType descriptorType);
+    const size_t &getSizeOfDescriptorType(uint32_t binding) { return getSizeOfDescriptorType(layoutBindings[binding].descriptorType); }
 
    private:
 
     static std::unordered_map<std::vector<uint32_t>, std::weak_ptr<DescriptorSetLayout>> descriptorSetLayoutCache;
 
-    DescriptorSetLayout(Device *device, std::map<uint32_t, VkDescriptorSetLayoutBinding> layoutBindings, std::vector<uint32_t> id);
     void getLayoutSizeAndOffsets();
     
     Device *device;

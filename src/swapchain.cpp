@@ -1,7 +1,7 @@
 
 #include "swapchain.hpp"
 
-#include <vulkan/vulkan_core.h>
+
 
 
 #include <cstdint>
@@ -126,7 +126,7 @@ void SwapChain::createSyncObjects() {
     imageAvailableSemaphores.clear();
     imageAvailableFences.reserve(numberOfFrame - 1);
     imageAvailableSemaphores.reserve(numberOfFrame - 1);
-    for (int i = 0; i < numberOfFrame - 1; i++) {
+    for (unsigned int i = 0; i < numberOfFrame - 1; i++) {
         imageAvailableFences.emplace_back(new Fence(device, true));
         imageAvailableSemaphores.emplace_back(device, VK_SEMAPHORE_TYPE_BINARY);
     }

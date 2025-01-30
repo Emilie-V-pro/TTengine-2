@@ -32,19 +32,18 @@ class DescriptorSet {
 
     // Functions
     void updateToGPU();
-    void writeSamplerDescriptor(uint32_t binding, VkSampler sampler);
-    void writeBufferDescriptor(uint32_t binding, VkDescriptorAddressInfoEXT *bufferInfo);
-    void writeImageDescriptor(uint32_t binding, VkDescriptorImageInfo *imageInfo);
-    void writeAccelerationStructureDescriptor(uint32_t binding, VkDeviceAddress *accelerationStructureAddress);
+    void writeSamplerDescriptor(uint32_t binding, const VkSampler &sampler);
+    void writeBufferDescriptor(uint32_t binding, const VkDescriptorAddressInfoEXT &bufferInfo);
+    void writeImageDescriptor(uint32_t binding, const VkDescriptorImageInfo &imageInfo);
+    void writeAccelerationStructureDescriptor(uint32_t binding, const VkDeviceAddress &accelerationStructureAddress);
 
-    void writeSamplersDescriptor(uint32_t binding, std::vector<VkSampler> *samplers);
-    void writeBuffersDescriptor(uint32_t binding, std::vector<VkDescriptorAddressInfoEXT> *buffersInfo);
-    void writeImagesDescriptor(uint32_t binding, std::vector<VkDescriptorImageInfo> *imagesInfo);
-    void writeAccelerationStructuresDescriptor(uint32_t binding, std::vector<VkDeviceAddress> *accelerationStructuresAddresses);
+    void writeSamplersDescriptor(uint32_t binding, const std::vector<VkSampler> &samplers);
+    void writeBuffersDescriptor(uint32_t binding, const std::vector<VkDescriptorAddressInfoEXT> &buffersInfo);
+    void writeImagesDescriptor(uint32_t binding, const std::vector<VkDescriptorImageInfo> &imagesInfo);
 
     static void bindDescriptorSet(
-        CommandBuffer cmdBuffer,
-        std::vector<VkDescriptorSet *> &descriptorSets,
+        const CommandBuffer &cmdBuffer,
+        std::vector<DescriptorSet *> &descriptorSets,
         VkPipelineLayout pipelineLayout,
         VkPipelineBindPoint bindPoint,
         uint32_t firstIndex = 0);

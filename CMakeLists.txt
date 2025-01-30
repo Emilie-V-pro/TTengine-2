@@ -7,11 +7,13 @@ project(TTengine VERSION 1.0
 
 # Compiler Options
 set(CMAKE_CXX_STANDARD 20)
-add_compile_options(-Wall -Wextra -Wpedantic)
+#add_compile_options(-fsanitize=undefined)
 # add_link_options(-Wall -Wextra -Wpedantic)
-set_source_files_properties(${SOURCE_DIR}/structs_vk.hpp PROPERTIES COMPILE_FLAGS "")
-set_source_files_properties(${SOURCE_DIR}/vk_mem_alloc.h PROPERTIES COMPILE_FLAGS "")
-
+# set_source_files_properties(
+#     ${PROJECT_SOURCE_DIR}/src/structs_vk.hpp
+#     ${PROJECT_SOURCE_DIR}/src/vk_mem_alloc.h
+#     PROPERTIES COMPILE_FLAGS "-Wall -Wextra -Wpedantic"
+# )
 
 
 #find all source files
@@ -20,9 +22,10 @@ find_package(Vulkan REQUIRED)
 find_package(glfw3 REQUIRED)
 add_subdirectory(volk)
 add_subdirectory(vk-bootstrap)
+add_subdirectory(SPIRV-Cross)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
-set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+#set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 
-target_link_libraries(${PROJECT_NAME} PUBLIC glfw vulkan volk vk-bootstrap::vk-bootstrap)
+target_link_libraries(${PROJECT_NAME} PUBLIC glfw vulkan volk vk-bootstrap::vk-bootstrap spirv-cross-cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC volk)

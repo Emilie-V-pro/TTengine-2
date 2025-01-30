@@ -1569,5 +1569,10 @@ template<>
 inline VkShaderCreateInfoEXT make<VkShaderCreateInfoEXT>(){
     return VkShaderCreateInfoEXT{VK_STRUCTURE_TYPE_SHADER_CREATE_INFO_EXT};
 }
+template<>
+inline VkPhysicalDeviceDescriptorBufferPropertiesEXT make<VkPhysicalDeviceDescriptorBufferPropertiesEXT>(){
+    return VkPhysicalDeviceDescriptorBufferPropertiesEXT{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT};
+}
+
 #endif
 }  // namespace nvvk

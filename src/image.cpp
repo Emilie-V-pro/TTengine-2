@@ -1,7 +1,8 @@
 
 #include "image.hpp"
 
-#include <vulkan/vulkan_core.h>
+
+#include <iostream>
 #define STB_IMAGE_IMPLEMENTATION
 #include <cstddef>
 
@@ -23,6 +24,7 @@ Image::Image(Device *device, ImageCreateInfo &imageCreateInfo, CommandBuffer *cm
       imageFormat(imageCreateInfo.format),
       imageLayout(imageCreateInfo.imageLayout),
       device(device) {
+    
     if (!this->imageCreateInfo.filename.empty()) {
         loadImageFromFile(imageCreateInfo.filename);
     }
@@ -87,9 +89,6 @@ Image::~Image() {
         }
         if (imageView != VK_NULL_HANDLE) {
             vkDestroyImageView(*device, imageView, nullptr);
-        }
-        if (imageMemory != VK_NULL_HANDLE) {
-            vkFreeMemory(*device, imageMemory, nullptr);
         }
     }
 }
@@ -182,6 +181,7 @@ void Image::transitionImageLayout(
 void Image::generateMipmaps() {}
 
 void Image::createImage() {
+    
     if (imageCreateInfo.enableMipMap) {
         imageCreateInfo.usageFlags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(imageCreateInfo.width, imageCreateInfo.width)))) + 1;
@@ -189,6 +189,8 @@ void Image::createImage() {
     auto imageInfo = make<VkImageCreateInfo>();
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
     imageInfo.format = imageCreateInfo.format;
+    imageInfo.extent.width = imageCreateInfo.width;
+    imageInfo.extent.height = imageCreateInfo.height;
 
     imageInfo.mipLevels = mipLevels;
     imageInfo.arrayLayers = imageCreateInfo.layers;
@@ -215,6 +217,7 @@ void Image::createImageWithInfo(const VkImageCreateInfo &imageInfo, VkMemoryProp
     allocInfo.requiredFlags = properties;
     ;
     allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+    std::cout << imageInfo.extent.width << " " << imageInfo.extent.height << std::endl;
 
     vmaCreateImage(device->getAllocator(), &imageInfo, &allocInfo, &image, &allocation, nullptr);
 }
@@ -248,17 +251,34 @@ void Image::createImageView() {
     vkCreateImageView(*device, &imageViewInfo, nullptr, &imageView);
 }
 
+#include <unistd.h>
+#include <stdio.h>
+#include <linux/limits.h>
+
+int test() {
+    char cwd[PATH_MAX];
+   if (getcwd(cwd, sizeof(cwd)) != NULL) {
+       printf("Current working dir: %s\n", cwd);
+   } else {
+       perror("getcwd() error");
+       return 1;
+   }
+   return  0;
+}
+
 void Image::loadImageFromFile(std::vector<std::string> &filename) {
     // stbi_set_flip_vertically_on_load(true);
     int nbOfchannel;
     int width, height;
-
+    test();
     stbi_info(filename[0].c_str(), &width, &height, &nbOfchannel);
     this->width = width;
     this->height = height;
     imageCreateInfo.width = width;
     imageCreateInfo.height = height;
+    std::cout << width << " " << height << std::endl;
     for (size_t i = 0; i < filename.size(); i++) {
+        std::cout << filename[i] << std::endl;
         imageCreateInfo.datas.push_back(stbi_load((filename[i]).c_str(), &width, &height, &nbOfchannel, 4));
     }
 
