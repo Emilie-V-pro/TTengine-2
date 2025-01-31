@@ -1,4 +1,7 @@
 #include "volk.h"
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+
 /*
  * Copyright (c) 2018-2021, NVIDIA CORPORATION.  All rights reserved.
  *

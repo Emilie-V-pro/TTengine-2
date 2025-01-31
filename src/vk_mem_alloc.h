@@ -20,6 +20,9 @@
 // THE SOFTWARE.
 //
 
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wnullability-extension"
+
 #ifndef AMD_VULKAN_MEMORY_ALLOCATOR_H
 #define AMD_VULKAN_MEMORY_ALLOCATOR_H
 

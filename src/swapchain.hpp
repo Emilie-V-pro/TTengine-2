@@ -56,8 +56,8 @@ class SwapChain {
     vkb::SwapchainBuilder::BufferMode bufferingMode;
 
 
-    VkQueue presentQueue;
-    Device *device;
+    VkQueue presentQueue = VK_NULL_HANDLE;
+    Device *device = nullptr;
     vkb::Swapchain vkbSwapchain;
 };
 

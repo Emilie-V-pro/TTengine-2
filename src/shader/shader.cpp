@@ -1,6 +1,8 @@
 
 #include "shader.hpp"
+#include <vulkan/vulkan_core.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -256,8 +258,10 @@ void addAccelerationStructureBinding(
 
 namespace TTe {
 
+Shader::Shader() {}
+
 Shader::Shader(Device *device, std::string shaderFile, VkShaderStageFlags descriptorStage, VkShaderStageFlags nextShaderStage)
-    : device(device), shaderFile(shaderFile), nextShaderStage(nextShaderStage) {
+    : shaderFile(shaderFile), nextShaderStage(nextShaderStage), device(device) {
     shaderStage = getShaderStageFlagsBitFromFileName(shaderFile);
     loadShaderCode();
     createDescriptorSetLayout(descriptorStage);
@@ -266,13 +270,51 @@ Shader::Shader(Device *device, std::string shaderFile, VkShaderStageFlags descri
 }
 
 Shader::~Shader() {
-    delete listDescriptor;
     if (shader != VK_NULL_HANDLE) {
         vkDestroyShaderEXT(*device, shader, nullptr);
     }
     if (shaderModule != VK_NULL_HANDLE) {
         vkDestroyShaderModule(*device, shaderModule, nullptr);
     }
+}
+
+Shader::Shader(Shader &&other) {
+    shader = other.shader;
+    shaderModule = other.shaderModule;
+    shaderCreateInfo = other.shaderCreateInfo;
+    pushConstants = other.pushConstants;
+    shaderFile = other.shaderFile;
+    nextShaderStage = other.nextShaderStage;
+    shaderStage = other.shaderStage;
+    device = other.device;
+    shaderCode = std::move(other.shaderCode);
+    descriptorsSetLayout = std::move(other.descriptorsSetLayout);
+    other.shader = VK_NULL_HANDLE;
+    other.shaderModule = VK_NULL_HANDLE;
+}
+
+Shader &Shader::operator=(Shader &&other) {
+    if (this != &other) {
+        if (shader != VK_NULL_HANDLE) {
+            vkDestroyShaderEXT(*device, shader, nullptr);
+        }
+        if (shaderModule != VK_NULL_HANDLE) {
+            vkDestroyShaderModule(*device, shaderModule, nullptr);
+        }
+        shader = other.shader;
+        shaderModule = other.shaderModule;
+        shaderCreateInfo = other.shaderCreateInfo;
+        pushConstants = other.pushConstants;
+        shaderFile = other.shaderFile;
+        nextShaderStage = other.nextShaderStage;
+        shaderStage = other.shaderStage;
+        device = other.device;
+        shaderCode = std::move(other.shaderCode);
+        descriptorsSetLayout = std::move(other.descriptorsSetLayout);
+        other.shader = VK_NULL_HANDLE;
+        other.shaderModule = VK_NULL_HANDLE;
+    }
+    return *this;
 }
 
 void Shader::loadShaderCode() {
@@ -318,6 +360,73 @@ void Shader::createPushConstant(VkShaderStageFlags descriptorStage) {
     pushConstants.stageFlags = descriptorStage;
     for (auto &range : ranges) {
         pushConstants.size += range.range;
+    }
+}
+
+
+void Shader::createShaderInfo() {
+    // listDescriptor = new VkDescriptorSetLayout[descriptorsSetLayout.size()];
+    // for (int i = 0; i < descriptorsSetLayout.size(); i++) {
+    //     listDescriptor[i] = *descriptorsSetLayout[i];
+    // }
+
+    shaderCreateInfo = make<VkShaderCreateInfoEXT>();
+    shaderCreateInfo.flags = 0;
+    shaderCreateInfo.stage = shaderStage;
+    shaderCreateInfo.nextStage = nextShaderStage;
+    shaderCreateInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+    shaderCreateInfo.codeSize = shaderCode.size() * sizeof(shaderCode[0]);
+    shaderCreateInfo.pCode = shaderCode.data();
+    shaderCreateInfo.pName = "main";
+    shaderCreateInfo.setLayoutCount = descriptorsSetLayout.size();
+    // shaderCreateInfo.pSetLayouts = listDescriptor;
+    shaderCreateInfo.pushConstantRangeCount = (pushConstants.size > 0) ? 1 : 0;
+    shaderCreateInfo.pPushConstantRanges = (pushConstants.size > 0) ? &pushConstants : nullptr;
+}
+
+// Creation of shader module for Ray-Tracing
+void Shader::createShaderModule() {
+    auto moduleCreateInfo = make<VkShaderModuleCreateInfo>();
+    moduleCreateInfo.codeSize = shaderCode.size() * sizeof(shaderCode[0]);
+    moduleCreateInfo.pCode = shaderCode.data();
+    auto res = vkCreateShaderModule(*device, &moduleCreateInfo, NULL, &shaderModule);
+    if (res != VK_SUCCESS) {
+        throw std::runtime_error("failed to create shader module");
+    }
+}
+
+void Shader::buildShader() {
+    std::vector<VkDescriptorSetLayout> listDescriptor;
+    for (size_t i = 0; i < descriptorsSetLayout.size(); i++) {
+        listDescriptor.push_back(*descriptorsSetLayout[i]);
+    }
+    shaderCreateInfo.pSetLayouts = listDescriptor.data();
+
+    VkResult result = vkCreateShadersEXT(*device, 1, &shaderCreateInfo, nullptr, &shader);
+
+    if (result != VK_SUCCESS) {
+        throw std::runtime_error("failed to build shader");
+    }
+}
+
+
+void Shader::buildLinkedShaders(Device *device, std::vector<Shader *> shaders) {
+    std::vector<VkShaderCreateInfoEXT> shadersCreateInfos;
+
+    for (size_t i = 0; i < shaders.size(); i++) {
+        shadersCreateInfos.push_back(shaders[i]->getShaderCreateInfo());
+        shadersCreateInfos[i].flags |= VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
+    }
+
+    std::vector<VkShaderEXT> shaderHandler(shaders.size());
+    VkResult result =
+        vkCreateShadersEXT(*device, shadersCreateInfos.size(), shadersCreateInfos.data(), nullptr, shaderHandler.data());
+
+    if (result != VK_SUCCESS) {
+        throw std::runtime_error("failed to create shader");
+    }
+    for (size_t i = 0; i < shaderHandler.size(); i++) {
+        shaders[i]->setShaderHandler(shaderHandler[i]);
     }
 }
 
@@ -368,69 +477,6 @@ VkShaderStageFlagBits Shader::getShaderStageFlagsBitFromFileName(std::string sha
     }
 }
 
-void Shader::createShaderInfo() {
-    listDescriptor = new VkDescriptorSetLayout[descriptorsSetLayout.size()];
-    for (int i = 0; i < descriptorsSetLayout.size(); i++) {
-        listDescriptor[i] = *descriptorsSetLayout[i];
-    }
-
-    shaderCreateInfo = make<VkShaderCreateInfoEXT>();
-    shaderCreateInfo.flags = 0;
-    shaderCreateInfo.stage = shaderStage;
-    shaderCreateInfo.nextStage = nextShaderStage;
-    shaderCreateInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    shaderCreateInfo.codeSize = shaderCode.size() * sizeof(shaderCode[0]);
-    shaderCreateInfo.pCode = shaderCode.data();
-    shaderCreateInfo.pName = "main";
-    shaderCreateInfo.setLayoutCount = descriptorsSetLayout.size();
-    shaderCreateInfo.pSetLayouts = listDescriptor;
-    shaderCreateInfo.pushConstantRangeCount = (pushConstants.size > 0) ? 1 : 0;
-    shaderCreateInfo.pPushConstantRanges = (pushConstants.size > 0) ? &pushConstants : nullptr;
-}
-
-// Creation of shader module for Ray-Tracing
-void Shader::createShaderModule() {
-    auto moduleCreateInfo = make<VkShaderModuleCreateInfo>();
-    moduleCreateInfo.codeSize = shaderCode.size() * sizeof(shaderCode[0]);
-    moduleCreateInfo.pCode = shaderCode.data();
-    auto res = vkCreateShaderModule(*device, &moduleCreateInfo, NULL, &shaderModule);
-    if (res != VK_SUCCESS) {
-        throw std::runtime_error("failed to create shader module");
-    }
-}
-
-void Shader::buildShader() {
-    VkResult result = vkCreateShadersEXT(*device, 1, &shaderCreateInfo, nullptr, &shader);
-
-    if (result != VK_SUCCESS) {
-        throw std::runtime_error("failed to build shader");
-    }
-}
-
-void Shader::reloadShaderData() {
-    loadShaderCode();
-    
-}
-
-void Shader::buildLinkedShaders(Device *device, std::vector<Shader *> shaders) {
-    std::vector<VkShaderCreateInfoEXT> shadersCreateInfos;
-
-    for (int i = 0; i < shaders.size(); i++) {
-        shadersCreateInfos.push_back(shaders[i]->getShaderCreateInfo());
-        shadersCreateInfos[i].flags |= VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    }
-
-    std::vector<VkShaderEXT> shaderHandler(shaders.size());
-    VkResult result =
-        vkCreateShadersEXT(*device, shadersCreateInfos.size(), shadersCreateInfos.data(), nullptr, shaderHandler.data());
-
-    if (result != VK_SUCCESS) {
-        throw std::runtime_error("failed to create shader");
-    }
-    for (int i = 0; i < shaderHandler.size(); i++) {
-        shaders[i]->setShaderHandler(shaderHandler[i]);
-    }
-}
 
 }  // namespace TTe
 

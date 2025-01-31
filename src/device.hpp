@@ -74,8 +74,8 @@ class Device {
 
     VkQueue presentQueue = VK_NULL_HANDLE;
 
-    VkPhysicalDeviceProperties2KHR deviceProps2;
-    VkPhysicalDeviceDescriptorBufferPropertiesEXT deviceDescProps;
+    VkPhysicalDeviceProperties2KHR deviceProps2 = {};
+    VkPhysicalDeviceDescriptorBufferPropertiesEXT deviceDescProps = {};
 
     vkb::Instance vkbInstance;
     vkb::PhysicalDevice vkbPhysicalDevice;

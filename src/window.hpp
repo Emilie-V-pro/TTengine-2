@@ -39,10 +39,10 @@ class Window {
    private:
     static void framebufferResizeCallback(GLFWwindow *window, int width, int height);
 
-    VkExtent2D size;
+    VkExtent2D size = {0, 0};
 
     bool framebufferResized = false;
-    VkSurfaceKHR surface;
-    GLFWwindow *window;
+    VkSurfaceKHR surface = VK_NULL_HANDLE;
+    GLFWwindow *window = nullptr;
 };
 }  // namespace vk_stage

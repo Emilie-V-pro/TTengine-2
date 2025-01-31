@@ -68,7 +68,7 @@ class Image : Destroyable {
     VkImageLayout imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     VkImageLayout actualImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-    Device *device;
+    Device *device = nullptr;
 
     VkImage image = VK_NULL_HANDLE;
     VkImageView imageView = VK_NULL_HANDLE;

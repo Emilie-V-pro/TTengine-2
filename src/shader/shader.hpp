@@ -5,35 +5,45 @@
 #include <string>
 #include <vector>
 
-#include "../device.hpp"
 #include "../descriptor/descriptorSetLayout.hpp"
+#include "../device.hpp"
 #include "volk.h"
 namespace TTe {
 class Shader {
    public:
+    // Constructor
+    Shader();
     Shader(Device *device, std::string shaderFile, VkShaderStageFlags descriptorStage, VkShaderStageFlags nextShaderStage = 0);
+
+    // Destructor
     ~Shader();
 
-    void buildShader();
+    // Remove copy constructor
+    Shader(const Shader &) = delete;
+    Shader &operator=(const Shader &) = delete;
+
+    // Move constructor
+    Shader(Shader &&other);
+    Shader &operator=(Shader &&other);
+
     void createShaderModule();
 
+    void buildShader();
     static void buildLinkedShaders(Device *device, std::vector<Shader *> shaders);
+
+    // Getters
+    operator VkShaderEXT() { return shader; }
+    operator VkShaderModule() { return shaderModule; }
+
+    const VkShaderStageFlagBits &getShaderStage() const { return shaderStage; }
+    const VkShaderStageFlags &getNexShadersStages() const { return nextShaderStage; }
+    const VkShaderCreateInfoEXT &getShaderCreateInfo() const { return shaderCreateInfo; }
+    const VkPushConstantRange &getPushConstants() const { return pushConstants; }
+    std::vector<std::shared_ptr<DescriptorSetLayout>> &getDescriptorsSetLayout() { return descriptorsSetLayout; }
 
     static VkShaderStageFlagBits getShaderStageFlagsBitFromFileName(std::string shaderFile);
 
-    VkShaderStageFlagBits getShaderStage() { return shaderStage; }
-    VkShaderStageFlags getNexShadersStages() { return nextShaderStage; }
-    VkShaderCreateInfoEXT getShaderCreateInfo() { return shaderCreateInfo; }
-    VkPushConstantRange getPushConstants() { return pushConstants; }
-    VkShaderEXT getShaderHandler() { return shader; }
-    VkShaderModule getShaderModule() { return shaderModule;}
-
-    std::vector<std::shared_ptr<DescriptorSetLayout>> &getDescriptorsSetLayout() { return descriptorsSetLayout; }
-
-
-
     void setShaderHandler(VkShaderEXT shaderExt) { shader = shaderExt; }
-
 
    private:
     void loadShaderCode();
@@ -44,18 +54,19 @@ class Shader {
     std::vector<uint32_t> shaderCode;
 
     std::vector<std::shared_ptr<DescriptorSetLayout>> descriptorsSetLayout;
-    VkPushConstantRange pushConstants;
+
+    VkPushConstantRange pushConstants = {};
 
     std::string shaderFile;
-    VkShaderStageFlags nextShaderStage;
+    VkShaderStageFlags nextShaderStage = 0;
     VkShaderStageFlagBits shaderStage;
 
+
+    VkShaderCreateInfoEXT shaderCreateInfo = {};
+
+    VkShaderEXT shader = VK_NULL_HANDLE;
     VkShaderModule shaderModule = VK_NULL_HANDLE;
-
-    VkShaderCreateInfoEXT shaderCreateInfo;
-
-    VkShaderEXT shader;
-    Device *device;
+    Device *device = nullptr;
 };
 
-}  // namespace vk_stage
+}  // namespace TTe
