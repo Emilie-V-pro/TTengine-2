@@ -83,7 +83,7 @@ Image::Image(Image &&other)
 }
 
 Image::~Image() {
-    if (!isSwapchainImage) {
+    if (!isSwapchainImage && vk_image != VK_NULL_HANDLE) {
         if (vk_image != VK_NULL_HANDLE) {
             vmaDestroyImage(device->getAllocator(), vk_image, allocation);
         }
