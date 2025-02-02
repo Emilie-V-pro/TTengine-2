@@ -18,6 +18,7 @@ struct DescriptorInfo {
 class DescriptorSet {
    public:
     // Constructor
+    DescriptorSet() {};
     DescriptorSet(Device *device, std::shared_ptr<DescriptorSetLayout> descriptorSetLayout);
 
     // Destructor
@@ -31,7 +32,6 @@ class DescriptorSet {
 
 
     // Functions
-    void updateToGPU();
     void writeSamplerDescriptor(uint32_t binding, const VkSampler &sampler);
     void writeBufferDescriptor(uint32_t binding, const VkDescriptorAddressInfoEXT &bufferInfo);
     void writeImageDescriptor(uint32_t binding, const VkDescriptorImageInfo &imageInfo);
@@ -53,7 +53,7 @@ class DescriptorSet {
     uint64_t descriptor_buffer_address = 0;
 
     std::shared_ptr<DescriptorSetLayout> descriptorSetLayout = nullptr;
-    VkDescriptorGetInfoEXT descriptorInfo;
+    VkDescriptorGetInfoEXT descriptorInfo = {};
 
     Device *device;
 };

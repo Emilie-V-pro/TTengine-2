@@ -4,25 +4,38 @@
 #include <string>
 #include <vector>
 
-#include "../shader.hpp"
 #include "../../descriptor//descriptorSetLayout.hpp"
 #include "../../device.hpp"
 #include "../pipeline.hpp"
+#include "../shader.hpp"
 #include "volk.h"
 
 namespace TTe {
 
 class ComputePipeline : Pipeline {
    public:
+   ComputePipeline() {};
+    // Constructor
     ComputePipeline(Device* device, std::string computeShaderName);
-    
+    // Destructor
     ~ComputePipeline();
 
-    void bindPipeline(const CommandBuffer& cmdBuffer) ;
+    // Remove copy constructor
+    ComputePipeline(const ComputePipeline&) = delete;
+    ComputePipeline& operator=(const ComputePipeline&) = delete;
+
+    // Move constructor
+    ComputePipeline(ComputePipeline&& other);
+    ComputePipeline& operator=(ComputePipeline&& other);
+
+
+    void bindPipeline(const CommandBuffer& cmdBuffer);
+    void dispatch(const CommandBuffer& cmdBuffer, uint32_t nbOfinvocationX = 1, uint32_t nbOfinvocationY = 1, uint32_t nbOfinvocationZ = 1);
+
     // void reloadShader(VkShaderStageFlagBits shaderStageToReload);
 
     VkPipelineLayout getPipelineLayout() { return pipelineLayout; };
-    std::vector<std::shared_ptr<DescriptorSetLayout>>& getDescriptorsSetLayout(){return  computeShader.getDescriptorsSetLayout();}
+    std::vector<std::shared_ptr<DescriptorSetLayout>>& getDescriptorsSetLayout() { return computeShader.getDescriptorsSetLayout(); }
 
    private:
     void createShaders(std::string& computeShaderName);
@@ -30,10 +43,9 @@ class ComputePipeline : Pipeline {
 
     Shader computeShader;
 
+    VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
 
-    VkPipelineLayout pipelineLayout;
-
-    Device* device;
+    Device* device = nullptr;
 };
 
-}  // namespace vk_stage
+}  // namespace TTe

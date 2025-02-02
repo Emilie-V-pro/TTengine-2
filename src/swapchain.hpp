@@ -1,7 +1,7 @@
 #pragma once
 
+#include <cstdint>
 #include <vector>
-#include <chrono>
 
 #include "image.hpp"
 #include "volk.h"
@@ -11,7 +11,6 @@
 #include "device.hpp"
 #include "synchronisation/fence.hpp"
 #include "synchronisation/semaphore.hpp"
-#include "utils.hpp"
 namespace TTe {
 
 class SwapChain {
@@ -30,8 +29,8 @@ class SwapChain {
 
     void recreateSwapchain(VkExtent2D windowExtent);
 
-    VkResult acquireNextImage(uint32_t& currentSwapchainImage, Semaphore* aquireFrameSemaphore);
-    VkResult presentFrame(uint32_t& currentSwapchainImage, std::vector<Semaphore*> waitSemaphores);
+    VkResult acquireNextImage(uint32_t& currentSwapchainImage, int* renderIndex , Semaphore*& aquireFrameSemaphore, Fence*& fence);
+    VkResult presentFrame(uint32_t& currentSwapchainImage, Semaphore* waitSemaphores);
    
     float extentAspectRatio() { 
         return static_cast<float>(vkbSwapchain.extent.width) / static_cast<float>(vkbSwapchain.extent.height); 

@@ -1576,6 +1576,13 @@ template<>
 inline VkPhysicalDeviceDescriptorBufferPropertiesEXT make<VkPhysicalDeviceDescriptorBufferPropertiesEXT>(){
     return VkPhysicalDeviceDescriptorBufferPropertiesEXT{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT};
 }
-
+template<>
+inline VkDescriptorGetInfoEXT make<VkDescriptorGetInfoEXT>(){
+    return VkDescriptorGetInfoEXT{VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT};
+}
+template<>
+inline VkDescriptorAddressInfoEXT make<VkDescriptorAddressInfoEXT>(){
+    return VkDescriptorAddressInfoEXT{VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT};
+}
 #endif
 }  // namespace nvvk

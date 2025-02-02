@@ -32,11 +32,13 @@ DescriptorSetLayout::DescriptorSetLayout(
     auto descriptorSetLayoutInfo = make<VkDescriptorSetLayoutCreateInfo>();
     descriptorSetLayoutInfo.bindingCount = layoutBindings.size();
     descriptorSetLayoutInfo.pBindings = bindingsVector.data();
+    descriptorSetLayoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
     descriptorSetLayoutInfo.pNext = &extendedInfo;
 
     if (vkCreateDescriptorSetLayout(*device, &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptorSetLayout");
     }
+    getLayoutSizeAndOffsets();
 }
 
 DescriptorSetLayout::~DescriptorSetLayout() {

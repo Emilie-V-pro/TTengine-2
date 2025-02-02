@@ -1,10 +1,12 @@
 
 #include "command_buffer.hpp"
 
+#include <iostream>
 #include <thread>
 
 #include "../structs_vk.hpp"
 #include "../synchronisation/fence.hpp"
+#include "commandPool_handler.hpp"
 
 // CommandBufferPool
 namespace TTe {
@@ -13,6 +15,9 @@ CommandBufferPool::CommandBufferPool(const Device* device, const VkQueue& vk_que
     auto createInfo = make<VkCommandPoolCreateInfo>();
     createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
     createInfo.queueFamilyIndex = device->getRenderQueueFamilyIndexFromQueu(vk_queue);
+    queueFamilyIndex = createInfo.queueFamilyIndex;
+    
+    std::cout << "JE SUIS LA COMMAND POOL AVEC LE QUEUEINDEX : " << createInfo.queueFamilyIndex << std::endl;
 
     if (vkCreateCommandPool(*device, &createInfo, nullptr, &vk_cmdPool) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create command pool");
@@ -75,6 +80,7 @@ std::vector<CommandBuffer> CommandBufferPool::createCommandBuffer(unsigned int c
     std::vector<CommandBuffer> returnValue(commandBufferCount);
     std::vector<VkCommandBuffer> commandBuffers(commandBufferCount);
 
+    std::cout << "JE SUIS LA COMMAND POOL AVEC LE QUEUEINDEX : " << queueFamilyIndex << std::endl;
     auto allocInfo = make<VkCommandBufferAllocateInfo>();
     allocInfo.commandPool = vk_cmdPool;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -118,6 +124,9 @@ CommandBuffer::~CommandBuffer() {
     if (vk_cmdBuffer != VK_NULL_HANDLE) {
         vkFreeCommandBuffers(*device, cmdBufferPool->operator()(), 1, &vk_cmdBuffer);
         cmdBufferPool->nbCommandBuffers--;
+        if(cmdBufferPool->nbCommandBuffers == 0){
+            CommandPoolHandler::cleanUnusedPools();
+        }
     }
 }
 
@@ -154,7 +163,7 @@ void CommandBuffer::submitCommandBuffer(
     const std::vector<VkSemaphoreSubmitInfo>& signalSemaphores,
     Fence* fence,
     bool waitForExecution) {
-    if (fence == nullptr) {
+    if (fence == nullptr && (waitForExecution || ressourcesToDestroy.size() > 0)) {
         fence = new Fence(device, false);
         addRessourceToDestroy(fence);
     }
@@ -173,7 +182,9 @@ void CommandBuffer::submitCommandBuffer(
     if (vkQueueSubmit2(this->cmdBufferPool->queue(), 1, &submitInfo, *fence) != VK_SUCCESS) {
         throw std::runtime_error("Failed to submit commandBuffer");
     }
-
+    if(ressourcesToDestroy.size() == 0 && !waitForExecution) {
+        return;
+    }
     if (waitForExecution) {
         waitAndDestroy(this, fence);
     } else {

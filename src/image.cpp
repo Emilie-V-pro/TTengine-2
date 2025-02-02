@@ -1,6 +1,7 @@
 
 #include "image.hpp"
 
+#include <vulkan/vulkan_core.h>
 
 #include <iostream>
 #define STB_IMAGE_IMPLEMENTATION
@@ -24,7 +25,6 @@ Image::Image(Device *device, ImageCreateInfo &imageCreateInfo, CommandBuffer *cm
       imageFormat(imageCreateInfo.format),
       imageLayout(imageCreateInfo.imageLayout),
       device(device) {
-    
     if (!this->imageCreateInfo.filename.empty()) {
         loadImageFromFile(imageCreateInfo.filename);
     }
@@ -42,9 +42,9 @@ Image::Image(Device *device, VkImage image, VkImageView imageView, VkFormat form
       layer(1),
       imageFormat(format),
       imageLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL),
-      actualImageLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL),
+      actualImageLayout(VK_IMAGE_LAYOUT_UNDEFINED),
       device(device),
-      image(image),
+      vk_image(image),
       imageView(imageView),
       isSwapchainImage(true) {}
 
@@ -75,17 +75,17 @@ Image::Image(Image &&other)
       imageLayout(other.imageLayout),
       actualImageLayout(other.actualImageLayout),
       device(other.device),
-      image(other.image),
+      vk_image(other.vk_image),
       imageView(other.imageView),
       imageMemory(other.imageMemory),
       isSwapchainImage(other.isSwapchainImage) {
-    other.image = VK_NULL_HANDLE;
+    other.vk_image = VK_NULL_HANDLE;
 }
 
 Image::~Image() {
     if (!isSwapchainImage) {
-        if (image != VK_NULL_HANDLE) {
-            vmaDestroyImage(device->getAllocator(), image, allocation);
+        if (vk_image != VK_NULL_HANDLE) {
+            vmaDestroyImage(device->getAllocator(), vk_image, allocation);
         }
         if (imageView != VK_NULL_HANDLE) {
             vkDestroyImageView(*device, imageView, nullptr);
@@ -122,14 +122,14 @@ Image &Image::operator=(Image &&other) {
         layer = other.layer;
         mipLevels = other.mipLevels;
         device = other.device;
-        image = other.image;
+        vk_image = other.vk_image;
         imageMemory = other.imageMemory;
         imageView = other.imageView;
         imageFormat = other.imageFormat;
         imageLayout = other.imageLayout;
         actualImageLayout = other.actualImageLayout;
         isSwapchainImage = other.isSwapchainImage;
-        other.image = VK_NULL_HANDLE;
+        other.vk_image = VK_NULL_HANDLE;
     }
     return *this;
 }
@@ -141,12 +141,15 @@ void Image::transitionImageLayout(VkImageLayout newLayout, CommandBuffer *extCmd
 
 void Image::transitionImageLayout(
     VkImageLayout oldLayout, VkImageLayout newLayout, u_int32_t mipLevel, u_int32_t mipCount, CommandBuffer *extCmdBuffer) {
+    if (oldLayout == newLayout) {
+        return;
+    }
     auto barrier = make<VkImageMemoryBarrier>();
     barrier.oldLayout = oldLayout;                          // VK_IMAGE_LAYOUT_UNDEFINED
     barrier.newLayout = newLayout;                          // VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;  // VK_QUEUE_FAMILY_IGNORED
     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;  // VK_QUEUE_FAMILY_IGNORED
-    barrier.image = image;
+    barrier.image = vk_image;
     if (imageFormat != VK_FORMAT_D32_SFLOAT) {  // https://discord.com/channels/231931740661350410/1140282527760781323
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;  // VK_IMAGE_ASPECT_COLOR_BIT
     } else {
@@ -178,10 +181,50 @@ void Image::transitionImageLayout(
     }
 }
 
+void Image::addImageMemoryBarrier(
+    const CommandBuffer &extCmdBuffer, VkPipelineStageFlags2 srcStageMask, VkPipelineStageFlags2 dstStageMask) {
+    auto imageMemoryBarrier = make<VkImageMemoryBarrier>();
+    imageMemoryBarrier.oldLayout = actualImageLayout;
+    imageMemoryBarrier.newLayout = actualImageLayout;
+    imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    imageMemoryBarrier.image = vk_image;
+    imageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
+    imageMemoryBarrier.subresourceRange.levelCount = mipLevels;
+    imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
+    imageMemoryBarrier.subresourceRange.layerCount = layer;
+    imageMemoryBarrier.srcAccessMask = getFlagFromPipelineStage(srcStageMask);
+    imageMemoryBarrier.dstAccessMask = getFlagFromPipelineStage(dstStageMask);
+    vkCmdPipelineBarrier(extCmdBuffer, srcStageMask, dstStageMask, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
+}
+
+void Image::transferQueueOwnership(const CommandBuffer &extCmdBuffer, uint32_t queueIndex) {
+    auto imageMemoryBarrier = make<VkImageMemoryBarrier>();
+    imageMemoryBarrier.oldLayout = actualImageLayout;
+    imageMemoryBarrier.newLayout = actualImageLayout;
+    imageMemoryBarrier.srcQueueFamilyIndex = extCmdBuffer.getQueueFamilyIndex();
+    imageMemoryBarrier.dstQueueFamilyIndex = queueIndex;
+    imageMemoryBarrier.image = vk_image;
+    imageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
+    imageMemoryBarrier.subresourceRange.levelCount = mipLevels;
+    imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
+    imageMemoryBarrier.subresourceRange.layerCount = layer;
+    imageMemoryBarrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT | VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT |
+                                       VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+                                       VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    imageMemoryBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_HOST_READ_BIT | VK_ACCESS_TRANSFER_READ_BIT |
+                                       VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                                       VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+    vkCmdPipelineBarrier(
+        extCmdBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1,
+        &imageMemoryBarrier);
+}
+
 void Image::generateMipmaps() {}
 
 void Image::createImage() {
-    
     if (imageCreateInfo.enableMipMap) {
         imageCreateInfo.usageFlags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(imageCreateInfo.width, imageCreateInfo.width)))) + 1;
@@ -217,9 +260,9 @@ void Image::createImageWithInfo(const VkImageCreateInfo &imageInfo, VkMemoryProp
     allocInfo.requiredFlags = properties;
     ;
     allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-    std::cout << imageInfo.extent.width << " " << imageInfo.extent.height << std::endl;
+    // std::cout << imageInfo.extent.width << " " << imageInfo.extent.height << std::endl;
 
-    vmaCreateImage(device->getAllocator(), &imageInfo, &allocInfo, &image, &allocation, nullptr);
+    vmaCreateImage(device->getAllocator(), &imageInfo, &allocInfo, &vk_image, &allocation, nullptr);
 }
 
 void Image::createImageView() {
@@ -247,23 +290,27 @@ void Image::createImageView() {
     imageViewInfo.subresourceRange.baseArrayLayer = 0;
     imageViewInfo.subresourceRange.layerCount = imageCreateInfo.layers;
     imageViewInfo.subresourceRange.levelCount = mipLevels;
-    imageViewInfo.image = image;
-    vkCreateImageView(*device, &imageViewInfo, nullptr, &imageView);
+    imageViewInfo.image = vk_image;
+    imageViewInfo.flags = 0;
+    auto result = vkCreateImageView(*device, &imageViewInfo, nullptr, &imageView);
+    if (result != VK_SUCCESS) {
+        std::cerr << "Erreur: vkCreateImageView a échoué avec le code " << result << std::endl;
+    }
 }
 
-#include <unistd.h>
-#include <stdio.h>
 #include <linux/limits.h>
+#include <stdio.h>
+#include <unistd.h>
 
 int test() {
     char cwd[PATH_MAX];
-   if (getcwd(cwd, sizeof(cwd)) != NULL) {
-       printf("Current working dir: %s\n", cwd);
-   } else {
-       perror("getcwd() error");
-       return 1;
-   }
-   return  0;
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        printf("Current working dir: %s\n", cwd);
+    } else {
+        perror("getcwd() error");
+        return 1;
+    }
+    return 0;
 }
 
 void Image::loadImageFromFile(std::vector<std::string> &filename) {
@@ -309,7 +356,6 @@ void Image::loadImageToGPU(CommandBuffer *extCmdBuffer) {
     transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, cmdBuffer);
     b->copyToImage(device, *this, width, height, layer, cmdBuffer);
     transitionImageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, cmdBuffer);
-
 
     if (extCmdBuffer == nullptr) {
         cmdBuffer->endCommandBuffer();

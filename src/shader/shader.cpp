@@ -1,6 +1,5 @@
 
 #include "shader.hpp"
-#include <vulkan/vulkan_core.h>
 
 #include <cstddef>
 #include <cstdint>
@@ -12,6 +11,7 @@
 #include <vector>
 
 #include "../structs_vk.hpp"
+#include "spirv.hpp"
 #include "spirv_cross.hpp"
 #include "volk.h"
 
@@ -289,6 +289,7 @@ Shader::Shader(Shader &&other) {
     device = other.device;
     shaderCode = std::move(other.shaderCode);
     descriptorsSetLayout = std::move(other.descriptorsSetLayout);
+    computeWorkGroupSize = other.computeWorkGroupSize;
     other.shader = VK_NULL_HANDLE;
     other.shaderModule = VK_NULL_HANDLE;
 }
@@ -311,6 +312,7 @@ Shader &Shader::operator=(Shader &&other) {
         device = other.device;
         shaderCode = std::move(other.shaderCode);
         descriptorsSetLayout = std::move(other.descriptorsSetLayout);
+        computeWorkGroupSize = other.computeWorkGroupSize;
         other.shader = VK_NULL_HANDLE;
         other.shaderModule = VK_NULL_HANDLE;
     }
@@ -337,6 +339,8 @@ void Shader::createDescriptorSetLayout(VkShaderStageFlags descriptorStage) {
     std::map<uint32_t, std::map<uint32_t, VkDescriptorSetLayoutBinding>> setBindings;
     spirv_cross::Compiler comp(shaderCode);
     spirv_cross::ShaderResources res = comp.get_shader_resources();
+
+    comp.get_execution_mode_argument(spv::ExecutionMode::ExecutionModeLocalSize, 0);
     addSamplerBinding(res.separate_samplers, comp, setBindings, descriptorStage);
     addSampledImagesBinding(res.sampled_images, comp, setBindings, descriptorStage);
     addSeparateImagesBinding(res.separate_images, comp, setBindings, descriptorStage);
@@ -346,6 +350,12 @@ void Shader::createDescriptorSetLayout(VkShaderStageFlags descriptorStage) {
     addUniformBufferBinding(res.uniform_buffers, comp, setBindings, descriptorStage);
     addStorageBufferBinding(res.storage_buffers, comp, setBindings, descriptorStage);
     addAccelerationStructureBinding(res.acceleration_structures, comp, setBindings, descriptorStage);
+    if(shaderStage == VK_SHADER_STAGE_COMPUTE_BIT) {
+        computeWorkGroupSize.width = comp.get_execution_mode_argument(spv::ExecutionMode::ExecutionModeLocalSize, 0);
+        computeWorkGroupSize.height = comp.get_execution_mode_argument(spv::ExecutionMode::ExecutionModeLocalSize, 1);
+        computeWorkGroupSize.depth = comp.get_execution_mode_argument(spv::ExecutionMode::ExecutionModeLocalSize, 2);
+    }
+
     for (auto &descriptorSet : setBindings) {
         descriptorsSetLayout.push_back(DescriptorSetLayout::createDescriptorSetLayout(device, descriptorSet.second, descriptorSet.first));
     }

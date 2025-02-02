@@ -1,0 +1,78 @@
+#version 450
+// #extension GL_EXT_debug_printf : enable
+// #extension GL_KHR_shader_subgroup_basic : enable
+// #extension GL_KHR_shader_subgroup_arithmetic : enable
+// #extension GL_KHR_shader_subgroup_ballot : enable
+#extension GL_EXT_shader_image_load_formatted : enable
+
+
+
+// layout(set = 0, binding = 0) uniform GlobalUbo {
+//     mat4 projection;
+//     mat4 view;
+//     mat4 invView;
+// }
+// ubo;
+
+//storage Image2D
+layout(set = 0, binding = 0) uniform image2D outputTexture;
+
+// layout(set = 0, binding = 1) buffer blocks { mesh_block blocks[200000]; }
+// mesh_blocks;
+
+// layout(set = 0, binding = 2) buffer drawCmd { VkDrawIndexedIndirectCommand vkCmd[1000000]; }
+// command_buffer;
+
+// layout(set = 0, binding = 3) buffer DrawCount { uint drawCount, offset1, offset2, offset3; }
+// drawCount_buffer;
+
+// layout(set = 0, binding = 4) buffer InstanceBuffer { instances i[100000]; }
+// instance_buffer;
+
+// layout(set = 0, binding = 5) uniform sampler2D depthTeture;
+
+layout(push_constant) uniform Push {
+    vec3 color;
+}
+push;
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+void main() {
+    ivec2 storePos = ivec2(gl_GlobalInvocationID.xy);
+    imageStore(outputTexture, storePos, vec4(push.color, 1.0));
+
+
+    // if (gl_GlobalInvocationID.x >= push.numberOfmesh_block) {
+    //     return;
+    // }
+    // mesh_block m = mesh_blocks.blocks[gl_GlobalInvocationID.x];
+
+    // if (!(m.checkFrustrumCull == 1)) return;
+
+    // float d = texture(depthTeture, vec2(0, 0)).x;
+
+    // matrixTOPminAndPmax(m.pmin, m.pmax, instance_buffer.i[m.instancesID].transformation);
+    // bool visible = checkBlockVisibility(m.pmin, m.pmax, ubo.projection * ubo.view);
+
+    // uint localIndex = 0;
+
+    // if (visible) {
+    //     if (m.wasDraw == 0) {
+    //         mesh_blocks.blocks[gl_GlobalInvocationID.x].wasDraw = 1;
+    //         localIndex = subgroupInclusiveAdd(1);
+    //     }
+    // } else {
+    //     mesh_blocks.blocks[gl_GlobalInvocationID.x].wasDraw = 0;
+    // }
+    // uint total = subgroupMax(localIndex);
+    // uint globalIndex;
+    // if (subgroupElect() && (total > 0)) {
+    //     globalIndex = atomicAdd(drawCount_buffer.drawCount, total + 1);
+    // }
+    // globalIndex = subgroupBroadcastFirst(globalIndex);
+
+    // if (visible)
+    //     command_buffer.vkCmd[globalIndex + localIndex - 1] =
+    //         VkDrawIndexedIndirectCommand(m.indexSize, 1, m.indexOffset, m.vertexOffset, m.instancesID);
+}

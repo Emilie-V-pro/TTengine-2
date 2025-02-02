@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <vector>
 #include "../destroyable.hpp"
 #include "../device.hpp"
@@ -24,7 +25,7 @@ class CommandBufferPool {
     const VkCommandPool &operator()() const { return vk_cmdPool; }
     VkQueue queue() const { return vk_queue;}
     unsigned int getNBCmBuffers() const { return nbCommandBuffers; }
-
+    uint32_t getQueueFamilyIndex() const { return queueFamilyIndex; }
 
     std::vector<CommandBuffer> createCommandBuffer(unsigned int commandBufferCount) ;
     void resetPool();
@@ -33,6 +34,7 @@ class CommandBufferPool {
 
     unsigned int nbCommandBuffers = 0;
     VkQueue vk_queue = VK_NULL_HANDLE;
+    uint32_t queueFamilyIndex = 0;
     VkCommandPool vk_cmdPool = VK_NULL_HANDLE;
     const Device* device = nullptr;
 
@@ -55,6 +57,7 @@ class CommandBuffer : public Destroyable {
 
     
     operator VkCommandBuffer() const { return vk_cmdBuffer; }
+    uint32_t getQueueFamilyIndex() const { return cmdBufferPool->queueFamilyIndex; }
 
 
     void beginCommandBuffer() const;

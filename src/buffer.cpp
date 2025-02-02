@@ -1,12 +1,11 @@
 
 #include "buffer.hpp"
 
-
 #include "commandBuffer/commandPool_handler.hpp"
 #include "commandBuffer/command_buffer.hpp"
 #include "device.hpp"
 #include "structs_vk.hpp"
-
+#include "utils.hpp"
 namespace TTe {
 
 Buffer::Buffer(
@@ -26,12 +25,13 @@ Buffer::Buffer(
     allocInfo = {};
     allocInfo.requiredFlags = requiredProperties;
     allocInfo.flags = getAllocationFlags(bufferType);
+    
     allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
 
     vmaCreateBuffer(device->getAllocator(), &bufferInfo, &allocInfo, &vk_buffer, &allocation, nullptr);
 }
 
-Buffer::Buffer(){}
+Buffer::Buffer() {}
 
 Buffer::~Buffer() {
     if (vk_buffer != VK_NULL_HANDLE) vmaDestroyBuffer(device->getAllocator(), vk_buffer, allocation);
@@ -137,19 +137,15 @@ VmaAllocationCreateFlags Buffer::getAllocationFlags(BufferType bufferType) const
     }
 }
 
-
-
 uint64_t Buffer::getBufferDeviceAddress(uint32_t offset) const {
     auto bufferDeviceAI = make<VkBufferDeviceAddressInfo>();
     bufferDeviceAI.buffer = vk_buffer;
     return vkGetBufferDeviceAddress(*device, &bufferDeviceAI) + offset;
-
 }
 
 void Buffer::writeToBuffer(void* data, VkDeviceSize size, VkDeviceSize offset) {
     vmaCopyMemoryToAllocation(device->getAllocator(), data, allocation, offset, size);
 }
-
 
 void Buffer::copyBuffer(
     Device* device,
@@ -179,7 +175,37 @@ void Buffer::copyBuffer(
     }
 }
 
+void Buffer::addBufferMemoryBarrier(
+    const CommandBuffer& extCmdBuffer, VkPipelineStageFlags2 srcStageMask, VkPipelineStageFlags2 dstStageMask) {
+    auto bufferMemoryBarrier = make<VkBufferMemoryBarrier>();
+    bufferMemoryBarrier.buffer = vk_buffer;
+    bufferMemoryBarrier.srcAccessMask = getFlagFromPipelineStage(srcStageMask);
+    bufferMemoryBarrier.dstAccessMask = getFlagFromPipelineStage(dstStageMask);
+    bufferMemoryBarrier.size = total_size;
+    bufferMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    bufferMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    bufferMemoryBarrier.offset = 0;
+    vkCmdPipelineBarrier(extCmdBuffer, srcStageMask, dstStageMask, 0, 0, nullptr, 1, &bufferMemoryBarrier, 0, nullptr);
+}
 
+void Buffer::transferQueueOwnership(const CommandBuffer& extCmdBuffer, uint32_t queueIndex) {
+    auto bufferMemoryBarrier = make<VkBufferMemoryBarrier>();
+    bufferMemoryBarrier.buffer = vk_buffer;
+    bufferMemoryBarrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT | VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT |
+                                        VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+                                        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    bufferMemoryBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_HOST_READ_BIT | VK_ACCESS_TRANSFER_READ_BIT |
+                                        VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                                        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+
+    bufferMemoryBarrier.size = total_size;
+    bufferMemoryBarrier.srcQueueFamilyIndex = extCmdBuffer.getQueueFamilyIndex();
+    bufferMemoryBarrier.dstQueueFamilyIndex = queueIndex;
+    bufferMemoryBarrier.offset = 0;
+    vkCmdPipelineBarrier(
+        extCmdBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 1, &bufferMemoryBarrier, 0,
+        nullptr);
+}
 
 void Buffer::copyToImage(Device* device, VkImage image, uint32_t width, uint32_t height, uint32_t layer, CommandBuffer* extCmdBuffer) {
     CommandBuffer* cmdBuffer = extCmdBuffer;
@@ -208,7 +234,6 @@ void Buffer::copyToImage(Device* device, VkImage image, uint32_t width, uint32_t
         cmdBuffer->addRessourceToDestroy(cmdBuffer);
         cmdBuffer->submitCommandBuffer({}, {}, nullptr, false);
     }
-
 }
 
 }  // namespace TTe

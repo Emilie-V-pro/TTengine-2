@@ -7,7 +7,7 @@ project(TTengine VERSION 1.0
 
 # Compiler Options
 set(CMAKE_CXX_STANDARD 20)
-add_compile_options(-Wall -Wextra -Wpedantic)
+# add_compile_options(-Wall -Wextra -Wpedantic)
 # add_link_options(-Wall -Wextra -Wpedantic)
 # set_source_files_properties(
 #     ${PROJECT_SOURCE_DIR}/src/structs_vk.hpp

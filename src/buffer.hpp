@@ -62,6 +62,13 @@ class Buffer : public Destroyable {
         VkDeviceSize src_offset = 0,
         VkDeviceSize dst_offset = 0);
 
+    void addBufferMemoryBarrier(
+        const CommandBuffer& extCmdBuffer,
+        VkPipelineStageFlags2 srcStageMask,
+        VkPipelineStageFlags2 dstStageMask);
+
+    void transferQueueOwnership(const CommandBuffer& extCmdBuffer, uint32_t queueIndex);
+
    private:
     VkBufferUsageFlags getBufferUsageFlags(BufferType bufferType) const;
     VmaAllocationCreateFlags getAllocationFlags(BufferType bufferType) const;

@@ -39,6 +39,7 @@ class Shader {
     const VkShaderStageFlags &getNexShadersStages() const { return nextShaderStage; }
     const VkShaderCreateInfoEXT &getShaderCreateInfo() const { return shaderCreateInfo; }
     const VkPushConstantRange &getPushConstants() const { return pushConstants; }
+    const VkExtent3D &getComputeWorkGroupSize() const { return computeWorkGroupSize; }
     std::vector<std::shared_ptr<DescriptorSetLayout>> &getDescriptorsSetLayout() { return descriptorsSetLayout; }
 
     static VkShaderStageFlagBits getShaderStageFlagsBitFromFileName(std::string shaderFile);
@@ -60,6 +61,8 @@ class Shader {
     std::string shaderFile;
     VkShaderStageFlags nextShaderStage = 0;
     VkShaderStageFlagBits shaderStage;
+
+    VkExtent3D computeWorkGroupSize = {1, 1, 1};
 
 
     VkShaderCreateInfoEXT shaderCreateInfo = {};

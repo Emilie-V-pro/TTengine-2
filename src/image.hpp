@@ -25,6 +25,7 @@ struct ImageCreateInfo {
 class Image : Destroyable {
    public:
     // Constructor
+    Image(){};
     Image(Device *device, ImageCreateInfo &imageCreateInfo, CommandBuffer *cmdBuffer = nullptr);
     Image(Device *device, VkImage image, VkImageView imageView, VkFormat format, VkExtent2D swapChainExtent);
 
@@ -38,14 +39,20 @@ class Image : Destroyable {
     Image &operator=(Image &&other);
 
     // Getters
-    operator VkImage() const { return image; }
+    operator VkImage() const { return vk_image; }
     operator VkImageView() const { return imageView; }
     uint32_t getWidth() const { return width; }
     uint32_t getHeight() const { return height; }
+    VkDescriptorImageInfo getDescriptorImageInfo() const {
+        return {VK_NULL_HANDLE, imageView, imageLayout};
+    }
 
     void transitionImageLayout(VkImageLayout newLayout, CommandBuffer *cmdBuffer = nullptr);
     void transitionImageLayout(
         VkImageLayout oldLayout, VkImageLayout newLayout, u_int32_t mipLevel, u_int32_t mipCount, CommandBuffer *extCmdBuffer = nullptr);
+
+    void addImageMemoryBarrier(const CommandBuffer &extCmdBuffer, VkPipelineStageFlags2 srcStageMask, VkPipelineStageFlags2 dstStageMask);
+    void transferQueueOwnership(const CommandBuffer &extCmdBuffer, uint32_t queueIndex);
 
     void generateMipmaps();
 
@@ -70,7 +77,7 @@ class Image : Destroyable {
 
     Device *device = nullptr;
 
-    VkImage image = VK_NULL_HANDLE;
+    VkImage vk_image = VK_NULL_HANDLE;
     VkImageView imageView = VK_NULL_HANDLE;
 
     VmaAllocation allocation = VK_NULL_HANDLE;

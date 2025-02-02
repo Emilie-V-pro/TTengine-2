@@ -1,7 +1,6 @@
 
 #include "descriptorSet.hpp"
 
-#include <vulkan/vulkan_core.h>
 
 #include <cstddef>
 #include <cstdint>
@@ -14,11 +13,11 @@ namespace TTe {
 
 DescriptorSet::DescriptorSet(Device *device, std::shared_ptr<DescriptorSetLayout> descriptorSetLayout)
     : descriptorSetLayout(descriptorSetLayout), device(device) {
-    descriptor_buffer = Buffer(
+    descriptor_buffer = std::move(Buffer(
         device, descriptorSetLayout->getLayoutSize(), 1,
         VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT |
             VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-        Buffer::BufferType::DYNAMIC);
+        Buffer::BufferType::DYNAMIC));
 
     descriptor_buffer_address = descriptor_buffer.getBufferDeviceAddress();
 }
@@ -61,8 +60,6 @@ DescriptorSet &DescriptorSet::operator=(DescriptorSet &&other) {
     return *this;
 }
 
-void DescriptorSet::updateToGPU() { char *data = (char *)descriptor_buffer.mapMemory(); }
-
 void DescriptorSet::writeSamplerDescriptor(uint32_t binding, const VkSampler &sampler) {
     auto descriptorGetInfo = make<VkDescriptorGetInfoEXT>();
     char *data = (char *)descriptor_buffer.mapMemory();
@@ -89,9 +86,11 @@ void DescriptorSet::writeImageDescriptor(uint32_t binding, const VkDescriptorIma
     auto descriptorGetInfo = make<VkDescriptorGetInfoEXT>();
     char *data = (char *)descriptor_buffer.mapMemory();
 
+    VkDescriptorImageInfo imageInfoRef = imageInfo;
+
     descriptorGetInfo.type = descriptorSetLayout->getLayoutBindings()[binding].descriptorType;
-    descriptorGetInfo.data.pCombinedImageSampler =
-        &imageInfo;  // combined image sampler/ storage image/ sampled image have the same type and well be determined by the descriptorType
+    descriptorGetInfo.data.pStorageImage =
+        &imageInfoRef;  // combined image sampler/ storage image/ sampled image have the same type and well be determined by the descriptorType
     vkGetDescriptorEXT(
         *device, &descriptorGetInfo, descriptorSetLayout->getSizeOfDescriptorType(binding),
         data + descriptorSetLayout->getLayoutOffsets()[binding]);

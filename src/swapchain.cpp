@@ -1,5 +1,6 @@
 
 #include "swapchain.hpp"
+#include <vulkan/vulkan_core.h>
 
 
 
@@ -40,6 +41,9 @@ SwapChain::SwapChain(Device *device, VkExtent2D windowExtent, vkb::SwapchainBuil
 }
 
 SwapChain::~SwapChain() {
+    for(auto& fence : imageAvailableFences){
+        delete fence;
+    }
     vkbSwapchain.destroy_image_views(swapChainImageView);
     vkb::destroy_swapchain(vkbSwapchain);
 }
@@ -74,42 +78,42 @@ void SwapChain::recreateSwapchain(VkExtent2D windowExtent) {
     vkb::destroy_swapchain(vkbSwapchain);
 
     vkbSwapchain = swap_ret.value();
+     for(auto& fence : imageAvailableFences){
+        delete fence;
+    }
     generateSwapchainImages();
     createSyncObjects();
 }
 
 
-VkResult SwapChain::acquireNextImage(uint32_t& currentSwapchainImage, Semaphore* aquireFrameSemaphore) {
-    int frameIndex = 0;
-    Fence::waitForFences(device, imageAvailableFences, false, &frameIndex);
-    if (frameIndex > static_cast<int>(imageAvailableFences.size())) {
+VkResult SwapChain::acquireNextImage(uint32_t& currentSwapchainImage, int* renderIndex, Semaphore*& aquireFrameSemaphore, Fence*& fence) {
+    Fence::waitForFences(device, imageAvailableFences, false, renderIndex);
+    if (*renderIndex == -1) {
         return VK_TIMEOUT;
     }
 
-    imageAvailableFences[frameIndex]->resetFence();
+    imageAvailableFences[*renderIndex]->resetFence();
+    fence = imageAvailableFences[*renderIndex];
 
     VkResult result = vkAcquireNextImageKHR(
         *device, vkbSwapchain.swapchain, std::numeric_limits<uint64_t>::max(),
-        imageAvailableSemaphores[frameIndex],  // must be a not signaled semaphore
+        imageAvailableSemaphores[*renderIndex],  // must be a not signaled semaphore
         VK_NULL_HANDLE, &currentSwapchainImage);
         
-    imageAvailableSemaphores[frameIndex].signalStage = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
-    aquireFrameSemaphore = &imageAvailableSemaphores[frameIndex];
+    imageAvailableSemaphores[*renderIndex].signalStage = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
+    aquireFrameSemaphore = &imageAvailableSemaphores[*renderIndex];
     
 
     return result;
 }
 
-VkResult SwapChain::presentFrame(uint32_t& currentSwapchainImage, std::vector<Semaphore*> waitSemaphores) {
+VkResult SwapChain::presentFrame(uint32_t& currentSwapchainImage, Semaphore* waitSemaphores) {
     auto presentInfo = make<VkPresentInfoKHR>();
 
-    std::vector<VkSemaphore> waitVKSemaphores(waitSemaphores.size());
-    for (size_t i = 0; i < waitSemaphores.size(); i++) {
-        waitVKSemaphores[i] = *waitSemaphores[i];
-    }
+    VkSemaphore &test = *waitSemaphores;
 
-    presentInfo.waitSemaphoreCount = waitSemaphores.size();
-    presentInfo.pWaitSemaphores = waitVKSemaphores.data();
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = &test;
 
     VkSwapchainKHR swapChains[] = {vkbSwapchain.swapchain};
     presentInfo.swapchainCount = 1;
@@ -129,6 +133,7 @@ void SwapChain::createSyncObjects() {
     for (unsigned int i = 0; i < numberOfFrame - 1; i++) {
         imageAvailableFences.emplace_back(new Fence(device, true));
         imageAvailableSemaphores.emplace_back(device, VK_SEMAPHORE_TYPE_BINARY);
+        imageAvailableSemaphores[i].signalStage = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
     }
 }
 }  // namespace TTe

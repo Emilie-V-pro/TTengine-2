@@ -97,6 +97,7 @@ void Device::initVMA() {
     vma_vulkan_func.vkCmdCopyBuffer = vkCmdCopyBuffer;
 
     allocatorInfo.pVulkanFunctions = &vma_vulkan_func;
+    allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
     vmaCreateAllocator(&allocatorInfo, &_allocator);
 }
 
@@ -167,7 +168,6 @@ void Device::queryPhysicalDeviceProperties() {
 
     deviceProps2.pNext = &deviceDescProps;
     vkGetPhysicalDeviceProperties2(vkbPhysicalDevice.physical_device, &deviceProps2);
-    int x = 0;
 }
 
 Device::~Device() {

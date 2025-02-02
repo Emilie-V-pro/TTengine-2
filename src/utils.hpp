@@ -8,6 +8,9 @@
 #include "volk.h"
 
 namespace TTe {
+
+static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
+
 inline VkAccessFlagBits2 getFlagFromPipelineStage(VkPipelineStageFlags2 pipelineStage) {
     VkAccessFlagBits2 returnFlag = 0;
     switch (pipelineStage) {
