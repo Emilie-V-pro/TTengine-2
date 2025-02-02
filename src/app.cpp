@@ -1,8 +1,11 @@
 
 #include "app.hpp"
+
 #include <vulkan/vulkan_core.h>
+
 #include <glm/fwd.hpp>
 #include <vector>
+
 #include "descriptor/descriptorSet.hpp"
 #include "device.hpp"
 #include "image.hpp"
@@ -10,7 +13,7 @@
 
 namespace TTe {
 
-void App::init(Device *device, std::vector<Image>& swapchainImages) {
+void App::init(Device *device, std::vector<Image> &swapchainImages) {
     this->swapchainImages = &swapchainImages;
     this->device = device;
 
@@ -20,7 +23,7 @@ void App::init(Device *device, std::vector<Image>& swapchainImages) {
     ici.width = 1280;
     ici.height = 720;
     ici.format = VK_FORMAT_R8G8B8A8_SNORM;
-    ici.usageFlags =  VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    ici.usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     ici.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     image = Image(device, ici);
 
@@ -63,25 +66,33 @@ void App::init(Device *device, std::vector<Image>& swapchainImages) {
     // ici.layers = 6;
     // Image im(&d, ici);
 
-    
     // vkDeviceWaitIdle(d);
-    // CommandPoolHandler::cleanUnusedPools(); 
+    // CommandPoolHandler::cleanUnusedPools();
 }
 
-
-
-void App::resize(int width, int height, std::vector<Image>& swapchainImages) {
-    this->swapchainImages = &swapchainImages;
-}
+void App::resize(int width, int height, std::vector<Image> &swapchainImages) { this->swapchainImages = &swapchainImages; }
 void App::update(float deltaTime, CommandBuffer &cmdBuffer) {
-    
     computePipeline.bindPipeline(cmdBuffer);
-    std::vector<DescriptorSet*> descriptorSets = {&descriptorSet};
+    std::vector<DescriptorSet *> descriptorSets = {&descriptorSet};
     DescriptorSet::bindDescriptorSet(cmdBuffer, descriptorSets, computePipeline.getPipelineLayout(), VK_PIPELINE_BIND_POINT_COMPUTE);
     glm::vec3 test = glm::vec3(1.0f, 0.0f, 0.0f);
     vkCmdPushConstants(cmdBuffer, computePipeline.getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(glm::vec3), &test);
     computePipeline.dispatch(cmdBuffer, 1280, 720, 1);
+
+    ImageCreateInfo ici;
+    ici.width = 1280;
+    ici.height = 720;
+    ici.format = VK_FORMAT_R8G8B8A8_SNORM;
+    ici.usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    ici.imageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    renderedImage = std::make_shared<Image>(device, ici);
+
+    Image::copyImage(device, image, *renderedImage, &cmdBuffer);
 }
 void App::renderFrame(float deltatTime, CommandBuffer &cmdBuffer, uint32_t curentFrameIndex) {
-    // std::cout << "rendering frame " << test << std::endl;
-}}
+    // copy renderedImage to swapchainImage
+    if (renderedImage) {
+        Image::copyImage(device, *renderedImage, (*swapchainImages)[curentFrameIndex], &cmdBuffer);
+    }
+}
+}  // namespace TTe

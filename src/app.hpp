@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <memory>
 
 #include "Iapp.hpp"
 #include "descriptor/descriptorSet.hpp"
@@ -26,6 +27,7 @@ class App : public IApp {
 
     ComputePipeline computePipeline;
     Image image;
+    std::shared_ptr<Image> renderedImage;
     DescriptorSet descriptorSet;
     std::array<Semaphore, MAX_FRAMES_IN_FLIGHT> imageRenderdSemaphores;
     std::vector<Image>* swapchainImages;
