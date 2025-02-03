@@ -3,12 +3,13 @@
 #include <cstdint>
 #include <vector>
 
+#include "../destroyable.hpp"
 #include "../device.hpp"
 #include "volk.h"
 
 namespace TTe {
 
-class Semaphore {
+class Semaphore : public Destroyable {
    public:
     // Constructor
     Semaphore() {};
@@ -29,7 +30,7 @@ class Semaphore {
     void signalTimeLineSemaphore(uint64_t signalValue) const;
     operator VkSemaphore&() { return vksemaphore; }
 
-    VkSemaphoreSubmitInfo getSemaphoreSubmitSignalInfo() const;
+    VkSemaphoreSubmitInfo getSemaphoreSubmitSignalInfo();
     VkSemaphoreSubmitInfo getSemaphoreSubmitWaittInfo() const;
 
     static VkResult waitTimeLineSemaphores(
@@ -42,6 +43,7 @@ class Semaphore {
 
 
     VkSemaphore vksemaphore = VK_NULL_HANDLE;
+    uint32_t timelineValue = 0;
     const VkSemaphoreType vkSemaphoreType = VK_SEMAPHORE_TYPE_BINARY;
     const Device *device = nullptr;
 };

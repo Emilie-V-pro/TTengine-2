@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <vector>
 
+#include "IRessource.hpp"
 #include "commandBuffer/command_buffer.hpp"
 #include "destroyable.hpp"
 #include "device.hpp"
@@ -22,7 +23,7 @@ struct ImageCreateInfo {
     std::vector<void *> datas;
 };
 
-class Image : Destroyable {
+class Image : Destroyable, Ressource {
    public:
     // Constructor
     Image(){};
@@ -56,6 +57,7 @@ class Image : Destroyable {
 
     void generateMipmaps();
 
+    static void blitImage(Device *device, Image &srcImage, Image &dstImage, CommandBuffer *extCmdBuffer = nullptr);
     static void copyImage(Device *device, Image &srcImage, Image &dstImage, CommandBuffer *extCmdBuffer = nullptr);
 
    private:

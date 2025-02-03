@@ -88,11 +88,17 @@ void App::update(float deltaTime, CommandBuffer &cmdBuffer) {
     renderedImage = std::make_shared<Image>(device, ici);
 
     Image::copyImage(device, image, *renderedImage, &cmdBuffer);
+    renderedImage->transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, &cmdBuffer);
+    renderedImage->transferQueueOwnership(cmdBuffer, device->getRenderQueueFamilyIndexFromQueu(device->getRenderQueue()));
+
+    cmdBuffer.endCommandBuffer();
+
+    cmdBuffer.submitCommandBuffer({}, {}, nullptr, true);
 }
 void App::renderFrame(float deltatTime, CommandBuffer &cmdBuffer, uint32_t curentFrameIndex) {
     // copy renderedImage to swapchainImage
     if (renderedImage) {
-        Image::copyImage(device, *renderedImage, (*swapchainImages)[curentFrameIndex], &cmdBuffer);
+        Image::blitImage(device, *renderedImage, (*swapchainImages)[curentFrameIndex], &cmdBuffer);
     }
 }
 }  // namespace TTe

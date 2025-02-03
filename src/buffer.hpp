@@ -3,12 +3,13 @@
 #include <volk.h>
 #include <cstdint>
 
+#include "IRessource.hpp"
 #include "commandBuffer/command_buffer.hpp"
 #include "device.hpp"
 
 namespace TTe {
 
-class Buffer : public Destroyable {
+class Buffer : public Destroyable, Ressource {
 
    public:
     enum struct BufferType { GPU_ONLY, STAGING, READBACK, DYNAMIC, OTHER };

@@ -365,7 +365,7 @@ void Image::loadImageToGPU(CommandBuffer *extCmdBuffer) {
     }
 }
 
-void Image::copyImage(Device *device, Image &srcImage, Image &dstImage, CommandBuffer *extCmdBuffer) {
+void Image::blitImage(Device *device, Image &srcImage, Image &dstImage, CommandBuffer *extCmdBuffer) {
     CommandBuffer *cmdBuffer = extCmdBuffer;
     if (cmdBuffer == nullptr) {
         cmdBuffer =
@@ -393,6 +393,38 @@ void Image::copyImage(Device *device, Image &srcImage, Image &dstImage, CommandB
     vkCmdBlitImage(
         *cmdBuffer, srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit,
         VK_FILTER_LINEAR);
+}
+
+void Image::copyImage(Device *device, Image &srcImage, Image &dstImage, CommandBuffer *extCmdBuffer) {
+    CommandBuffer *cmdBuffer = extCmdBuffer;
+    if (cmdBuffer == nullptr) {
+        cmdBuffer =
+            new CommandBuffer(std::move(CommandPoolHandler::getCommandPool(device, device->getTransferQueue())->createCommandBuffer(1)[0]));
+        cmdBuffer->beginCommandBuffer();
+    }
+
+    srcImage.transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, cmdBuffer);
+    dstImage.transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, cmdBuffer);
+
+    VkImageCopy copyRegion{};
+    copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copyRegion.srcSubresource.layerCount = srcImage.layer;
+    copyRegion.srcSubresource.baseArrayLayer = 0;
+    copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copyRegion.dstSubresource.layerCount = srcImage.layer;
+    copyRegion.dstSubresource.baseArrayLayer = 0;
+    copyRegion.extent.width = srcImage.width;
+    copyRegion.extent.height = srcImage.height;
+    copyRegion.extent.depth = 1;
+
+    vkCmdCopyImage(
+        *cmdBuffer, srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
+
+    if (extCmdBuffer == nullptr) {
+        cmdBuffer->endCommandBuffer();
+        cmdBuffer->addRessourceToDestroy(cmdBuffer);
+        cmdBuffer->submitCommandBuffer({}, {}, nullptr, false);
+    }
 }
 
 }  // namespace TTe
