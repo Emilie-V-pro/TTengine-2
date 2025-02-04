@@ -1,5 +1,7 @@
 #pragma once
 
+
 namespace TTe {
-class Ressource {};
+class Ressource {
+};
 }  // namespace TTe

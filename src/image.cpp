@@ -85,6 +85,7 @@ Image::Image(Image &&other)
 Image::~Image() {
     if (!isSwapchainImage && vk_image != VK_NULL_HANDLE) {
         if (vk_image != VK_NULL_HANDLE) {
+            std::cout << "delete image" << std::endl;
             vmaDestroyImage(device->getAllocator(), vk_image, allocation);
         }
         if (imageView != VK_NULL_HANDLE) {
@@ -261,7 +262,7 @@ void Image::createImageWithInfo(const VkImageCreateInfo &imageInfo, VkMemoryProp
     ;
     allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
     // std::cout << imageInfo.extent.width << " " << imageInfo.extent.height << std::endl;
-
+    std::cout << "create image" << std::endl;
     vmaCreateImage(device->getAllocator(), &imageInfo, &allocInfo, &vk_image, &allocation, nullptr);
 }
 

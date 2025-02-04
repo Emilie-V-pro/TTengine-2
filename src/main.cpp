@@ -5,7 +5,7 @@
 #include "engine.hpp"
 
 int main() {
-    TTe::App app{};
+    TTe::App *app = new TTe::App();
     TTe::Engine engine{app};
     try {
         engine.init();

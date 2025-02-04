@@ -1,11 +1,13 @@
 
 #include "device.hpp"
+#include <iostream>
 
 #include "VkBootstrap.h"
 #include "structs_vk.hpp"
 
 #define VMA_IMPLEMENTATION
 #include <volk.h>
+
 
 #include "vk_mem_alloc.h"
 namespace TTe {
@@ -66,6 +68,10 @@ void Device::createLogicialDevice() {
     vkGetDeviceQueue(vkbDevice.device, transferQueueFamilyIndex, 0, &transferQueue);
 
     vk_device = vkbDevice.device;
+}
+
+void VmaLogCallbackFunction(void* pUserData, const char* message) {
+    std::cout << "VMA: " << message << std::endl;
 }
 
 void Device::initVMA() {
@@ -137,7 +143,7 @@ void setRequiredFeatures12(vkb::PhysicalDeviceSelector &phys_device_selector) {
     required_features12.bufferDeviceAddress = true;
     required_features12.descriptorIndexing = true;
     required_features12.scalarBlockLayout = true;
-
+    required_features12.timelineSemaphore = true;
     phys_device_selector.set_required_features_12(required_features12);
 }
 
@@ -146,7 +152,6 @@ void setRequiredFeatures13(vkb::PhysicalDeviceSelector &phys_device_selector) {
     required_features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
     required_features13.dynamicRendering = true;
     required_features13.synchronization2 = true;
-
     phys_device_selector.set_required_features_13(required_features13);
 }
 

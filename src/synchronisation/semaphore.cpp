@@ -83,7 +83,7 @@ void Semaphore::signalTimeLineSemaphore(uint64_t signalValue) const {
 
 VkResult Semaphore::waitTimeLineSemaphores(
     const Device* device, std::vector<const Semaphore*> semaphores, std::vector<uint64_t> waitValues, bool waitForFirstSemaphore) {
-    assert(semaphores.size() != waitValues.size() && "You need to provide exactly one semaphore per waitValue");
+    assert(semaphores.size() == waitValues.size() && "You need to provide exactly one semaphore per waitValue");
     std::vector<VkSemaphore> semaphoresList(semaphores.size());
 
     for (unsigned int i = 0; i < semaphores.size(); i++) semaphoresList[i] = semaphores[i]->vksemaphore;

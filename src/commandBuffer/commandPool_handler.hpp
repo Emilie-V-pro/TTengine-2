@@ -10,7 +10,7 @@
 namespace TTe {
 class CommandPoolHandler {
    public:
-    static CommandBufferPool *getCommandPool(const Device *device, const VkQueue &queue) {
+    static CommandBufferPool *getCommandPool(Device *device, const VkQueue &queue) {
         std::thread::id this_id = std::this_thread::get_id();
         if (commandPools.find({this_id, queue}) == commandPools.end()) {
             commandPools[{this_id, queue}] = new CommandBufferPool(device, queue);

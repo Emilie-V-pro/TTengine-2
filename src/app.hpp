@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdint>
 #include <memory>
+#include <mutex>
 
 #include "Iapp.hpp"
 #include "descriptor/descriptorSet.hpp"
@@ -15,16 +16,17 @@
 namespace TTe {
 class App : public IApp {
    public:
+    ~App() {};
     // set up the application
-    void init(Device *device, std::vector<Image>& swapchainImages);
+    void init(Device* device, std::vector<Image>& swapchainImages);
     void resize(int width, int height, std::vector<Image>& swapchainImages);
 
     // update the application
-    void update(float deltaTime, CommandBuffer &cmdBuffer);
+    void update(float deltaTime, CommandBuffer& cmdBuffer);
     void renderFrame(float deltatTime, CommandBuffer& cmdBuffer, uint32_t curentFrameIndex);
 
    private:
-
+    std::mutex testMutex;
     ComputePipeline computePipeline;
     Image image;
     std::shared_ptr<Image> renderedImage;

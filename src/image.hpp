@@ -23,7 +23,7 @@ struct ImageCreateInfo {
     std::vector<void *> datas;
 };
 
-class Image : Destroyable, Ressource {
+class Image : public Destroyable, public Ressource {
    public:
     // Constructor
     Image(){};

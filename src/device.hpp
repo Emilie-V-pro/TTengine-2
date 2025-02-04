@@ -7,7 +7,7 @@
 #include "window.hpp"
 
 
-
+#define VMA_DEBUG_LOG(format, ...) printf(format "\n", ##__VA_ARGS__)
 #include "vk_mem_alloc.h"
 
 

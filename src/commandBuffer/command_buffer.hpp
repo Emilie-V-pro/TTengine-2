@@ -63,8 +63,8 @@ class CommandBuffer : public Destroyable {
     void beginCommandBuffer() const;
     void endCommandBuffer() const;
     void submitCommandBuffer(
-        std::vector<VkSemaphoreSubmitInfo>& waitSemaphores,
-        std::vector<VkSemaphoreSubmitInfo>& signalSemaphores,
+        std::vector<VkSemaphoreSubmitInfo> waitSemaphores,
+        std::vector<VkSemaphoreSubmitInfo> signalSemaphores,
         Fence* vk_fence = nullptr,
         bool waitForExecution = false);
 

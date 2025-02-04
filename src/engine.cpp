@@ -12,12 +12,14 @@
 namespace TTe {
 
 Engine::~Engine() {
+    delete app;
     vkDeviceWaitIdle(device);
     CommandPoolHandler::cleanUnusedPools();
+    
 }
 
 void Engine::init() {
-    app.init(&device, swapChain.getswapChainImages());
+    app->init(&device, swapChain.getswapChainImages());
     for (unsigned int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         waitToPresentSemaphores.emplace_back(&device, VK_SEMAPHORE_TYPE_BINARY);
         renderCommandBuffers[i] = std::move(commandBufferPool->createCommandBuffer(1)[0]);
@@ -61,7 +63,7 @@ void Engine::resize() {
     resizeMutex.lock();
     vkDeviceWaitIdle(device);
     swapChain.recreateSwapchain(extent);
-    app.resize(extent.width, extent.height, swapChain.getswapChainImages());
+    app->resize(extent.width, extent.height, swapChain.getswapChainImages());
     resizeMutex.unlock();
 }
 
@@ -90,7 +92,7 @@ void Engine::renderLoop(Engine &engine) {
         }
         engine.renderCommandBuffers[engine.renderIndex].beginCommandBuffer();
 
-        engine.app.renderFrame(engine.currentSwapchainImage, engine.renderCommandBuffers[engine.renderIndex], deltatTime);
+        engine.app->renderFrame(engine.currentSwapchainImage, engine.renderCommandBuffers[engine.renderIndex], deltatTime);
 
         engine.swapChain.getSwapChainImage(engine.currentSwapchainImage)
             .transitionImageLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, &engine.renderCommandBuffers[engine.renderIndex]);
@@ -118,10 +120,10 @@ void Engine::updateLoop(Engine &engine) {
             start = newTime;
 
             engine.updateCommandBuffer.beginCommandBuffer();
-            engine.app.update(deltatTime, engine.updateCommandBuffer);
+            engine.app->update(deltatTime, engine.updateCommandBuffer);
             
             engine.resizeMutex.unlock();
-            if (frameIndex == 10000) {
+            if (frameIndex == 100) {
                 engine.shouldClose = true;
             }
         }

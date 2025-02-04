@@ -32,6 +32,7 @@ class Semaphore : public Destroyable {
 
     VkSemaphoreSubmitInfo getSemaphoreSubmitSignalInfo();
     VkSemaphoreSubmitInfo getSemaphoreSubmitWaittInfo() const;
+    uint32_t getTimelineValue() const { return timelineValue; };
 
     static VkResult waitTimeLineSemaphores(
         const Device *device, std::vector<const Semaphore *> semaphores, std::vector<uint64_t> waitValues, bool waitForFirstSemaphore);

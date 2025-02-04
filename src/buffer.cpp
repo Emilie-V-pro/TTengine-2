@@ -1,5 +1,6 @@
 
 #include "buffer.hpp"
+#include <iostream>
 
 #include "commandBuffer/commandPool_handler.hpp"
 #include "commandBuffer/command_buffer.hpp"
@@ -27,14 +28,18 @@ Buffer::Buffer(
     allocInfo.flags = getAllocationFlags(bufferType);
     
     allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
-
+    std::cout << "create buffer" << std::endl;
     vmaCreateBuffer(device->getAllocator(), &bufferInfo, &allocInfo, &vk_buffer, &allocation, nullptr);
 }
 
 Buffer::Buffer() {}
 
 Buffer::~Buffer() {
-    if (vk_buffer != VK_NULL_HANDLE) vmaDestroyBuffer(device->getAllocator(), vk_buffer, allocation);
+    if (vk_buffer != VK_NULL_HANDLE){
+        std::cout << "delete buffer" << std::endl;
+       vmaUnmapMemory(device->getAllocator(), allocation);
+       vmaDestroyBuffer(device->getAllocator(), vk_buffer, allocation);
+    } 
 }
 
 Buffer::Buffer(const Buffer& other)
@@ -45,6 +50,7 @@ Buffer::Buffer(const Buffer& other)
       total_size(instance_count * instance_size),
       device(other.device) {
     bufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    std::cout << "create buffer" << std::endl;
     vmaCreateBuffer(device->getAllocator(), &bufferInfo, &allocInfo, &vk_buffer, &allocation, nullptr);
     copyBuffer(device, other, *this);
 }
@@ -59,6 +65,7 @@ Buffer& Buffer::operator=(const Buffer& other) {
         allocInfo = other.allocInfo;
         bufferInfo = other.bufferInfo;
         bufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        std::cout << "create buffer" << std::endl;
         vmaCreateBuffer(device->getAllocator(), &bufferInfo, &allocInfo, &vk_buffer, &allocation, nullptr);
         copyBuffer(device, other, *this);
     }

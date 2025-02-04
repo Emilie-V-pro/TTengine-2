@@ -19,7 +19,7 @@ namespace TTe {
 class Engine {
    public:
     // Constructor
-    Engine(IApp &app) : app(app) {};
+    Engine(IApp *app) : app(app) {};
 
     // Destructor
     ~Engine();
@@ -50,7 +50,7 @@ class Engine {
     Window window{1280, 720, "mon napli"};
     Device device{window};
     SwapChain swapChain{&device, window.getExtent(), vkb::SwapchainBuilder::BufferMode::DOUBLE_BUFFERING};
-    IApp &app;
+    IApp *app;
 
     std::vector<Semaphore> waitToPresentSemaphores;
 

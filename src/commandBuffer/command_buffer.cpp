@@ -1,6 +1,6 @@
 
 #include "command_buffer.hpp"
-#include <vulkan/vulkan_core.h>
+
 
 #include <iostream>
 #include <thread>
@@ -18,7 +18,7 @@ CommandBufferPool::CommandBufferPool(Device* device, const VkQueue& vk_queue) : 
     createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
     createInfo.queueFamilyIndex = device->getRenderQueueFamilyIndexFromQueu(vk_queue);
     queueFamilyIndex = createInfo.queueFamilyIndex;
-    
+
     std::cout << "JE SUIS LA COMMAND POOL AVEC LE QUEUEINDEX : " << createInfo.queueFamilyIndex << std::endl;
 
     if (vkCreateCommandPool(*device, &createInfo, nullptr, &vk_cmdPool) != VK_SUCCESS) {
@@ -126,7 +126,7 @@ CommandBuffer::~CommandBuffer() {
     if (vk_cmdBuffer != VK_NULL_HANDLE) {
         vkFreeCommandBuffers(*device, cmdBufferPool->operator()(), 1, &vk_cmdBuffer);
         cmdBufferPool->nbCommandBuffers--;
-        if(cmdBufferPool->nbCommandBuffers == 0){
+        if (cmdBufferPool->nbCommandBuffers == 0) {
             CommandPoolHandler::cleanUnusedPools();
         }
     }
@@ -161,15 +161,15 @@ void CommandBuffer::endCommandBuffer() const {
 }
 
 void CommandBuffer::submitCommandBuffer(
-     std::vector<VkSemaphoreSubmitInfo>& waitSemaphores,
-     std::vector<VkSemaphoreSubmitInfo>& signalSemaphores,
+    std::vector<VkSemaphoreSubmitInfo> waitSemaphores,
+    std::vector<VkSemaphoreSubmitInfo> signalSemaphores,
     Fence* fence,
     bool waitForExecution) {
-    if (fence == nullptr && (waitForExecution || ressourcesToDestroy.size() > 0)) {
-        Semaphore* s = new Semaphore(device, VK_SEMAPHORE_TYPE_TIMELINE);
-        signalSemaphores.push_back(s->getSemaphoreSubmitSignalInfo());
-        this->addRessourceToDestroy(s)
-    }
+
+
+    Semaphore* s = new Semaphore(device, VK_SEMAPHORE_TYPE_TIMELINE);
+    s->signalStage = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    signalSemaphores.push_back(s->getSemaphoreSubmitSignalInfo());
 
     auto cmdInfo = make<VkCommandBufferSubmitInfo>();
     cmdInfo.commandBuffer = this->vk_cmdBuffer;
@@ -182,19 +182,21 @@ void CommandBuffer::submitCommandBuffer(
     submitInfo.commandBufferInfoCount = 1;
     submitInfo.pCommandBufferInfos = &cmdInfo;
 
-    if (vkQueueSubmit2(this->cmdBufferPool->queue(), 1, &submitInfo, *fence) != VK_SUCCESS) {
+    VkFence vk_fence = (fence == nullptr) ? VK_NULL_HANDLE : static_cast<VkFence>(*fence);
+
+    if (vkQueueSubmit2(this->cmdBufferPool->queue(), 1, &submitInfo, vk_fence) != VK_SUCCESS) {
         throw std::runtime_error("Failed to submit commandBuffer");
     }
     if (waitForExecution) {
-        waitAndDestroy(this, fence);
+        waitAndDestroy(this, s);
     } else {
-        std::thread(CommandBuffer::waitAndDestroy, this, fence).detach();
+        std::thread(CommandBuffer::waitAndDestroy, this, s).detach();
     }
 }
 
-void CommandBuffer::waitAndDestroy(CommandBuffer* cmdBuffer, Fence* fence) {
+void CommandBuffer::waitAndDestroy(CommandBuffer* cmdBuffer, Semaphore* s) {
     std::this_thread::get_id();
-    fence->waitForFence();
+    s->waitTimeLineSemaphore(s->getTimelineValue());
     bool autoCmdBufferDestroy = false;
     for (auto& ressource : cmdBuffer->ressourcesToDestroy) {
         if (ressource == cmdBuffer) {
@@ -203,6 +205,7 @@ void CommandBuffer::waitAndDestroy(CommandBuffer* cmdBuffer, Fence* fence) {
         }
         delete ressource;
     }
+    std::cout << "taille ressource : " << cmdBuffer->ressources.size() << std::endl;
     cmdBuffer->ressources.clear();
     cmdBuffer->ressourcesToDestroy.clear();
     if (autoCmdBufferDestroy) {

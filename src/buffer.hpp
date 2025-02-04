@@ -9,7 +9,7 @@
 
 namespace TTe {
 
-class Buffer : public Destroyable, Ressource {
+class Buffer : public Destroyable, public Ressource {
 
    public:
     enum struct BufferType { GPU_ONLY, STAGING, READBACK, DYNAMIC, OTHER };
@@ -41,6 +41,8 @@ class Buffer : public Destroyable, Ressource {
         vmaMapMemory(device->getAllocator(), allocation, &data);
         return data;
     };
+
+    void unmapMemory() const { vmaUnmapMemory(device->getAllocator(), allocation); }
 
     uint64_t getBufferDeviceAddress(uint32_t offset = 0) const;
     

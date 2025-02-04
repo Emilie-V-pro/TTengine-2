@@ -9,6 +9,7 @@ namespace TTe {
 class IApp {
    public:
     // set up the application
+    virtual ~IApp() = default;
     void virtual init(Device *device, std::vector<Image> &swapchainImages) = 0;
     void virtual resize(int width, int height, std::vector<Image> &swapchainImages) = 0;
 
