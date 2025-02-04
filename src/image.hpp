@@ -23,7 +23,7 @@ struct ImageCreateInfo {
     std::vector<void *> datas;
 };
 
-class Image : public Destroyable, public Ressource {
+class Image : public Destroyable {
    public:
     // Constructor
     Image(){};
@@ -84,6 +84,9 @@ class Image : public Destroyable, public Ressource {
 
     VmaAllocation allocation = VK_NULL_HANDLE;
     VkDeviceMemory imageMemory = VK_NULL_HANDLE;
+
+    std::mutex mutex;
+    int *refCount = 0;
 
     bool isSwapchainImage = false;
 };

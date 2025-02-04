@@ -1,5 +1,6 @@
 #pragma once
 
+#include <mutex>
 #include <vector>
 
 #include "../destroyable.hpp"
@@ -21,7 +22,7 @@ class Fence : public Destroyable {
     Fence(Fence &&other);
     Fence &operator=(Fence &&other);
 
-    VkResult getFenceStatus() const;
+    VkResult getFenceStatus();
     VkResult waitForFence();
     void resetFence();
 
@@ -30,7 +31,7 @@ class Fence : public Destroyable {
 
    private:
     VkFence vk_Fence = VK_NULL_HANDLE;
-
+    std::mutex mutex;
     const Device *device = nullptr;
 };
 }  // namespace TTe

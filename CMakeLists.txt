@@ -29,3 +29,8 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 
 target_link_libraries(${PROJECT_NAME} PUBLIC glfw vulkan volk vk-bootstrap::vk-bootstrap spirv-cross-cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC volk)
+
+
+add_library(TTengineApp ${SOURCES})
+target_link_libraries(TTengineApp PUBLIC glfw vulkan volk vk-bootstrap::vk-bootstrap spirv-cross-cpp)
+target_include_directories(TTengineApp PUBLIC volk)

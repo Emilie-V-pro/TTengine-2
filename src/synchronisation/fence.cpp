@@ -2,6 +2,7 @@
 #include "fence.hpp"
 
 #include <limits>
+#include <mutex>
 #include <vector>
 
 #include "../structs_vk.hpp"
@@ -19,7 +20,7 @@ Fence::Fence(const Device *device, bool signaled) : device(device) {
     }
 }
 
-Fence::Fence(Fence &&other) : vk_Fence(other.vk_Fence), device(other.device) { other.vk_Fence = VK_NULL_HANDLE; }
+Fence::Fence(Fence &&other) : vk_Fence(other.vk_Fence), device(other.device){ other.vk_Fence = VK_NULL_HANDLE; }
 
 Fence &Fence::operator=(Fence &&other) {
     if (this != &other) {
@@ -36,7 +37,7 @@ Fence::~Fence() {
     }
 }
 
-VkResult Fence::getFenceStatus() const {
+VkResult Fence::getFenceStatus() {
     VkResult returnValue;
     returnValue = vkGetFenceStatus(*device, vk_Fence);
     if (returnValue == VK_ERROR_DEVICE_LOST) {
@@ -51,12 +52,22 @@ void Fence::resetFence() {
     }
 }
 
-VkResult Fence::waitForFence() { return waitForFences(device, {this}, true, nullptr); }
+VkResult Fence::waitForFence() {
+    
+    VkResult returnValue = vkWaitForFences(*device, 1, &this->vk_Fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
+    
+    return returnValue;
+}
 
 VkResult Fence::waitForFences(const Device *device, const std::vector<Fence *> &fences, bool waitAllFence, int *fenceSignaled) {
     if (fenceSignaled != nullptr) *fenceSignaled = -1;
-    std::vector<VkFence> fencesList(fences.size());
-    for (unsigned int i = 0; i < fences.size(); i++) fencesList[i] = *fences[i];
+    std::vector<VkFence> fencesList;
+    for (unsigned int i = 0; i < fences.size(); i++){
+        // if(fences[i]->mutex.try_lock()){
+            fencesList.push_back(*fences[i]);
+        // }
+    }
+     
 
     VkBool32 waitAll = (waitAllFence) ? VK_TRUE : VK_FALSE;
 
@@ -68,7 +79,7 @@ VkResult Fence::waitForFences(const Device *device, const std::vector<Fence *> &
     if ((returnValue == VK_SUCCESS) && !waitAllFence && fenceSignaled != nullptr) {
         int i = 0;
         for (auto &fence : fences) {
-            if (fence->getFenceStatus() == VK_SUCCESS) {
+            if (fence->getFenceStatus() == VK_SUCCESS ) {
                 *fenceSignaled = i;
                 break;
             }

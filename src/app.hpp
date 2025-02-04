@@ -29,7 +29,7 @@ class App : public IApp {
     std::mutex testMutex;
     ComputePipeline computePipeline;
     Image image;
-    std::shared_ptr<Image> renderedImage;
+    Image* renderedImage;
     DescriptorSet descriptorSet;
     std::array<Semaphore, MAX_FRAMES_IN_FLIGHT> imageRenderdSemaphores;
     std::vector<Image>* swapchainImages;

@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <vector>
 
 #include "../IRessource.hpp"
@@ -60,7 +61,7 @@ class CommandBuffer : public Destroyable {
     operator VkCommandBuffer() const { return vk_cmdBuffer; }
     uint32_t getQueueFamilyIndex() const { return cmdBufferPool->queueFamilyIndex; }
 
-    void beginCommandBuffer() const;
+    void beginCommandBuffer();
     void endCommandBuffer() const;
     void submitCommandBuffer(
         std::vector<VkSemaphoreSubmitInfo> waitSemaphores,
@@ -69,14 +70,17 @@ class CommandBuffer : public Destroyable {
         bool waitForExecution = false);
 
     void addRessourceToDestroy(Destroyable* ressource);
-    void addRessource(std::shared_ptr<Ressource> ressource) { ressources.push_back(ressource); };
+    void addRessource(Destroyable ressource) { ressources.push_back(ressource); };
 
    private:
-    static void waitAndDestroy(CommandBuffer* cmdBuffer, Semaphore* s);
+    static void waitAndDestroy(CommandBuffer* cmdBuffer, Fence* s);
     std::vector<Destroyable*> ressourcesToDestroy;
-    std::vector<std::shared_ptr<Ressource>> ressources;
+    std::vector<Destroyable> ressources;
     CommandBufferPool* cmdBufferPool = nullptr;
     VkCommandBuffer vk_cmdBuffer = VK_NULL_HANDLE;
+    bool fini = true;
+    bool reseted = true;
+    std::mutex mutex;
     Device* device = nullptr;
 
     friend class CommandBufferPool;

@@ -42,7 +42,7 @@ class Semaphore : public Destroyable {
    private:
 
 
-
+    
     VkSemaphore vksemaphore = VK_NULL_HANDLE;
     uint32_t timelineValue = 0;
     const VkSemaphoreType vkSemaphoreType = VK_SEMAPHORE_TYPE_BINARY;

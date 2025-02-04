@@ -25,6 +25,9 @@ Image::Image(Device *device, ImageCreateInfo &imageCreateInfo, CommandBuffer *cm
       imageFormat(imageCreateInfo.format),
       imageLayout(imageCreateInfo.imageLayout),
       device(device) {
+    std::cout << "Image Constructor" << std::endl;
+    mutex.lock();
+    refCount = new int(1);
     if (!this->imageCreateInfo.filename.empty()) {
         loadImageFromFile(imageCreateInfo.filename);
     }
@@ -34,6 +37,8 @@ Image::Image(Device *device, ImageCreateInfo &imageCreateInfo, CommandBuffer *cm
     if (this->imageCreateInfo.datas.size() > 0) {
         loadImageToGPU(cmdBuffer);
     }
+
+    mutex.unlock();
 }
 
 Image::Image(Device *device, VkImage image, VkImageView imageView, VkFormat format, VkExtent2D swapChainExtent)
@@ -58,11 +63,18 @@ Image::Image(Image &other)
       imageLayout(other.imageLayout),
       actualImageLayout(other.actualImageLayout),
       device(other.device),
+      vk_image(other.vk_image),
+      imageView(other.imageView),
+      allocation(other.allocation),
+      imageMemory(other.imageMemory),
       isSwapchainImage(other.isSwapchainImage) {
-    this->~Image();
-    createImage();
-    createImageView();
-    copyImage(device, other, *this);
+    std::cout << "Image Copy Constructor" << std::endl;
+    mutex.lock();
+    other.mutex.lock();
+    refCount = other.refCount;
+    *refCount += 1;
+    other.mutex.unlock();
+    mutex.unlock();
 }
 
 Image::Image(Image &&other)
@@ -77,46 +89,49 @@ Image::Image(Image &&other)
       device(other.device),
       vk_image(other.vk_image),
       imageView(other.imageView),
+      allocation(other.allocation),
       imageMemory(other.imageMemory),
       isSwapchainImage(other.isSwapchainImage) {
+    std::cout << "Image Move Constructor" << std::endl;
+    mutex.lock();
+    other.mutex.lock();
+    refCount = other.refCount;
+    other.refCount = nullptr;
     other.vk_image = VK_NULL_HANDLE;
+    other.mutex.unlock();
+    mutex.unlock();
+
 }
 
 Image::~Image() {
+    std::cout << "Image Destructor" << std::endl;
+    mutex.lock();
     if (!isSwapchainImage && vk_image != VK_NULL_HANDLE) {
-        if (vk_image != VK_NULL_HANDLE) {
-            std::cout << "delete image" << std::endl;
-            vmaDestroyImage(device->getAllocator(), vk_image, allocation);
-        }
-        if (imageView != VK_NULL_HANDLE) {
-            vkDestroyImageView(*device, imageView, nullptr);
+        std::cout << "refCount : " << *refCount << std::endl;
+        *refCount -= 1;
+        std::cout << "refCount : " << *refCount << std::endl;
+        if (*refCount == 0) {
+            delete refCount;
+
+            if (vk_image != VK_NULL_HANDLE) {
+                vmaDestroyImage(device->getAllocator(), vk_image, allocation);
+                // vmaFreeMemory(device->getAllocator(), allocation);
+            }
+            if (imageView != VK_NULL_HANDLE) {
+                vkDestroyImageView(*device, imageView, nullptr);
+            }
         }
     }
+    mutex.unlock();
 }
 
 Image &Image::operator=(Image &other) {
     if (this != &other) {
-        this->~Image();
-        imageCreateInfo = other.imageCreateInfo;
-        width = other.width;
-        height = other.height;
-        layer = other.layer;
-        mipLevels = other.mipLevels;
-        device = other.device;
-        imageFormat = other.imageFormat;
-        imageLayout = other.imageLayout;
-        actualImageLayout = other.actualImageLayout;
-        isSwapchainImage = other.isSwapchainImage;
-        createImage();
-        createImageView();
-        copyImage(device, other, *this);
-    }
-    return *this;
-}
+        std::cout << "Image Copy Operator" << std::endl;
+        other.mutex.lock();
 
-Image &Image::operator=(Image &&other) {
-    if (this != &other) {
         this->~Image();
+        mutex.lock();
         imageCreateInfo = other.imageCreateInfo;
         width = other.width;
         height = other.height;
@@ -124,6 +139,37 @@ Image &Image::operator=(Image &&other) {
         mipLevels = other.mipLevels;
         device = other.device;
         vk_image = other.vk_image;
+        allocation = other.allocation;
+        imageMemory = other.imageMemory;
+        imageView = other.imageView;
+        imageFormat = other.imageFormat;
+        imageLayout = other.imageLayout;
+        actualImageLayout = other.actualImageLayout;
+        isSwapchainImage = other.isSwapchainImage;
+
+        refCount = other.refCount;
+        *refCount += 1;
+        other.mutex.unlock();
+        mutex.unlock();
+    }
+    return *this;
+}
+
+Image &Image::operator=(Image &&other) {
+    if (this != &other) {
+        std::cout << "Image Move Operator" << std::endl;
+        other.mutex.lock();
+
+        this->~Image();
+        mutex.lock();
+        imageCreateInfo = other.imageCreateInfo;
+        width = other.width;
+        height = other.height;
+        layer = other.layer;
+        mipLevels = other.mipLevels;
+        device = other.device;
+        vk_image = other.vk_image;
+        allocation = other.allocation;
         imageMemory = other.imageMemory;
         imageView = other.imageView;
         imageFormat = other.imageFormat;
@@ -131,6 +177,11 @@ Image &Image::operator=(Image &&other) {
         actualImageLayout = other.actualImageLayout;
         isSwapchainImage = other.isSwapchainImage;
         other.vk_image = VK_NULL_HANDLE;
+
+        refCount = other.refCount;
+        other.refCount = nullptr;
+        other.mutex.unlock();
+        mutex.unlock();
     }
     return *this;
 }
@@ -259,11 +310,10 @@ void Image::createImage() {
 void Image::createImageWithInfo(const VkImageCreateInfo &imageInfo, VkMemoryPropertyFlags properties) {
     VmaAllocationCreateInfo allocInfo = {};
     allocInfo.requiredFlags = properties;
-    ;
-    allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
     // std::cout << imageInfo.extent.width << " " << imageInfo.extent.height << std::endl;
-    std::cout << "create image" << std::endl;
+
     vmaCreateImage(device->getAllocator(), &imageInfo, &allocInfo, &vk_image, &allocation, nullptr);
+ 
 }
 
 void Image::createImageView() {

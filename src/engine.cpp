@@ -92,7 +92,7 @@ void Engine::renderLoop(Engine &engine) {
         }
         engine.renderCommandBuffers[engine.renderIndex].beginCommandBuffer();
 
-        engine.app->renderFrame(engine.currentSwapchainImage, engine.renderCommandBuffers[engine.renderIndex], deltatTime);
+        engine.app->renderFrame(deltatTime, engine.renderCommandBuffers[engine.renderIndex], engine.currentSwapchainImage);
 
         engine.swapChain.getSwapChainImage(engine.currentSwapchainImage)
             .transitionImageLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, &engine.renderCommandBuffers[engine.renderIndex]);
@@ -119,11 +119,11 @@ void Engine::updateLoop(Engine &engine) {
             float deltatTime = std::chrono::duration<float, std::chrono::seconds::period>(newTime - start).count();
             start = newTime;
 
-            engine.updateCommandBuffer.beginCommandBuffer();
-            engine.app->update(deltatTime, engine.updateCommandBuffer);
+            // engine.updateCommandBuffer.beginCommandBuffer();
+            // engine.app->update(deltatTime, engine.updateCommandBuffer);
             
             engine.resizeMutex.unlock();
-            if (frameIndex == 100) {
+            if (frameIndex == 1000000000) {
                 engine.shouldClose = true;
             }
         }
