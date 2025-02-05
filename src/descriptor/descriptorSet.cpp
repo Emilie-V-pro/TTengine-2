@@ -33,7 +33,7 @@ DescriptorSet::DescriptorSet(DescriptorSet &other)
 
 DescriptorSet::DescriptorSet(DescriptorSet &&other)
     : descriptor_buffer(std::move(other.descriptor_buffer)),
-      descriptor_buffer_address(descriptor_buffer.getBufferDeviceAddress()),
+      descriptor_buffer_address(other.descriptor_buffer_address),
       descriptorSetLayout(std::move(other.descriptorSetLayout)),
       descriptorInfo(other.descriptorInfo),
       device(other.device) {}
@@ -52,7 +52,7 @@ DescriptorSet &DescriptorSet::operator=(DescriptorSet &other) {
 DescriptorSet &DescriptorSet::operator=(DescriptorSet &&other) {
     if (this != &other) {
         descriptor_buffer = std::move(other.descriptor_buffer);
-        descriptor_buffer_address = descriptor_buffer.getBufferDeviceAddress();
+        descriptor_buffer_address = other.descriptor_buffer_address;
         descriptorSetLayout = std::move(other.descriptorSetLayout);
         descriptorInfo = other.descriptorInfo;
         device = other.device;

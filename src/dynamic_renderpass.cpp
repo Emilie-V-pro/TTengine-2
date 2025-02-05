@@ -1,6 +1,5 @@
 
 #include "dynamic_renderpass.hpp"
-#include <vulkan/vulkan_core.h>
 
 
 

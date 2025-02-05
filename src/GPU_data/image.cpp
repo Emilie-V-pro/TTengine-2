@@ -1,5 +1,6 @@
 
 #include "GPU_data/image.hpp"
+#include <vulkan/vulkan_core.h>
 
 #include <iostream>
 #define STB_IMAGE_IMPLEMENTATION
@@ -87,9 +88,9 @@ Image::Image(Image &&other)
       imageMemory(other.imageMemory),
       isSwapchainImage(other.isSwapchainImage) {
     if (!other.isSwapchainImage) {
+        
         refCount.store(other.refCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
         other.vk_image = VK_NULL_HANDLE;
-        
     }
 }
 
@@ -452,6 +453,35 @@ void Image::copyImage(Device *device, Image &srcImage, Image &dstImage, CommandB
         cmdBuffer->addRessourceToDestroy(cmdBuffer);
         cmdBuffer->submitCommandBuffer({}, {}, nullptr, false);
     }
+}
+
+void Image::createsamplers(Device *device) {
+ auto samplerInfo = make<VkSamplerCreateInfo>();
+    samplerInfo.magFilter = VK_FILTER_LINEAR;
+    samplerInfo.minFilter = VK_FILTER_LINEAR;
+    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.mipLodBias = 0.0f;
+    samplerInfo.anisotropyEnable = VK_TRUE;
+    samplerInfo.maxAnisotropy = 8;
+    samplerInfo.compareEnable = VK_FALSE;
+    samplerInfo.minLod = 0.0f;
+    samplerInfo.maxLod = VK_LOD_CLAMP_NONE;
+    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_WHITE;
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+
+    auto result = vkCreateSampler(*device, &samplerInfo, nullptr, &linearSampler);
+    if (result != VK_SUCCESS) {
+        std::cerr << "Erreur: vkCreateSampler a échoué avec le code " << result << std::endl;
+    }
+
+    samplerInfo.magFilter = VK_FILTER_NEAREST;
+    samplerInfo.minFilter = VK_FILTER_NEAREST;
+    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    result = vkCreateSampler(*device, &samplerInfo, nullptr, &nearestSampler);
+
 }
 
 }  // namespace TTe

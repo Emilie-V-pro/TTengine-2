@@ -29,15 +29,16 @@ class Scene {
     Camera camera;
 
     void render(CommandBuffer &cmd);
+    void updateBuffer();
 
     std::vector<Object> objects;
     std::vector<Mesh> meshes;
     std::vector<Material> materials;
     std::vector<Image> textures;
+    void createDescriptorSets();
     
    private:
 
-    void createDescriptorSets();
     GraphicPipeline pipeline;
     DescriptorSet sceneDescriptorSet;
     Buffer CameraBuffer;

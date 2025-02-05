@@ -28,14 +28,14 @@ class Mesh {
     Mesh(Device *device, const std::vector<unsigned int> &indicies, const std::vector<Vertex> &verticies);
     
     //copy constructor
-    Mesh(Mesh &other){
+    Mesh(const Mesh &other){
         this->device = other.device;
         this->indicies = other.indicies;
         this->verticies = other.verticies;
         this->vertexBuffer = other.vertexBuffer;
         this->indexBuffer = other.indexBuffer;
     }
-    Mesh &operator=(Mesh &other){
+    Mesh &operator=(const Mesh &other){
         if(this != &other){
             this->device = other.device;
             this->indicies = other.indicies;

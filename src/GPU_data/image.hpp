@@ -68,6 +68,8 @@ class Image : public Destroyable {
     static void blitImage(Device *device, Image &srcImage, Image &dstImage, CommandBuffer *extCmdBuffer = nullptr);
     static void copyImage(Device *device, Image &srcImage, Image &dstImage, CommandBuffer *extCmdBuffer = nullptr);
 
+    void static createsamplers(Device *device);
+
    private:
     void createImage();
     void createImageWithInfo(const VkImageCreateInfo &imageInfo, VkMemoryPropertyFlags properties);
@@ -96,7 +98,8 @@ class Image : public Destroyable {
    
     std::atomic<std::shared_ptr<int>> refCount;
 
-    std::atomic<std::shared_ptr<int>> test;
+    static VkSampler linearSampler;
+    static VkSampler nearestSampler;
 
     bool isSwapchainImage = false;
 };

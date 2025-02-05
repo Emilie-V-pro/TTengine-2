@@ -1,6 +1,5 @@
 
 #include "scene.hpp"
-#include <vulkan/vulkan_core.h>
 #include <glm/fwd.hpp>
 #include <vector>
 #include "descriptor/descriptorSet.hpp"
@@ -41,9 +40,15 @@ void Scene::render(CommandBuffer &cmd) {
 
 }
 
+void Scene::updateBuffer() {
+    CameraBuffer.writeToBuffer(&camera);
+    ObjectBuffer.writeToBuffer(objects.data(), sizeof(Object) *objects.size(), 0);
+    MaterialBuffer.writeToBuffer(materials.data(), sizeof(Material)*materials.size(), 0);
+}
+
 void Scene::createDescriptorSets() {
     CameraBuffer = Buffer(device, sizeof(Camera), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
-    // ObjectBuffer = Buffer(device, sizeof(Object), objects.size(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
+    ObjectBuffer = Buffer(device, sizeof(Object), objects.size(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
     MaterialBuffer = Buffer(device, sizeof(Material), materials.size(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
 
     GraphicPipelineCreateInfo pipelineCreateInfo;

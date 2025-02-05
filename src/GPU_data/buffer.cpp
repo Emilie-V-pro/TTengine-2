@@ -18,11 +18,10 @@ Buffer::Buffer(
     BufferType bufferType,
     VkMemoryPropertyFlags requiredProperties)
     : instance_size(instance_size), instance_count(instance_count), total_size(instance_count * instance_size), device(device) {
-    mutex.lock();
-    refCount = new int(1);
+    refCount.store(std::make_shared<int>(1), std::memory_order_relaxed);
     bufferInfo = make<VkBufferCreateInfo>();
     bufferInfo.size = total_size;
-    bufferInfo.usage = usage | getBufferUsageFlags(bufferType);
+    bufferInfo.usage = usage | getBufferUsageFlags(bufferType) | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
@@ -32,28 +31,23 @@ Buffer::Buffer(
 
     allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
     vmaCreateBuffer(device->getAllocator(), &bufferInfo, &allocInfo, &vk_buffer, &allocation, nullptr);
-    mutex.unlock();
 }
 
 Buffer::Buffer() {}
 
 Buffer::~Buffer() {
-    mutex.lock();
     if (vk_buffer != VK_NULL_HANDLE) {
-        *refCount -= 1;
-        if (*refCount == 0) {
-            delete refCount;
-            if(mappedMemory != nullptr) {
+        if (refCount.load(std::memory_order_relaxed) && --(*refCount.load()) == 0) {
+            if (mappedMemory != nullptr) {
                 vmaUnmapMemory(device->getAllocator(), allocation);
             }
 
             vmaDestroyBuffer(device->getAllocator(), vk_buffer, allocation);
         }
     }
-    mutex.unlock();
 }
 
-Buffer::Buffer(Buffer& other)
+Buffer::Buffer(const Buffer& other)
     : allocInfo(other.allocInfo),
       bufferInfo(other.bufferInfo),
       instance_size(other.instance_size),
@@ -63,19 +57,13 @@ Buffer::Buffer(Buffer& other)
       vk_buffer(other.vk_buffer),
       vk_memory(other.vk_memory),
       device(other.device) {
-    mutex.lock();
-    other.mutex.lock();
-    refCount = other.refCount;
-    *refCount += 1;
-    other.mutex.unlock();
-    mutex.unlock();
+    refCount.store(other.refCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
+    (*refCount.load())++;
 }
 
-Buffer& Buffer::operator=(Buffer& other) {
+Buffer& Buffer::operator=(const Buffer& other) {
     if (this != &other) {
-        other.mutex.lock();
         this->~Buffer();
-        mutex.lock();
         allocInfo = other.allocInfo;
         bufferInfo = other.bufferInfo;
         instance_size = other.instance_size;
@@ -85,11 +73,8 @@ Buffer& Buffer::operator=(Buffer& other) {
         vk_buffer = other.vk_buffer;
         vk_memory = other.vk_memory;
         device = other.device;
-
-        refCount = other.refCount;
-        *refCount += 1;
-        other.mutex.unlock();
-        mutex.unlock();
+        refCount.store(other.refCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
+        (*refCount.load())++;
     }
     return *this;
 }
@@ -104,21 +89,13 @@ Buffer::Buffer(Buffer&& other)
       vk_buffer(other.vk_buffer),
       vk_memory(other.vk_memory),
       device(other.device) {
-    other.mutex.lock();
-    this->~Buffer();
-    mutex.lock();
-
-    refCount = other.refCount;
-    other.refCount = nullptr;
-    other.mutex.unlock();
-    mutex.unlock();
+    refCount.store(other.refCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
+    other.vk_buffer = VK_NULL_HANDLE;
 }
 
 Buffer& Buffer::operator=(Buffer&& other) {
     if (this != &other) {
-        other.mutex.lock();
         this->~Buffer();
-        mutex.lock();
 
         allocInfo = other.allocInfo;
         bufferInfo = other.bufferInfo;
@@ -134,11 +111,8 @@ Buffer& Buffer::operator=(Buffer&& other) {
         other.vk_memory = VK_NULL_HANDLE;
         other.allocation = VK_NULL_HANDLE;
         other.device = nullptr;
-
-        refCount = other.refCount;
-        other.refCount = nullptr;
-        other.mutex.unlock();
-        mutex.unlock();
+        refCount.store(other.refCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
+        
     }
     return *this;
 }

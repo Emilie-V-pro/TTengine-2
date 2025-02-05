@@ -2,11 +2,14 @@
 
 #include <volk.h>
 
+#include <atomic>
 #include <cstdint>
+#include <memory>
 
 #include "../commandBuffer/command_buffer.hpp"
 #include "IRessource.hpp"
 #include "device.hpp"
+#include "structs_vk.hpp"
 
 namespace TTe {
 
@@ -27,16 +30,17 @@ class Buffer : public Destroyable, public Ressource {
     ~Buffer();
 
     // Copy and move constructors
-    Buffer(Buffer& other);
-    Buffer& operator=(Buffer& other);
+    Buffer(const Buffer& other);
+    Buffer& operator=(const Buffer& other);
     Buffer(Buffer&& other);
     Buffer& operator=(Buffer&& other);
 
     operator VkBuffer() const { return vk_buffer; }
     operator uint64_t() const { return getBufferDeviceAddress(); }
     operator VkDescriptorAddressInfoEXT() const {
-        VkDescriptorAddressInfoEXT addressInfo = {};
+        auto addressInfo = make<VkDescriptorAddressInfoEXT>();
         addressInfo.address = getBufferDeviceAddress();
+        addressInfo.range = total_size;
         return addressInfo;
     }
 
@@ -88,7 +92,6 @@ class Buffer : public Destroyable, public Ressource {
     void *mappedMemory = nullptr;
 
 
-    std::mutex mutex;
-    int* refCount = 0;
+    std::atomic<std::shared_ptr<int>> refCount;
 };
 }  // namespace TTe

@@ -67,10 +67,12 @@ void App::init(Device *device, SwapChain *swapchain) {
 
      std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
     Mesh m = Mesh(device,indices, vertices);
-
-    scene.meshes.push_back(std::move(m));
+    scene = Scene(device);
+    scene.meshes.push_back(m);
     scene.materials.push_back({{1,1,1,1}, -1, -1});
     scene.textures.push_back(image);
+    scene.createDescriptorSets();
+    scene.updateBuffer();
     
     // Window w{1280,720, "mon napli"};
     // Device d = Device(w);

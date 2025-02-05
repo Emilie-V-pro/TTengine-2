@@ -422,10 +422,15 @@ void Shader::buildShader() {
 
 void Shader::buildLinkedShaders(Device *device, std::vector<Shader *> &shaders) {
     std::vector<VkShaderCreateInfoEXT> shadersCreateInfos;
-
+    std::vector<std::vector<VkDescriptorSetLayout>> listDescriptor(shaders.size());
     for (size_t i = 0; i < shaders.size(); i++) {
         shadersCreateInfos.push_back(shaders[i]->getShaderCreateInfo());
         shadersCreateInfos[i].flags |= VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
+        for (size_t j = 0; j < shaders[i]->getDescriptorsSetLayout().size(); j++) {
+            listDescriptor[i].push_back(*shaders[i]->getDescriptorsSetLayout()[j]);
+        }
+        shadersCreateInfos[i].setLayoutCount = listDescriptor[i].size();
+        shadersCreateInfos[i].pSetLayouts = listDescriptor[i].data();
     }
 
     std::vector<VkShaderEXT> shaderHandler(shaders.size());

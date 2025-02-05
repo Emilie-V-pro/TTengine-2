@@ -1,7 +1,5 @@
 
 #include "graphic_pipeline.hpp"
-
-#include <vulkan/vulkan_core.h>
 #include <cstddef>
 #include "commandBuffer/command_buffer.hpp"
 #include "structs_vk.hpp"
@@ -153,7 +151,7 @@ void GraphicPipeline::createShaders(GraphicPipelineCreateInfo& pipelineCreateInf
         shadersMap[VK_SHADER_STAGE_GEOMETRY_BIT] = createGeometryShader(pipelineCreateInfo, nextStageFlag);
         buildsShaderVector.push_back(&shadersMap[VK_SHADER_STAGE_GEOMETRY_BIT]);
     }
-    shadersMap[VK_SHADER_STAGE_FRAGMENT_BIT] = createGeometryShader(pipelineCreateInfo, nextStageFlag);
+    shadersMap[VK_SHADER_STAGE_FRAGMENT_BIT] = createFragmentShader(pipelineCreateInfo);
     buildsShaderVector.push_back(&shadersMap[VK_SHADER_STAGE_FRAGMENT_BIT]);
 
     // Build shader together
