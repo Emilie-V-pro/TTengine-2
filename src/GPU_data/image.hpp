@@ -1,6 +1,9 @@
 #pragma once
 
+
+#include <atomic>
 #include <cstdint>
+#include <memory>
 #include <vector>
 
 #include "IRessource.hpp"
@@ -34,19 +37,24 @@ class Image : public Destroyable {
     ~Image();
 
     // Copy and move constructors
-    Image(Image &other);
-    Image &operator=(Image &other);
+    Image(const Image &other);
+    Image &operator=(const Image &other);
     Image(Image &&other);
     Image &operator=(Image &&other);
 
     // Getters
     operator VkImage() const { return vk_image; }
     operator VkImageView() const { return imageView; }
+    operator VkImageLayout() const { return actualImageLayout; }
+
     uint32_t getWidth() const { return width; }
     uint32_t getHeight() const { return height; }
     VkDescriptorImageInfo getDescriptorImageInfo() const {
         return {VK_NULL_HANDLE, imageView, imageLayout};
     }
+    
+    bool isSwapchainImg() const { return isSwapchainImage; }
+
 
     void transitionImageLayout(VkImageLayout newLayout, CommandBuffer *cmdBuffer = nullptr);
     void transitionImageLayout(
@@ -85,8 +93,10 @@ class Image : public Destroyable {
     VmaAllocation allocation = VK_NULL_HANDLE;
     VkDeviceMemory imageMemory = VK_NULL_HANDLE;
 
-    std::mutex mutex;
-    int *refCount = 0;
+   
+    std::atomic<std::shared_ptr<int>> refCount;
+
+    std::atomic<std::shared_ptr<int>> test;
 
     bool isSwapchainImage = false;
 };

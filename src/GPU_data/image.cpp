@@ -1,15 +1,12 @@
 
-#include "image.hpp"
-
-#include <vulkan/vulkan_core.h>
+#include "GPU_data/image.hpp"
 
 #include <iostream>
 #define STB_IMAGE_IMPLEMENTATION
 #include <cstddef>
 
-#include "buffer.hpp"
+#include "GPU_data/buffer.hpp"
 #include "commandBuffer/commandPool_handler.hpp"
-#include "commandBuffer/command_buffer.hpp"
 #include "device.hpp"
 #include "stb_image.h"
 #include "structs_vk.hpp"
@@ -25,9 +22,8 @@ Image::Image(Device *device, ImageCreateInfo &imageCreateInfo, CommandBuffer *cm
       imageFormat(imageCreateInfo.format),
       imageLayout(imageCreateInfo.imageLayout),
       device(device) {
-    std::cout << "Image Constructor" << std::endl;
-    mutex.lock();
-    refCount = new int(1);
+    
+    refCount.store(std::make_shared<int>(1), std::memory_order_relaxed);
     if (!this->imageCreateInfo.filename.empty()) {
         loadImageFromFile(imageCreateInfo.filename);
     }
@@ -38,7 +34,7 @@ Image::Image(Device *device, ImageCreateInfo &imageCreateInfo, CommandBuffer *cm
         loadImageToGPU(cmdBuffer);
     }
 
-    mutex.unlock();
+    
 }
 
 Image::Image(Device *device, VkImage image, VkImageView imageView, VkFormat format, VkExtent2D swapChainExtent)
@@ -53,7 +49,7 @@ Image::Image(Device *device, VkImage image, VkImageView imageView, VkFormat form
       imageView(imageView),
       isSwapchainImage(true) {}
 
-Image::Image(Image &other)
+Image::Image(const Image &other)
     : imageCreateInfo(other.imageCreateInfo),
       width(other.width),
       height(other.height),
@@ -69,12 +65,10 @@ Image::Image(Image &other)
       imageMemory(other.imageMemory),
       isSwapchainImage(other.isSwapchainImage) {
     std::cout << "Image Copy Constructor" << std::endl;
-    mutex.lock();
-    other.mutex.lock();
-    refCount = other.refCount;
-    *refCount += 1;
-    other.mutex.unlock();
-    mutex.unlock();
+    if (!other.isSwapchainImage) {
+       refCount.store(other.refCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
+        (*refCount.load())++;
+    }
 }
 
 Image::Image(Image &&other)
@@ -92,26 +86,19 @@ Image::Image(Image &&other)
       allocation(other.allocation),
       imageMemory(other.imageMemory),
       isSwapchainImage(other.isSwapchainImage) {
-    std::cout << "Image Move Constructor" << std::endl;
-    mutex.lock();
-    other.mutex.lock();
-    refCount = other.refCount;
-    other.refCount = nullptr;
-    other.vk_image = VK_NULL_HANDLE;
-    other.mutex.unlock();
-    mutex.unlock();
-
+    if (!other.isSwapchainImage) {
+        refCount.store(other.refCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
+        other.vk_image = VK_NULL_HANDLE;
+        
+    }
 }
 
 Image::~Image() {
     std::cout << "Image Destructor" << std::endl;
-    mutex.lock();
+
     if (!isSwapchainImage && vk_image != VK_NULL_HANDLE) {
-        std::cout << "refCount : " << *refCount << std::endl;
-        *refCount -= 1;
-        std::cout << "refCount : " << *refCount << std::endl;
-        if (*refCount == 0) {
-            delete refCount;
+        if (refCount.load(std::memory_order_relaxed) && --(*refCount.load()) == 0) {
+          
 
             if (vk_image != VK_NULL_HANDLE) {
                 vmaDestroyImage(device->getAllocator(), vk_image, allocation);
@@ -122,16 +109,12 @@ Image::~Image() {
             }
         }
     }
-    mutex.unlock();
 }
 
-Image &Image::operator=(Image &other) {
+Image &Image::operator=(const Image &other) {
     if (this != &other) {
-        std::cout << "Image Copy Operator" << std::endl;
-        other.mutex.lock();
 
         this->~Image();
-        mutex.lock();
         imageCreateInfo = other.imageCreateInfo;
         width = other.width;
         height = other.height;
@@ -146,22 +129,19 @@ Image &Image::operator=(Image &other) {
         imageLayout = other.imageLayout;
         actualImageLayout = other.actualImageLayout;
         isSwapchainImage = other.isSwapchainImage;
-
-        refCount = other.refCount;
-        *refCount += 1;
-        other.mutex.unlock();
-        mutex.unlock();
+        if (!other.isSwapchainImage) {
+            refCount.store(other.refCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
+            (*refCount.load())++;
+        }
     }
     return *this;
 }
 
 Image &Image::operator=(Image &&other) {
     if (this != &other) {
-        std::cout << "Image Move Operator" << std::endl;
-        other.mutex.lock();
+    
 
         this->~Image();
-        mutex.lock();
         imageCreateInfo = other.imageCreateInfo;
         width = other.width;
         height = other.height;
@@ -176,12 +156,10 @@ Image &Image::operator=(Image &&other) {
         imageLayout = other.imageLayout;
         actualImageLayout = other.actualImageLayout;
         isSwapchainImage = other.isSwapchainImage;
-        other.vk_image = VK_NULL_HANDLE;
-
-        refCount = other.refCount;
-        other.refCount = nullptr;
-        other.mutex.unlock();
-        mutex.unlock();
+        if (!isSwapchainImage) {
+            other.vk_image = VK_NULL_HANDLE;
+            refCount.store(other.refCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
+        }
     }
     return *this;
 }
@@ -313,7 +291,6 @@ void Image::createImageWithInfo(const VkImageCreateInfo &imageInfo, VkMemoryProp
     // std::cout << imageInfo.extent.width << " " << imageInfo.extent.height << std::endl;
 
     vmaCreateImage(device->getAllocator(), &imageInfo, &allocInfo, &vk_image, &allocation, nullptr);
- 
 }
 
 void Image::createImageView() {
@@ -368,7 +345,6 @@ void Image::loadImageFromFile(std::vector<std::string> &filename) {
     // stbi_set_flip_vertically_on_load(true);
     int nbOfchannel;
     int width, height;
-    test();
     stbi_info(filename[0].c_str(), &width, &height, &nbOfchannel);
     this->width = width;
     this->height = height;

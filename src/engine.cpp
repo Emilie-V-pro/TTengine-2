@@ -19,7 +19,7 @@ Engine::~Engine() {
 }
 
 void Engine::init() {
-    app->init(&device, swapChain.getswapChainImages());
+    app->init(&device, &swapChain);
     for (unsigned int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         waitToPresentSemaphores.emplace_back(&device, VK_SEMAPHORE_TYPE_BINARY);
         renderCommandBuffers[i] = std::move(commandBufferPool->createCommandBuffer(1)[0]);
@@ -63,7 +63,7 @@ void Engine::resize() {
     resizeMutex.lock();
     vkDeviceWaitIdle(device);
     swapChain.recreateSwapchain(extent);
-    app->resize(extent.width, extent.height, swapChain.getswapChainImages());
+    app->resize(extent.width, extent.height);
     resizeMutex.unlock();
 }
 
@@ -120,7 +120,7 @@ void Engine::updateLoop(Engine &engine) {
             start = newTime;
 
             // engine.updateCommandBuffer.beginCommandBuffer();
-            // engine.app->update(deltatTime, engine.updateCommandBuffer);
+            engine.app->update(deltatTime, engine.updateCommandBuffer);
             
             engine.resizeMutex.unlock();
             if (frameIndex == 1000000000) {

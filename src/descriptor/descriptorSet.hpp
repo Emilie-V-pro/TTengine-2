@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <memory>
 
-#include "../buffer.hpp"
+#include "../GPU_data/buffer.hpp"
 #include "descriptorSetLayout.hpp"
 #include "volk.h"
 

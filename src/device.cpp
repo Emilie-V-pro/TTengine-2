@@ -1,5 +1,6 @@
 
 #include "device.hpp"
+
 #include <iostream>
 
 #include "VkBootstrap.h"
@@ -7,7 +8,6 @@
 
 #define VMA_IMPLEMENTATION
 #include <volk.h>
-
 
 #include "vk_mem_alloc.h"
 namespace TTe {
@@ -70,9 +70,7 @@ void Device::createLogicialDevice() {
     vk_device = vkbDevice.device;
 }
 
-void VmaLogCallbackFunction(void* pUserData, const char* message) {
-    std::cout << "VMA: " << message << std::endl;
-}
+void VmaLogCallbackFunction(void *pUserData, const char *message) { std::cout << "VMA: " << message << std::endl; }
 
 void Device::initVMA() {
     VmaAllocatorCreateInfo allocatorInfo = {};
@@ -173,6 +171,20 @@ void Device::queryPhysicalDeviceProperties() {
 
     deviceProps2.pNext = &deviceDescProps;
     vkGetPhysicalDeviceProperties2(vkbPhysicalDevice.physical_device, &deviceProps2);
+}
+
+VkFormat Device::findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
+    for (VkFormat format : candidates) {
+        VkFormatProperties props;
+        vkGetPhysicalDeviceFormatProperties(vkbDevice.physical_device, format, &props);
+
+        if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
+            return format;
+        } else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
+            return format;
+        }
+    }
+    throw std::runtime_error("failed to find supported format!");
 }
 
 Device::~Device() {

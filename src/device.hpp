@@ -46,6 +46,7 @@ class Device {
     const vkb::Device &getVkbDevice() const { return vkbDevice; }
 
     const VkPhysicalDeviceDescriptorBufferPropertiesEXT &getDeviceDescProps() const { return deviceDescProps; }
+    VkFormat findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
     //get device
     operator VkDevice() const { return vk_device; }

@@ -1,24 +1,27 @@
 
 #include "app.hpp"
 
-#include <vulkan/vulkan_core.h>
 
 #include <glm/fwd.hpp>
 #include <iostream>
+#include <utility>
 #include <vector>
 
 #include "commandBuffer/commandPool_handler.hpp"
-#include "commandBuffer/command_buffer.hpp"
 #include "descriptor/descriptorSet.hpp"
 #include "device.hpp"
-#include "image.hpp"
+#include "GPU_data/image.hpp"
+#include "dynamic_renderpass.hpp"
+#include "scene/mesh.hpp"
 #include "shader/pipeline/compute_pipeline.hpp"
+#include "swapchain.hpp"
 #include "synchronisation/fence.hpp"
+#include "utils.hpp"
 
 namespace TTe {
 
-void App::init(Device *device, std::vector<Image> &swapchainImages) {
-    this->swapchainImages = &swapchainImages;
+void App::init(Device *device, SwapChain *swapchain) {
+    this->swapchain = swapchain;
     this->device = device;
 
     computePipeline = ComputePipeline(device, "test.comp");
@@ -51,6 +54,24 @@ void App::init(Device *device, std::vector<Image> &swapchainImages) {
     cmdBuffer.submitCommandBuffer({}, {}, &f, true);
     f.waitForFence();
 
+
+    renderPass = DynamicRenderPass(device, {1280, 720}, {}, swapchain->getswapChainImages().size(), depthAndStencil::DEPTH, swapchain, nullptr);
+
+
+    std::vector<Vertex> vertices = {
+        {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, 0},
+        {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}, 0},
+        {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}, 0},
+        {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}, 0},
+    };
+
+     std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
+    Mesh m = Mesh(device,indices, vertices);
+
+    scene.meshes.push_back(std::move(m));
+    scene.materials.push_back({{1,1,1,1}, -1, -1});
+    scene.textures.push_back(image);
+    
     // Window w{1280,720, "mon napli"};
     // Device d = Device(w);
     // // CommandBufferPool cbp (&d, d.getRenderQueue());
@@ -90,7 +111,7 @@ void App::init(Device *device, std::vector<Image> &swapchainImages) {
     // CommandPoolHandler::cleanUnusedPools();
 }
 
-void App::resize(int width, int height, std::vector<Image> &swapchainImages) { this->swapchainImages = &swapchainImages; }
+void App::resize(int width, int height) { renderPass.resize({static_cast<uint32_t>(width), static_cast<uint32_t>(height)}); }
 void App::update(float deltaTime, CommandBuffer &cmdBuffer) {
 
     // std::cout << "UPDATE" << std::endl << std::endl;
@@ -113,9 +134,15 @@ void App::update(float deltaTime, CommandBuffer &cmdBuffer) {
     // renderIm.transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, &cmdBuffer);
     // renderIm.transferQueueOwnership(cmdBuffer, device->getRenderQueueFamilyIndexFromQueu(device->getRenderQueue()));
 
-    cmdBuffer.endCommandBuffer();
+    //random float 
+     float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+     float g = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+     float b = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+     
+    renderPass.setClearColor({r, g, b});
+  //  cmdBuffer.endCommandBuffer();
 
-     cmdBuffer.submitCommandBuffer({}, {}, nullptr, true);
+     //cmdBuffer.submitCommandBuffer({}, {}, nullptr, true);
     // testMutex.lock();
     // // std::cout << "TRANSFERT SHARED_PTR" << std::endl;
     // delete renderedImage;
@@ -125,12 +152,22 @@ void App::update(float deltaTime, CommandBuffer &cmdBuffer) {
 void App::renderFrame(float deltatTime, CommandBuffer &cmdBuffer, uint32_t curentFrameIndex) {
     // copy renderedImage to swapchainImage
     // if (renderedImage) {
+
+    swapchain->getSwapChainImage(curentFrameIndex).transitionImageLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, &cmdBuffer);
+    
+    renderPass.beginRenderPass(cmdBuffer, curentFrameIndex);
+    // scene.render(cmdBuffer);
+    renderPass.endRenderPass(cmdBuffer);
+        // testMutex.lock();
+        // Image::blitImage(device, *renderedImage, (*swapchainImages)[curentFrameIndex], &cmdBuffer);
+        // cmdBuffer.addRessourceToDestroy(renderedImage);
+        // renderedImage = nullptr;
+        // testMutex.unlock();
         
-        
-        testMutex.lock();
-        Image::blitImage(device, image, (*swapchainImages)[curentFrameIndex], &cmdBuffer);
+       // testMutex.lock();
+        //Image::blitImage(device, image, (*swapchainImages)[curentFrameIndex], &cmdBuffer);
         // cmdBuffer.addRessourceToDestroy(new Image(*renderedImage));
-        testMutex.unlock();
+       // testMutex.unlock();
 
     // }
 }

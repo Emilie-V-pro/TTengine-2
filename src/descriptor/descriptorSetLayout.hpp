@@ -33,6 +33,7 @@ class DescriptorSetLayout {
     operator const VkDescriptorSetLayout&() const { return descriptorSetLayout; }
     
     std::map<uint32_t, VkDescriptorSetLayoutBinding> getLayoutBindings() const { return layoutBindings; }
+    std::vector<uint32_t> getId() const { return id; }
     const VkDeviceSize& getLayoutSize() const { return layoutSize; }
     std::unordered_map<uint32_t, VkDeviceSize> &getLayoutOffsets() { return layoutOffsets; }
     

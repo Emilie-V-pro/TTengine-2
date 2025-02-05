@@ -1,8 +1,9 @@
 
 #include "buffer.hpp"
+
 #include <iostream>
 
-#include "commandBuffer/commandPool_handler.hpp"
+#include "../commandBuffer/commandPool_handler.hpp"
 #include "commandBuffer/command_buffer.hpp"
 #include "device.hpp"
 #include "structs_vk.hpp"
@@ -17,6 +18,8 @@ Buffer::Buffer(
     BufferType bufferType,
     VkMemoryPropertyFlags requiredProperties)
     : instance_size(instance_size), instance_count(instance_count), total_size(instance_count * instance_size), device(device) {
+    mutex.lock();
+    refCount = new int(1);
     bufferInfo = make<VkBufferCreateInfo>();
     bufferInfo.size = total_size;
     bufferInfo.usage = usage | getBufferUsageFlags(bufferType);
@@ -26,77 +29,102 @@ Buffer::Buffer(
     allocInfo = {};
     allocInfo.requiredFlags = requiredProperties;
     allocInfo.flags = getAllocationFlags(bufferType);
-    
+
     allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
     vmaCreateBuffer(device->getAllocator(), &bufferInfo, &allocInfo, &vk_buffer, &allocation, nullptr);
+    mutex.unlock();
 }
 
 Buffer::Buffer() {}
 
 Buffer::~Buffer() {
-    if (vk_buffer != VK_NULL_HANDLE){
-       vmaUnmapMemory(device->getAllocator(), allocation);
-       vmaDestroyBuffer(device->getAllocator(), vk_buffer, allocation);
-    } 
+    mutex.lock();
+    if (vk_buffer != VK_NULL_HANDLE) {
+        *refCount -= 1;
+        if (*refCount == 0) {
+            delete refCount;
+            if(mappedMemory != nullptr) {
+                vmaUnmapMemory(device->getAllocator(), allocation);
+            }
+
+            vmaDestroyBuffer(device->getAllocator(), vk_buffer, allocation);
+        }
+    }
+    mutex.unlock();
 }
 
-Buffer::Buffer(const Buffer& other)
+Buffer::Buffer(Buffer& other)
     : allocInfo(other.allocInfo),
       bufferInfo(other.bufferInfo),
       instance_size(other.instance_size),
       instance_count(other.instance_count),
       total_size(instance_count * instance_size),
+      allocation(other.allocation),
+      vk_buffer(other.vk_buffer),
+      vk_memory(other.vk_memory),
       device(other.device) {
-    bufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    vmaCreateBuffer(device->getAllocator(), &bufferInfo, &allocInfo, &vk_buffer, &allocation, nullptr);
-    copyBuffer(device, other, *this);
+    mutex.lock();
+    other.mutex.lock();
+    refCount = other.refCount;
+    *refCount += 1;
+    other.mutex.unlock();
+    mutex.unlock();
 }
 
-Buffer& Buffer::operator=(const Buffer& other) {
+Buffer& Buffer::operator=(Buffer& other) {
     if (this != &other) {
+        other.mutex.lock();
         this->~Buffer();
+        mutex.lock();
+        allocInfo = other.allocInfo;
+        bufferInfo = other.bufferInfo;
         instance_size = other.instance_size;
         instance_count = other.instance_count;
         total_size = instance_count * instance_size;
+        allocation = other.allocation;
+        vk_buffer = other.vk_buffer;
+        vk_memory = other.vk_memory;
         device = other.device;
-        allocInfo = other.allocInfo;
-        bufferInfo = other.bufferInfo;
-        bufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-        vmaCreateBuffer(device->getAllocator(), &bufferInfo, &allocInfo, &vk_buffer, &allocation, nullptr);
-        copyBuffer(device, other, *this);
+
+        refCount = other.refCount;
+        *refCount += 1;
+        other.mutex.unlock();
+        mutex.unlock();
     }
     return *this;
 }
 
-Buffer::Buffer(Buffer&& other) {
-    allocInfo = other.allocInfo;
-    bufferInfo = other.bufferInfo;
+Buffer::Buffer(Buffer&& other)
+    : allocInfo(other.allocInfo),
+      bufferInfo(other.bufferInfo),
+      instance_size(other.instance_size),
+      instance_count(other.instance_count),
+      total_size(instance_count * instance_size),
+      allocation(other.allocation),
+      vk_buffer(other.vk_buffer),
+      vk_memory(other.vk_memory),
+      device(other.device) {
+    other.mutex.lock();
+    this->~Buffer();
+    mutex.lock();
 
-    instance_size = other.instance_size;
-    instance_count = other.instance_count;
-    total_size = instance_count * instance_size;
-
-    allocation = other.allocation;
-    vk_buffer = other.vk_buffer;
-    vk_memory = other.vk_memory;
-    device = other.device;
-
-    other.vk_buffer = VK_NULL_HANDLE;
-    other.vk_memory = VK_NULL_HANDLE;
-    other.allocation = VK_NULL_HANDLE;
-    other.device = nullptr;
+    refCount = other.refCount;
+    other.refCount = nullptr;
+    other.mutex.unlock();
+    mutex.unlock();
 }
 
 Buffer& Buffer::operator=(Buffer&& other) {
     if (this != &other) {
+        other.mutex.lock();
         this->~Buffer();
+        mutex.lock();
+
         allocInfo = other.allocInfo;
         bufferInfo = other.bufferInfo;
-
         instance_size = other.instance_size;
         instance_count = other.instance_count;
         total_size = instance_count * instance_size;
-
         allocation = other.allocation;
         vk_buffer = other.vk_buffer;
         vk_memory = other.vk_memory;
@@ -106,6 +134,11 @@ Buffer& Buffer::operator=(Buffer&& other) {
         other.vk_memory = VK_NULL_HANDLE;
         other.allocation = VK_NULL_HANDLE;
         other.device = nullptr;
+
+        refCount = other.refCount;
+        other.refCount = nullptr;
+        other.mutex.unlock();
+        mutex.unlock();
     }
     return *this;
 }

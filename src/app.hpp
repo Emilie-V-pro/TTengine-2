@@ -8,18 +8,22 @@
 #include "Iapp.hpp"
 #include "descriptor/descriptorSet.hpp"
 #include "device.hpp"
-#include "image.hpp"
+#include "GPU_data/image.hpp"
+#include "dynamic_renderpass.hpp"
+#include "scene/scene.hpp"
 #include "shader/pipeline/compute_pipeline.hpp"
+#include "swapchain.hpp"
 #include "synchronisation/semaphore.hpp"
 #include "utils.hpp"
 
 namespace TTe {
 class App : public IApp {
    public:
+    App() {};
     ~App() {};
     // set up the application
-    void init(Device* device, std::vector<Image>& swapchainImages);
-    void resize(int width, int height, std::vector<Image>& swapchainImages);
+    void init(Device* device, SwapChain* swapchain);
+    void resize(int width, int height);
 
     // update the application
     void update(float deltaTime, CommandBuffer& cmdBuffer);
@@ -32,6 +36,9 @@ class App : public IApp {
     Image* renderedImage;
     DescriptorSet descriptorSet;
     std::array<Semaphore, MAX_FRAMES_IN_FLIGHT> imageRenderdSemaphores;
-    std::vector<Image>* swapchainImages;
+    SwapChain* swapchain;
+    
+    DynamicRenderPass renderPass;
+    Scene scene;
 };
 }  // namespace TTe

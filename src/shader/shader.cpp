@@ -420,7 +420,7 @@ void Shader::buildShader() {
 }
 
 
-void Shader::buildLinkedShaders(Device *device, std::vector<Shader *> shaders) {
+void Shader::buildLinkedShaders(Device *device, std::vector<Shader *> &shaders) {
     std::vector<VkShaderCreateInfoEXT> shadersCreateInfos;
 
     for (size_t i = 0; i < shaders.size(); i++) {

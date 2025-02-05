@@ -13,11 +13,11 @@ namespace TTe {
 
 DescriptorSet::DescriptorSet(Device *device, std::shared_ptr<DescriptorSetLayout> descriptorSetLayout)
     : descriptorSetLayout(descriptorSetLayout), device(device) {
-    descriptor_buffer = std::move(Buffer(
+    descriptor_buffer = Buffer(
         device, descriptorSetLayout->getLayoutSize(), 1,
         VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT |
             VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-        Buffer::BufferType::DYNAMIC));
+        Buffer::BufferType::DYNAMIC);
 
     descriptor_buffer_address = descriptor_buffer.getBufferDeviceAddress();
 }

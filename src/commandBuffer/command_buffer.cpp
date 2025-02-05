@@ -7,8 +7,6 @@
 
 #include "../structs_vk.hpp"
 #include "../synchronisation/fence.hpp"
-#include "../synchronisation/semaphore.hpp"
-#include "commandPool_handler.hpp"
 
 // CommandBufferPool
 namespace TTe {

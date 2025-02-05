@@ -8,7 +8,7 @@
 
 #include "../utils.hpp"
 #include "../device.hpp"
-#include "../commandBuffer/command_buffer.hpp"
+#include "commandBuffer/command_buffer.hpp"
 
 #include "volk.h"
 

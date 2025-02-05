@@ -29,7 +29,7 @@ class Shader {
     void createShaderModule();
 
     void buildShader();
-    static void buildLinkedShaders(Device *device, std::vector<Shader *> shaders);
+    static void buildLinkedShaders(Device *device, std::vector<Shader *> &shaders);
 
     // Getters
     operator VkShaderEXT() { return shader; }

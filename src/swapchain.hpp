@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "image.hpp"
+#include "GPU_data/image.hpp"
 #include "volk.h"
 
 #define VK_NO_PROTOTYPES

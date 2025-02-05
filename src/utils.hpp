@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <glm/fwd.hpp>
 #include <glm/glm.hpp>
 #include <stdexcept>
@@ -10,6 +11,13 @@
 namespace TTe {
 
 static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
+
+struct Vertex {
+    glm::vec3 pos;
+    glm::vec3 normal;
+    glm::vec2 uv;
+    uint32_t material_id;
+};
 
 inline VkAccessFlagBits2 getFlagFromPipelineStage(VkPipelineStageFlags2 pipelineStage) {
     VkAccessFlagBits2 returnFlag = 0;

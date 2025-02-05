@@ -1,16 +1,16 @@
 #pragma once
 
 #include <volk.h>
+
 #include <cstdint>
 
+#include "../commandBuffer/command_buffer.hpp"
 #include "IRessource.hpp"
-#include "commandBuffer/command_buffer.hpp"
 #include "device.hpp"
 
 namespace TTe {
 
 class Buffer : public Destroyable, public Ressource {
-
    public:
     enum struct BufferType { GPU_ONLY, STAGING, READBACK, DYNAMIC, OTHER };
     // Constructors
@@ -27,57 +27,52 @@ class Buffer : public Destroyable, public Ressource {
     ~Buffer();
 
     // Copy and move constructors
-    Buffer(const Buffer& other);
-    Buffer& operator=(const Buffer& other);
+    Buffer(Buffer& other);
+    Buffer& operator=(Buffer& other);
     Buffer(Buffer&& other);
     Buffer& operator=(Buffer&& other);
 
-
     operator VkBuffer() const { return vk_buffer; }
     operator uint64_t() const { return getBufferDeviceAddress(); }
+    operator VkDescriptorAddressInfoEXT() const {
+        VkDescriptorAddressInfoEXT addressInfo = {};
+        addressInfo.address = getBufferDeviceAddress();
+        return addressInfo;
+    }
 
-    void * mapMemory() const {
-        void * data;
-        vmaMapMemory(device->getAllocator(), allocation, &data);
-        return data;
+    void* mapMemory()  {
+        vmaMapMemory(device->getAllocator(), allocation, &mappedMemory);
+        return mappedMemory;
     };
 
-    void unmapMemory() const { vmaUnmapMemory(device->getAllocator(), allocation); }
+    void unmapMemory() { 
+        vmaUnmapMemory(device->getAllocator(), allocation); 
+        mappedMemory = nullptr;
+        }
 
     uint64_t getBufferDeviceAddress(uint32_t offset = 0) const;
-    
+
     void writeToBuffer(void* data, VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
 
     void copyToImage(
-        Device* device,
-        VkImage image,
-        uint32_t width,
-        uint32_t height,
-        uint32_t layer = 1,
-        CommandBuffer* extCmdBuffer = nullptr);
+        Device* device, VkImage image, uint32_t width, uint32_t height, uint32_t layer = 1, CommandBuffer* extCmdBuffer = nullptr);
 
     static void copyBuffer(
         Device* device,
-        const Buffer & src_buffer,
-        const Buffer & dst_buffer,
+        const Buffer& src_buffer,
+        const Buffer& dst_buffer,
         CommandBuffer* cmdBuffer = nullptr,
         VkDeviceSize size = VK_WHOLE_SIZE,
         VkDeviceSize src_offset = 0,
         VkDeviceSize dst_offset = 0);
 
-    void addBufferMemoryBarrier(
-        const CommandBuffer& extCmdBuffer,
-        VkPipelineStageFlags2 srcStageMask,
-        VkPipelineStageFlags2 dstStageMask);
+    void addBufferMemoryBarrier(const CommandBuffer& extCmdBuffer, VkPipelineStageFlags2 srcStageMask, VkPipelineStageFlags2 dstStageMask);
 
     void transferQueueOwnership(const CommandBuffer& extCmdBuffer, uint32_t queueIndex);
 
    private:
     VkBufferUsageFlags getBufferUsageFlags(BufferType bufferType) const;
     VmaAllocationCreateFlags getAllocationFlags(BufferType bufferType) const;
-
-    
-    
 
     VmaAllocationCreateInfo allocInfo = {};
     VkBufferCreateInfo bufferInfo = {};
@@ -90,5 +85,10 @@ class Buffer : public Destroyable, public Ressource {
     VkBuffer vk_buffer = VK_NULL_HANDLE;
     VkDeviceMemory vk_memory = VK_NULL_HANDLE;
     Device* device = nullptr;
+    void *mappedMemory = nullptr;
+
+
+    std::mutex mutex;
+    int* refCount = 0;
 };
 }  // namespace TTe

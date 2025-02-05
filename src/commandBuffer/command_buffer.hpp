@@ -1,15 +1,12 @@
 #pragma once
 
 #include <cstdint>
-#include <memory>
 #include <mutex>
 #include <vector>
 
-#include "../IRessource.hpp"
 #include "../destroyable.hpp"
 #include "../device.hpp"
 #include "../synchronisation/fence.hpp"
-#include "../synchronisation/semaphore.hpp"
 #include "volk.h"
 
 namespace TTe {
