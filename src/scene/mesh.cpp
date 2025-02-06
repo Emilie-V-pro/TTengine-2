@@ -23,8 +23,8 @@ Mesh::Mesh(Device* device, const std::vector<unsigned int> &indicies, const std:
 }
 
 void Mesh::uploadToGPU() {
-    indexBuffer.writeToBuffer(indicies.data(), indicies.size() * sizeof(unsigned int));
     vertexBuffer.writeToBuffer(verticies.data(), verticies.size() * sizeof(Vertex));
+    indexBuffer.writeToBuffer(indicies.data(), indicies.size() * sizeof(unsigned int));
 }
 
 

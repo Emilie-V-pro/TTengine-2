@@ -30,6 +30,7 @@ class Scene {
 
     void render(CommandBuffer &cmd);
     void updateBuffer();
+    void updateCameraBuffer();
 
     std::vector<Object> objects;
     std::vector<Mesh> meshes;
@@ -40,6 +41,7 @@ class Scene {
    private:
 
     GraphicPipeline pipeline;
+    GraphicPipeline backgroundPipeline;
     DescriptorSet sceneDescriptorSet;
     Buffer CameraBuffer;
     Buffer ObjectBuffer;

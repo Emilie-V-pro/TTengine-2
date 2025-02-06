@@ -1,6 +1,9 @@
 
 #include "graphic_pipeline.hpp"
+#include <vulkan/vulkan_core.h>
+
 #include <cstddef>
+
 #include "commandBuffer/command_buffer.hpp"
 #include "structs_vk.hpp"
 #include "utils.hpp"
@@ -46,7 +49,7 @@ void GraphicPipeline::setRasterizerInfo(VkCommandBuffer cmdBuffer) {
     vkCmdSetSampleMaskEXT(cmdBuffer, VK_SAMPLE_COUNT_1_BIT, &sampleMask);
     vkCmdSetAlphaToCoverageEnableEXT(cmdBuffer, VK_FALSE);
     vkCmdSetPolygonModeEXT(cmdBuffer, VK_POLYGON_MODE_FILL);
-    vkCmdSetCullMode(cmdBuffer, VK_CULL_MODE_BACK_BIT);
+    vkCmdSetCullMode(cmdBuffer, VK_CULL_MODE_NONE);
     vkCmdSetFrontFace(cmdBuffer, VK_FRONT_FACE_COUNTER_CLOCKWISE);
 }
 
@@ -154,6 +157,25 @@ void GraphicPipeline::createShaders(GraphicPipelineCreateInfo& pipelineCreateInf
     shadersMap[VK_SHADER_STAGE_FRAGMENT_BIT] = createFragmentShader(pipelineCreateInfo);
     buildsShaderVector.push_back(&shadersMap[VK_SHADER_STAGE_FRAGMENT_BIT]);
 
+    pushConstantInfo = make<VkPushConstantRange>();
+    // parcour the shaders to get the push constant
+    for (auto& shader : shadersMap) {
+        auto shaderPushConstantInfo = shader.second.getPushConstants();
+        pushConstantInfo.stageFlags |= shader.first;
+        if (shaderPushConstantInfo.size > 0) {
+            if (shaderPushConstantInfo.size > pushConstantInfo.size) {
+                pushConstantInfo.size = shaderPushConstantInfo.size;
+            }
+        }
+    }
+
+    for (auto& shader : shadersMap) {
+        shader.second.setPushConstant(pushConstantInfo);
+        shader.second.createShaderInfo();
+    }
+
+
+
     // Build shader together
     Shader::buildLinkedShaders(device, buildsShaderVector);
 }
@@ -178,9 +200,9 @@ void GraphicPipeline::createPipelineLayout(GraphicPipelineCreateInfo& pipelineCr
     for (auto& descriptorSetLayout : pipelineDescriptorsSetsLayoutList) {
         descriptorSetLayoutVector.push_back(*descriptorSetLayout.second);
     }
+
     
-    VkPushConstantRange pushConstantInfo = shadersMap.begin()->second.getPushConstants();
-    pushConstantInfo.stageFlags = pipelineStageFlags;
+
 
     auto pipelineLayoutInfo = make<VkPipelineLayoutCreateInfo>();
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;

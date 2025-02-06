@@ -6,6 +6,7 @@
 #include <iostream>
 #include <thread>
 
+#include "GPU_data/image.hpp"
 #include "commandBuffer/commandPool_handler.hpp"
 #include "device.hpp"
 #include "synchronisation/semaphore.hpp"
@@ -19,6 +20,7 @@ Engine::~Engine() {
 }
 
 void Engine::init() {
+    Image::createsamplers(&device);
     app->init(&device, &swapChain);
     for (unsigned int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         waitToPresentSemaphores.emplace_back(&device, VK_SEMAPHORE_TYPE_BINARY);
@@ -120,7 +122,7 @@ void Engine::updateLoop(Engine &engine) {
             start = newTime;
 
             // engine.updateCommandBuffer.beginCommandBuffer();
-            engine.app->update(deltatTime, engine.updateCommandBuffer);
+            engine.app->update(deltatTime, engine.updateCommandBuffer, engine.window);
             
             engine.resizeMutex.unlock();
             if (frameIndex == 1000000000) {

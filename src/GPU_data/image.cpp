@@ -15,6 +15,10 @@
 
 namespace TTe {
 
+//define static member
+VkSampler Image::linearSampler = VK_NULL_HANDLE;
+VkSampler Image::nearestSampler = VK_NULL_HANDLE;
+
 Image::Image(Device *device, ImageCreateInfo &imageCreateInfo, CommandBuffer *cmdBuffer)
     : imageCreateInfo(imageCreateInfo),
       width(imageCreateInfo.width),

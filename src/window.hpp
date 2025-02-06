@@ -26,6 +26,8 @@ class Window {
     Window(Window &&) = delete;
     Window &operator=(Window &&) = delete;
 
+    operator GLFWwindow *() const { return window; }
+
     // getter
     VkSurfaceKHR &getSurface (const vkb::Instance &vkInstance);
     const VkExtent2D &getExtent() const { return size; }

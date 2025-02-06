@@ -26,6 +26,7 @@ class GraphicPipeline : Pipeline {
     std::shared_ptr<DescriptorSetLayout> getDescriptorSetLayout(uint32_t id){return pipelineDescriptorsSetsLayoutList[id];}
     VkPipelineLayout getPipelineLayout(){return pipelineLayout;};
     void reloadShader(VkShaderStageFlagBits shaderStageToReload);
+    VkShaderStageFlags getPushConstantStage(){return pushConstantInfo.stageFlags;}
 
    private:
 
@@ -56,7 +57,7 @@ class GraphicPipeline : Pipeline {
     std::unordered_map<std::vector<uint32_t>, std::shared_ptr<DescriptorSetLayout>> pipelineDescriptorsSetsLayout;
     std::map<uint32_t ,std::shared_ptr<DescriptorSetLayout>> pipelineDescriptorsSetsLayoutList;
     VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
-
+    VkPushConstantRange pushConstantInfo;
 
     Device *device = nullptr;
 };

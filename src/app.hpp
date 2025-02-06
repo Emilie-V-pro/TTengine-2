@@ -10,6 +10,7 @@
 #include "device.hpp"
 #include "GPU_data/image.hpp"
 #include "dynamic_renderpass.hpp"
+#include "movement_controller.hpp"
 #include "scene/scene.hpp"
 #include "shader/pipeline/compute_pipeline.hpp"
 #include "swapchain.hpp"
@@ -26,7 +27,7 @@ class App : public IApp {
     void resize(int width, int height);
 
     // update the application
-    void update(float deltaTime, CommandBuffer& cmdBuffer);
+    void update(float deltaTime, CommandBuffer& cmdBuffer, Window& windowObj);
     void renderFrame(float deltatTime, CommandBuffer& cmdBuffer, uint32_t curentFrameIndex);
 
    private:
@@ -39,6 +40,7 @@ class App : public IApp {
     SwapChain* swapchain;
     
     DynamicRenderPass renderPass;
+    MovementController movementController;
     Scene scene;
 };
 }  // namespace TTe

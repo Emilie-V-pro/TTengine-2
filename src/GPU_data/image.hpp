@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include <atomic>
 #include <cstdint>
 #include <memory>
@@ -12,6 +11,8 @@
 #include "device.hpp"
 
 namespace TTe {
+
+enum samplerType { LINEAR, NEAREST };
 
 struct ImageCreateInfo {
     uint32_t width = 0;
@@ -51,6 +52,23 @@ class Image : public Destroyable {
     uint32_t getHeight() const { return height; }
     VkDescriptorImageInfo getDescriptorImageInfo() const {
         return {VK_NULL_HANDLE, imageView, imageLayout};
+    }
+    VkDescriptorImageInfo getDescriptorImageInfo(samplerType type) const {
+        VkSampler sampler;
+        switch (type) {
+            case LINEAR:
+                sampler = linearSampler;
+                break;
+            case NEAREST:
+                sampler = nearestSampler;
+                break;
+            default:
+                sampler = VK_NULL_HANDLE;
+                break;
+        
+        }
+
+        return {sampler, imageView, imageLayout};
     }
     
     bool isSwapchainImg() const { return isSwapchainImage; }

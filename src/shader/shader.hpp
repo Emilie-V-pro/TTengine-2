@@ -43,14 +43,15 @@ class Shader {
     std::vector<std::shared_ptr<DescriptorSetLayout>> &getDescriptorsSetLayout() { return descriptorsSetLayout; }
 
     static VkShaderStageFlagBits getShaderStageFlagsBitFromFileName(std::string shaderFile);
+    
 
     void setShaderHandler(VkShaderEXT shaderExt) { shader = shaderExt; }
-
+    void setPushConstant(VkPushConstantRange pushConstant) { pushConstants = pushConstant; }
+    void createShaderInfo();
    private:
     void loadShaderCode();
     void createDescriptorSetLayout(VkShaderStageFlags descriptorStage);
     void createPushConstant(VkShaderStageFlags descriptorStage);
-    void createShaderInfo();
 
     std::vector<uint32_t> shaderCode;
 

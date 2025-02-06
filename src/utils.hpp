@@ -19,6 +19,12 @@ struct Vertex {
     uint32_t material_id;
 };
 
+struct Ubo{
+    glm::mat4 projection;
+    glm::mat4 view;
+    glm::mat4 invView;
+};
+
 inline VkAccessFlagBits2 getFlagFromPipelineStage(VkPipelineStageFlags2 pipelineStage) {
     VkAccessFlagBits2 returnFlag = 0;
     switch (pipelineStage) {

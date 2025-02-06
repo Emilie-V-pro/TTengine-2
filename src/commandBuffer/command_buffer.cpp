@@ -159,7 +159,6 @@ void CommandBuffer::beginCommandBuffer() {
     reseted = true;
     mutex.unlock();
     fini = false;
-    std::cout << "beginCommandBuffer : " << vk_cmdBuffer << std::endl;
 }
 
 void CommandBuffer::endCommandBuffer() const {

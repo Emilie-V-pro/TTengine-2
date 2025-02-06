@@ -9,6 +9,10 @@ namespace TTe {
 
 class Camera : public Object {
    public:
+   Camera() {
+       translation = {0,0,0};
+       rotation = {};
+       }
     float fov = 80;
     float near = 0.01;
     float far = 100.0;

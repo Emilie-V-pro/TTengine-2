@@ -1,24 +1,45 @@
 
 #include "camera.hpp"
+
 #include <glm/trigonometric.hpp>
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/glm.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
+#include <glm/glm.hpp>
 
 namespace TTe {
 
 glm::mat4 Camera::getViewMatrix() {
-    return glm::lookAt(translation, translation+glm::normalize(rotation),up);
+    glm::vec3 orientation;
+    float xzLen = cos(rotation.y);
+    orientation.x = std::sin(rotation.x) * std::cos(rotation.y);
+    orientation.y = std::sin(rotation.x) * std::sin(rotation.y);
+    orientation.z = std::cos(rotation.x);
+
+    return glm::lookAt(translation, translation+glm::normalize(rotation),  up);
+    // const glm::vec3 w{glm::normalize(rotation)};
+    // const glm::vec3 u{glm::normalize(glm::cross(w, up))};
+    // const glm::vec3 v{glm::cross(w, u)};
+
+    // glm::mat4 viewMatrix = glm::mat4{1.f};
+    // viewMatrix[0][0] = u.x;
+    // viewMatrix[1][0] = u.y;
+    // viewMatrix[2][0] = u.z;
+    // viewMatrix[0][1] = v.x;
+    // viewMatrix[1][1] = v.y;
+    // viewMatrix[2][1] = v.z;
+    // viewMatrix[0][2] = w.x;
+    // viewMatrix[1][2] = w.y;
+    // viewMatrix[2][2] = w.z;
+    // viewMatrix[3][0] = -glm::dot(u, translation);
+    // viewMatrix[3][1] = -glm::dot(v, translation);
+    // viewMatrix[3][2] = -glm::dot(w, translation);
+    // return viewMatrix;
 }
 
-glm::mat4 Camera::getInvViewMatrix() {
-    return glm::inverse(getViewMatrix());
-}
+glm::mat4 Camera::getInvViewMatrix() { return glm::inverse(getViewMatrix()); }
 
-glm::mat4 Camera::getProjectionMatrix(float aspect) {
-    return glm::perspective(fov, aspect, near, far);
-}
-}
+glm::mat4 Camera::getProjectionMatrix(float aspect) { return glm::perspective(fov, aspect, near, far); }
+}  // namespace TTe

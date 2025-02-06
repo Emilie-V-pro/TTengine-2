@@ -15,7 +15,7 @@ class IApp {
     void virtual resize(int width, int height) = 0;
 
     // update the application
-    void virtual update(float deltaTime, CommandBuffer &cmdBuffer) = 0;
+    void virtual update(float deltaTime, CommandBuffer &cmdBuffer, Window& windowObj) = 0;
     void virtual renderFrame(float deltatTime, CommandBuffer &cmdBuffer, uint32_t curentFrameIndex) = 0;
    protected:
    Device *device;
