@@ -1,6 +1,5 @@
 
 #include "swapchain.hpp"
-#include <vulkan/vulkan_core.h>
 
 
 

@@ -2,8 +2,8 @@
 
 
 namespace TTe {
-class Destroyable {
+class vk_cmdBuffer_OBJ {
    public:
-    virtual ~Destroyable() = default;
+    virtual ~vk_cmdBuffer_OBJ() = default;
 };
 }

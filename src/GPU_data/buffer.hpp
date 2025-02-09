@@ -13,7 +13,7 @@
 
 namespace TTe {
 
-class Buffer : public Destroyable, public Ressource {
+class Buffer : public vk_cmdBuffer_OBJ, public Ressource {
    public:
     enum struct BufferType { GPU_ONLY, STAGING, READBACK, DYNAMIC, OTHER };
     // Constructors
@@ -45,7 +45,8 @@ class Buffer : public Destroyable, public Ressource {
     }
 
     void* mapMemory()  {
-        vmaMapMemory(device->getAllocator(), allocation, &mappedMemory);
+        if(mappedMemory == nullptr)
+            vmaMapMemory(device->getAllocator(), allocation, &mappedMemory);
         return mappedMemory;
     };
 
@@ -77,6 +78,7 @@ class Buffer : public Destroyable, public Ressource {
    private:
     VkBufferUsageFlags getBufferUsageFlags(BufferType bufferType) const;
     VmaAllocationCreateFlags getAllocationFlags(BufferType bufferType) const;
+    void destruction();
 
     VmaAllocationCreateInfo allocInfo = {};
     VkBufferCreateInfo bufferInfo = {};
@@ -91,7 +93,7 @@ class Buffer : public Destroyable, public Ressource {
     Device* device = nullptr;
     void *mappedMemory = nullptr;
 
-
+    // TODO REMPLACER PAR MUTABLE
     std::atomic<std::shared_ptr<int>> refCount;
 };
 }  // namespace TTe

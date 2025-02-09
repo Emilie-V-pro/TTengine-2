@@ -7,6 +7,7 @@
 #include "../destroyable.hpp"
 #include "../device.hpp"
 #include "../synchronisation/fence.hpp"
+#include "synchronisation/semaphore.hpp"
 #include "volk.h"
 
 namespace TTe {
@@ -43,7 +44,7 @@ class CommandBufferPool {
     friend class CommandBuffer;
 };
 
-class CommandBuffer : public Destroyable {
+class CommandBuffer : public vk_cmdBuffer_OBJ {
    public:
     CommandBuffer();
     CommandBuffer(Device* device, CommandBufferPool* CommandBufferPool, const VkCommandBuffer& cmdBuffer);
@@ -66,19 +67,26 @@ class CommandBuffer : public Destroyable {
         Fence* vk_fence = nullptr,
         bool waitForExecution = false);
 
-    void addRessourceToDestroy(Destroyable* ressource);
-    void addRessource(Destroyable ressource) { ressources.push_back(ressource); };
+    void addRessourceToDestroy(vk_cmdBuffer_OBJ* ressource);
+    void addRessource(vk_cmdBuffer_OBJ &ressource) { 
+        ressources.push_back(ressource);
+        int x = 0;
+        };
 
+    bool fini = true;
    private:
-    static void waitAndDestroy(CommandBuffer* cmdBuffer, Fence* s);
-    std::vector<Destroyable*> ressourcesToDestroy;
-    std::vector<Destroyable> ressources;
+    static void waitAndDestroy(CommandBuffer* cmdBuffer, Semaphore* s, uint32_t index);
+
+    std::vector<vk_cmdBuffer_OBJ*> ressourcesToDestroy;
+    std::vector<vk_cmdBuffer_OBJ> ressources;
+    
     CommandBufferPool* cmdBufferPool = nullptr;
     VkCommandBuffer vk_cmdBuffer = VK_NULL_HANDLE;
-    bool fini = true;
     bool reseted = true;
-    std::mutex mutex;
+    uint32_t index = 0;
+
     Device* device = nullptr;
+    std::mutex mutex;
 
     friend class CommandBufferPool;
 };

@@ -94,7 +94,6 @@ void Scene::createDescriptorSets() {
     std::vector<VkDescriptorImageInfo> imageInfos;
     for (auto &texture : textures) {
         imageInfos.push_back(texture.getDescriptorImageInfo(samplerType::LINEAR));
-        //TODO: add sampler
     }
     sceneDescriptorSet.writeImagesDescriptor(2, imageInfos);
     

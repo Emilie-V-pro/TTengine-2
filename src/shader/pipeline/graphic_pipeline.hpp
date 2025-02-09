@@ -19,15 +19,23 @@ class GraphicPipeline : Pipeline {
    public:
     GraphicPipeline(){};
     GraphicPipeline(Device *device, GraphicPipelineCreateInfo& pipelineCreateInfo);
-    void destroy();
+    ~GraphicPipeline();
+
+    // Remove copy constructor
+    GraphicPipeline(const GraphicPipeline &) = delete;
+    GraphicPipeline &operator=(const GraphicPipeline &) = delete;
+
+    // Move constructor
+    GraphicPipeline(GraphicPipeline &&other);
+    GraphicPipeline &operator=(GraphicPipeline &&other);
 
 
-    void bindPipeline(const CommandBuffer &cmdBuffer);
-    std::shared_ptr<DescriptorSetLayout> getDescriptorSetLayout(uint32_t id){return pipelineDescriptorsSetsLayoutList[id];}
     VkPipelineLayout getPipelineLayout(){return pipelineLayout;};
-    void reloadShader(VkShaderStageFlagBits shaderStageToReload);
+    std::shared_ptr<DescriptorSetLayout> getDescriptorSetLayout(uint32_t id){return pipelineDescriptorsSetsLayoutList[id];}
     VkShaderStageFlags getPushConstantStage(){return pushConstantInfo.stageFlags;}
 
+    void bindPipeline(const CommandBuffer &cmdBuffer);
+    void reloadShader(VkShaderStageFlagBits shaderStageToReload);
    private:
 
     void createShaders(GraphicPipelineCreateInfo& pipelineCreateInfo);

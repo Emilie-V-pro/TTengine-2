@@ -15,7 +15,8 @@ namespace TTe {
 Engine::~Engine() {
     delete app;
     vkDeviceWaitIdle(device);
-    CommandPoolHandler::cleanUnusedPools();
+    Image::destroySamplers(&device);
+    // CommandPoolHandler::destroyCommandPools();
     
 }
 
@@ -30,9 +31,13 @@ void Engine::init() {
 }
 void Engine::run() {
     // create thread for update loop
+    
+    std::cout << "DÉBUT RENDU" << std::endl;
     std::thread updateThread(&Engine::updateLoop, std::ref(*this));
 
     std::thread renderThread(&Engine::renderLoop, std::ref(*this));
+
+
 
     updateThread.join();
     renderThread.join();
@@ -80,7 +85,6 @@ void Engine::endAndPresentFrame(Semaphore *waitRenderSemaphore) {
 }
 
 void Engine::renderLoop(Engine &engine) {
-    std::cout << "render loop avec le thread : " << std::this_thread::get_id() << std::endl;
     auto start = std::chrono::high_resolution_clock::now();
     while (!engine.shouldClose) {
         auto newTime = std::chrono::high_resolution_clock::now();
@@ -110,7 +114,6 @@ void Engine::renderLoop(Engine &engine) {
 }
 
 void Engine::updateLoop(Engine &engine) {
-    std::cout << "update loop avec le thread : " << std::this_thread::get_id() << std::endl;
     auto start = std::chrono::high_resolution_clock::now();
     uint32_t frameIndex = 0;
     while (!engine.shouldClose) {
@@ -121,11 +124,10 @@ void Engine::updateLoop(Engine &engine) {
             float deltatTime = std::chrono::duration<float, std::chrono::seconds::period>(newTime - start).count();
             start = newTime;
 
-            // engine.updateCommandBuffer.beginCommandBuffer();
+            engine.updateCommandBuffer.beginCommandBuffer();
             engine.app->update(deltatTime, engine.updateCommandBuffer, engine.window);
-            
             engine.resizeMutex.unlock();
-            if (frameIndex == 1000000000) {
+            if (frameIndex == 10000) {
                 engine.shouldClose = true;
             }
         }

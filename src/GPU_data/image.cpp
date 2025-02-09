@@ -1,6 +1,5 @@
 
 #include "GPU_data/image.hpp"
-#include <vulkan/vulkan_core.h>
 
 #include <iostream>
 #define STB_IMAGE_IMPLEMENTATION
@@ -15,7 +14,7 @@
 
 namespace TTe {
 
-//define static member
+// define static member
 VkSampler Image::linearSampler = VK_NULL_HANDLE;
 VkSampler Image::nearestSampler = VK_NULL_HANDLE;
 
@@ -27,7 +26,6 @@ Image::Image(Device *device, ImageCreateInfo &imageCreateInfo, CommandBuffer *cm
       imageFormat(imageCreateInfo.format),
       imageLayout(imageCreateInfo.imageLayout),
       device(device) {
-    
     refCount.store(std::make_shared<int>(1), std::memory_order_relaxed);
     if (!this->imageCreateInfo.filename.empty()) {
         loadImageFromFile(imageCreateInfo.filename);
@@ -38,8 +36,6 @@ Image::Image(Device *device, ImageCreateInfo &imageCreateInfo, CommandBuffer *cm
     if (this->imageCreateInfo.datas.size() > 0) {
         loadImageToGPU(cmdBuffer);
     }
-
-    
 }
 
 Image::Image(Device *device, VkImage image, VkImageView imageView, VkFormat format, VkExtent2D swapChainExtent)
@@ -69,9 +65,8 @@ Image::Image(const Image &other)
       allocation(other.allocation),
       imageMemory(other.imageMemory),
       isSwapchainImage(other.isSwapchainImage) {
-    std::cout << "Image Copy Constructor" << std::endl;
     if (!other.isSwapchainImage) {
-       refCount.store(other.refCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
+        refCount.store(other.refCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
         (*refCount.load())++;
     }
 }
@@ -92,19 +87,14 @@ Image::Image(Image &&other)
       imageMemory(other.imageMemory),
       isSwapchainImage(other.isSwapchainImage) {
     if (!other.isSwapchainImage) {
-        
         refCount.store(other.refCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
         other.vk_image = VK_NULL_HANDLE;
     }
 }
 
-Image::~Image() {
-    std::cout << "Image Destructor" << std::endl;
-
+void Image::destruction() {
     if (!isSwapchainImage && vk_image != VK_NULL_HANDLE) {
         if (refCount.load(std::memory_order_relaxed) && --(*refCount.load()) == 0) {
-          
-
             if (vk_image != VK_NULL_HANDLE) {
                 vmaDestroyImage(device->getAllocator(), vk_image, allocation);
                 // vmaFreeMemory(device->getAllocator(), allocation);
@@ -116,10 +106,11 @@ Image::~Image() {
     }
 }
 
+Image::~Image() { destruction(); }
+
 Image &Image::operator=(const Image &other) {
     if (this != &other) {
-
-        this->~Image();
+        destruction();
         imageCreateInfo = other.imageCreateInfo;
         width = other.width;
         height = other.height;
@@ -144,9 +135,8 @@ Image &Image::operator=(const Image &other) {
 
 Image &Image::operator=(Image &&other) {
     if (this != &other) {
-    
 
-        this->~Image();
+        destruction();
         imageCreateInfo = other.imageCreateInfo;
         width = other.width;
         height = other.height;
@@ -293,7 +283,6 @@ void Image::createImage() {
 void Image::createImageWithInfo(const VkImageCreateInfo &imageInfo, VkMemoryPropertyFlags properties) {
     VmaAllocationCreateInfo allocInfo = {};
     allocInfo.requiredFlags = properties;
-    // std::cout << imageInfo.extent.width << " " << imageInfo.extent.height << std::endl;
 
     vmaCreateImage(device->getAllocator(), &imageInfo, &allocInfo, &vk_image, &allocation, nullptr);
 }
@@ -355,9 +344,7 @@ void Image::loadImageFromFile(std::vector<std::string> &filename) {
     this->height = height;
     imageCreateInfo.width = width;
     imageCreateInfo.height = height;
-    std::cout << width << " " << height << std::endl;
     for (size_t i = 0; i < filename.size(); i++) {
-        std::cout << filename[i] << std::endl;
         imageCreateInfo.datas.push_back(stbi_load((filename[i]).c_str(), &width, &height, &nbOfchannel, 4));
     }
 
@@ -460,7 +447,7 @@ void Image::copyImage(Device *device, Image &srcImage, Image &dstImage, CommandB
 }
 
 void Image::createsamplers(Device *device) {
- auto samplerInfo = make<VkSamplerCreateInfo>();
+    auto samplerInfo = make<VkSamplerCreateInfo>();
     samplerInfo.magFilter = VK_FILTER_LINEAR;
     samplerInfo.minFilter = VK_FILTER_LINEAR;
     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
@@ -485,7 +472,11 @@ void Image::createsamplers(Device *device) {
     samplerInfo.minFilter = VK_FILTER_NEAREST;
     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
     result = vkCreateSampler(*device, &samplerInfo, nullptr, &nearestSampler);
+}
 
+void Image::destroySamplers(Device *device) {
+    vkDestroySampler(*device, linearSampler, nullptr);
+    vkDestroySampler(*device, nearestSampler, nullptr);
 }
 
 }  // namespace TTe

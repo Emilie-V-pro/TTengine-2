@@ -9,7 +9,7 @@
 
 namespace TTe {
 
-class Semaphore : public Destroyable {
+class Semaphore : public vk_cmdBuffer_OBJ {
    public:
     // Constructor
     Semaphore() {};

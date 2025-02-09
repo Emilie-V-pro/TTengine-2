@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "VkBootstrap.h"
+#include "commandBuffer/commandPool_handler.hpp"
 #include "structs_vk.hpp"
 
 #define VMA_IMPLEMENTATION
@@ -188,10 +189,12 @@ VkFormat Device::findSupportedFormat(const std::vector<VkFormat> &candidates, Vk
 }
 
 Device::~Device() {
+    CommandPoolHandler::cleanUnusedPools();
     vmaDestroyAllocator(_allocator);
     vkb::destroy_device(vkbDevice);
     vkb::destroy_surface(vkbInstance, surface);
     vkb::destroy_instance(vkbInstance);
+
 }
 
 }  // namespace TTe

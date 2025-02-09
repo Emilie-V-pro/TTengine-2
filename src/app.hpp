@@ -15,6 +15,7 @@
 #include "shader/pipeline/compute_pipeline.hpp"
 #include "swapchain.hpp"
 #include "synchronisation/semaphore.hpp"
+#include "circular_queue.hpp"
 #include "utils.hpp"
 
 namespace TTe {
@@ -34,7 +35,9 @@ class App : public IApp {
     std::mutex testMutex;
     ComputePipeline computePipeline;
     Image image;
-    Image* renderedImage;
+
+    CircularQueue<Image, 3> renderedImage;
+    
     DescriptorSet descriptorSet;
     std::array<Semaphore, MAX_FRAMES_IN_FLIGHT> imageRenderdSemaphores;
     SwapChain* swapchain;
@@ -42,5 +45,7 @@ class App : public IApp {
     DynamicRenderPass renderPass;
     MovementController movementController;
     Scene scene;
+
+    float time = 0.0f;
 };
 }  // namespace TTe

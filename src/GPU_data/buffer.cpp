@@ -30,12 +30,19 @@ Buffer::Buffer(
     allocInfo.flags = getAllocationFlags(bufferType);
 
     allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
-    vmaCreateBuffer(device->getAllocator(), &bufferInfo, &allocInfo, &vk_buffer, &allocation, nullptr);
+    VmaAllocationInfo getAllocInfo;
+    vmaCreateBuffer(device->getAllocator(), &bufferInfo, &allocInfo, &vk_buffer, &allocation, &getAllocInfo);
+    //check if match VMA_ALLOCATION_CREATE_MAPPED_BIT
+    if (bufferType == BufferType::STAGING || bufferType == BufferType::READBACK || bufferType == BufferType::DYNAMIC) {
+        mappedMemory = getAllocInfo.pMappedData;
+    }
+
 }
 
 Buffer::Buffer() {}
 
-Buffer::~Buffer() {
+
+void Buffer::destruction(){
     if (vk_buffer != VK_NULL_HANDLE) {
         if (refCount.load(std::memory_order_relaxed) && --(*refCount.load()) == 0) {
             if (mappedMemory != nullptr) {
@@ -45,6 +52,10 @@ Buffer::~Buffer() {
             vmaDestroyBuffer(device->getAllocator(), vk_buffer, allocation);
         }
     }
+}
+
+Buffer::~Buffer() {
+    destruction();
 }
 
 Buffer::Buffer(const Buffer& other)
@@ -63,7 +74,7 @@ Buffer::Buffer(const Buffer& other)
 
 Buffer& Buffer::operator=(const Buffer& other) {
     if (this != &other) {
-        this->~Buffer();
+        destruction();
         allocInfo = other.allocInfo;
         bufferInfo = other.bufferInfo;
         instance_size = other.instance_size;
@@ -95,7 +106,7 @@ Buffer::Buffer(Buffer&& other)
 
 Buffer& Buffer::operator=(Buffer&& other) {
     if (this != &other) {
-        this->~Buffer();
+        destruction();
 
         allocInfo = other.allocInfo;
         bufferInfo = other.bufferInfo;

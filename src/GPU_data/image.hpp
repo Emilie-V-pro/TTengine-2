@@ -27,7 +27,7 @@ struct ImageCreateInfo {
     std::vector<void *> datas;
 };
 
-class Image : public Destroyable {
+class Image : public vk_cmdBuffer_OBJ {
    public:
     // Constructor
     Image(){};
@@ -87,6 +87,7 @@ class Image : public Destroyable {
     static void copyImage(Device *device, Image &srcImage, Image &dstImage, CommandBuffer *extCmdBuffer = nullptr);
 
     void static createsamplers(Device *device);
+    void static destroySamplers(Device *device);
 
    private:
     void createImage();
@@ -94,6 +95,7 @@ class Image : public Destroyable {
     void createImageView();
     void loadImageFromFile(std::vector<std::string> &filename);
     void loadImageToGPU(CommandBuffer *extCmdBuffer = nullptr);
+    void destruction();
 
     ImageCreateInfo imageCreateInfo;
 

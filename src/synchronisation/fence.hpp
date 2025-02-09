@@ -7,7 +7,7 @@
 #include "../device.hpp"
 #include "volk.h"
 namespace TTe {
-class Fence : public Destroyable {
+class Fence : public vk_cmdBuffer_OBJ {
    public:
     // Constructors
     Fence() {};

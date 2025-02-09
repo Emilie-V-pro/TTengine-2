@@ -1,6 +1,6 @@
 
 #include "graphic_pipeline.hpp"
-#include <vulkan/vulkan_core.h>
+
 
 #include <cstddef>
 
@@ -17,9 +17,45 @@ GraphicPipeline::GraphicPipeline(Device* device, GraphicPipelineCreateInfo& pipe
     createVertexShaderInfo();
 }
 
-void GraphicPipeline::destroy() {
-    shadersMap.clear();
-    vkDestroyPipelineLayout(*device, pipelineLayout, nullptr);
+GraphicPipeline::~GraphicPipeline() {
+    // shadersMap.clear();
+    if(pipelineLayout != VK_NULL_HANDLE)
+        vkDestroyPipelineLayout(*device, pipelineLayout, nullptr);
+}
+
+GraphicPipeline::GraphicPipeline(GraphicPipeline&& other) {
+    vertexInputBinding = other.vertexInputBinding;
+    vertexAttributes = std::move(other.vertexAttributes);
+    
+    shadersMap = std::move(other.shadersMap);
+
+    pipelineStageFlags = other.pipelineStageFlags;
+    pipelineDescriptorsSetsLayout = std::move(other.pipelineDescriptorsSetsLayout);
+    pipelineDescriptorsSetsLayoutList = std::move(other.pipelineDescriptorsSetsLayoutList);
+    pipelineLayout = other.pipelineLayout;
+    pushConstantInfo = other.pushConstantInfo;
+
+    device = other.device;
+    other.pipelineLayout = VK_NULL_HANDLE;
+}
+
+GraphicPipeline& GraphicPipeline::operator=(GraphicPipeline&& other) {
+    if (this != &other) {
+        vertexInputBinding = other.vertexInputBinding;
+        vertexAttributes = std::move(other.vertexAttributes);
+        
+        shadersMap = std::move(other.shadersMap);
+
+        pipelineStageFlags = other.pipelineStageFlags;
+        pipelineDescriptorsSetsLayout = std::move(other.pipelineDescriptorsSetsLayout);
+        pipelineDescriptorsSetsLayoutList = std::move(other.pipelineDescriptorsSetsLayoutList);
+        pipelineLayout = other.pipelineLayout;
+        pushConstantInfo = other.pushConstantInfo;
+
+        device = other.device;
+        other.pipelineLayout = VK_NULL_HANDLE;
+    }
+    return *this;
 }
 
 void GraphicPipeline::bindPipeline(const CommandBuffer& cmdBuffer) {
@@ -174,8 +210,6 @@ void GraphicPipeline::createShaders(GraphicPipelineCreateInfo& pipelineCreateInf
         shader.second.createShaderInfo();
     }
 
-
-
     // Build shader together
     Shader::buildLinkedShaders(device, buildsShaderVector);
 }
@@ -200,9 +234,6 @@ void GraphicPipeline::createPipelineLayout(GraphicPipelineCreateInfo& pipelineCr
     for (auto& descriptorSetLayout : pipelineDescriptorsSetsLayoutList) {
         descriptorSetLayoutVector.push_back(*descriptorSetLayout.second);
     }
-
-    
-
 
     auto pipelineLayoutInfo = make<VkPipelineLayoutCreateInfo>();
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
