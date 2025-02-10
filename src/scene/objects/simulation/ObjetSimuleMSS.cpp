@@ -128,7 +128,8 @@ void ObjetSimuleMSS::initObjetSimule() {
     /* Fichier de donnees des textures */
     std::ifstream _FichIn_Texture(_Fich_Texture.c_str());
 
-    std::cout << "Utilisation des textures pour ObjetSimule : " << _use_texture << std::endl;
+    
+    
 
     /* Lecture des textures */
     std::vector<glm::vec2> uv;
@@ -146,10 +147,10 @@ void ObjetSimuleMSS::initObjetSimule() {
 
     /** Calculs intermediaires **/
     /* Calcul de Pmin et Pmax */
-    for (int i = 0; i < _Nb_Sommets; ++i) {
-        Pmin = glm::vec3(std::min(Pmin.x, P[i].x), std::min(Pmin.y, P[i].y), std::min(Pmin.z, P[i].z));
+    for (int i = 0; i < pos.size(); ++i) {
+        Pmin = glm::vec3(std::min(Pmin.x, pos[i].x), std::min(Pmin.y, pos[i].y), std::min(Pmin.z, pos[i].z));
 
-        Pmax = glm::vec3(std::max(Pmax.x, P[i].x), std::max(Pmax.y, P[i].y), std::max(Pmax.z, P[i].z));
+        Pmax = glm::vec3(std::max(Pmax.x, pos[i].x), std::max(Pmax.y, pos[i].y), std::max(Pmax.z, pos[i].z));
     }
 
     /* Taille du tissu dans chacune des directions x, y, z */
@@ -158,13 +159,12 @@ void ObjetSimuleMSS::initObjetSimule() {
     _Size.z = fabs(Pmin.z - Pmax.z);
 
     /*** Initialisation des tableaux pour chacun des sommets ***/
-    for (int i = 0; i < _Nb_Sommets; ++i) {
+    for (int i = 0; i < pos.size(); ++i) {
         /** Vecteur nulle pour initialiser les vitesses,
          accel, forces, des normales des sommets **/
         V.push_back(glm::vec3(0.0, 0.0, 0.0));
         A.push_back(glm::vec3(0.0, 0.0, 0.0));
         Force.push_back(glm::vec3(0.0, 0.0, 0.0));
-        _vectNormals.push_back(glm::vec3(0, 0, 0));
 
         /** Ajout du sommet dans le systeme masses-ressorts **/
         /* Construction d une particule */
@@ -174,7 +174,7 @@ void ObjetSimuleMSS::initObjetSimule() {
         Part->SetId(i);
 
         /* Position de la particule */
-        Part->SetPosition(P[i]);
+        Part->SetPosition(pos[i]);
         // TODO : cette position n est pas mise a jour car on se sert du tableau P
         // TODO : mettre un pointeur sur la valeur contenue dans P[i] pour que la position de la particule soit mise � jour
 
@@ -204,30 +204,30 @@ void ObjetSimuleMSS::initObjetSimule() {
     /* Construction des facettes */
     while (!_FichIn_FaceSet.eof()) {
         /// Remplissage de allfacets
-        FacetTriangle facet;
-
-        _FichIn_FaceSet >> facet.fi;
-        _FichIn_FaceSet >> facet.fj;
-        _FichIn_FaceSet >> facet.fk;
+        // push_back dans le tableau des indices des sommets
+        int vertexIds[3];
+        _FichIn_FaceSet >> vertexIds[0];
+        _FichIn_FaceSet >> vertexIds[1];
+        _FichIn_FaceSet >> vertexIds[2];
+        
+        // _FichIn_FaceSet >> facet.fi;
+        // _FichIn_FaceSet >> facet.fj;
+        // _FichIn_FaceSet >> facet.fk;
 
         /* Construction de la facette fi, fj, fk */
         // Creation de la facet en mettant les sommets
         // dans l ordre inverse des aiguilles d une montre
         _SystemeMasseRessort->MakeFace(
-            _SystemeMasseRessort->GetParticule(facet.fk), _SystemeMasseRessort->GetParticule(facet.fj),
-            _SystemeMasseRessort->GetParticule(facet.fi), &_SystemeMasseRessort->_RessOS);
+            _SystemeMasseRessort->GetParticule(vertexIds[2]), _SystemeMasseRessort->GetParticule(vertexIds[1]),
+            _SystemeMasseRessort->GetParticule(vertexIds[0]), &_SystemeMasseRessort->_RessOS);
 
         // Recopie dans le tableau des indices des sommets
-        _VIndices.push_back(facet.fk);
-        _VIndices.push_back(facet.fj);
-        _VIndices.push_back(facet.fi);
-
+        mesh.indicies.push_back(vertexIds[0]);
+        mesh.indicies.push_back(vertexIds[1]);
+        mesh.indicies.push_back(vertexIds[2]);
         nb_facet++;
     }
 
-    /* Taille du tableau des indices des sommets */
-    _NFacets = nb_facet - 1;
-    _VISize = 3 * _NFacets;
 
     /** Fermeture des fichiers de donnees **/
     _FichIn_FaceSet.close();

@@ -86,14 +86,14 @@ class Mesh {
     // Triangle operator[](const int i);
     // Triangle operator[](const int i) const;
 
+    std::vector<Vertex> verticies;
+    std::vector<uint32_t> indicies;
    private:
     glm::vec3 min = {FLT_MAX, FLT_MAX, FLT_MAX};
     glm::vec3 max = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
 
     // bool intersectAABBbox(Ray r) const;
 
-    std::vector<uint32_t> indicies;
-    std::vector<Vertex> verticies;
 
     Buffer vertexBuffer;
     Buffer indexBuffer;
