@@ -6,9 +6,11 @@
 namespace TTe {
 class SimulateObj : public Object {
    public:
-    SimulateObj();
-    SimulateObj(std::string &paramFile);
-    ~SimulateObj();
+    // SimulateObj(){}
+    SimulateObj(std::string &paramFile){
+        Param_mesh(paramFile);
+    }
+    // ~SimulateObj();
 
     /*! Lecture des parametres lies au maillage */
     void Param_mesh(std::string fich_param);

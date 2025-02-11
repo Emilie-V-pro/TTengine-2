@@ -31,7 +31,7 @@ class ObjetSimuleMSS: public SimulateObj
 public:
     
     /*! Constructeur */
-    ObjetSimuleMSS(std::string fich_param);
+    ObjetSimuleMSS(std::string &fich_param);
     
     /*! Lecture des parametres lies au systeme masses-ressorts */
     void Param_mss(std::string fich_param);
