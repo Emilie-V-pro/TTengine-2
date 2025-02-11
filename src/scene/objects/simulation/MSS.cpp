@@ -28,8 +28,6 @@
 
 
 /** Librairies de base **/
-#include <stdio.h>
-#include <fstream>
 #include <math.h> 
 
 // Fichiers de gkit2light

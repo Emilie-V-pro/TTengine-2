@@ -11,15 +11,13 @@
 
 
 /** Librairies de base **/
-#include <stdio.h>
 #include <glm/fwd.hpp>
 #include <vector>
-#include <string.h>
-#include <fstream>
 
 
 // Fichiers de master_meca_sim
 #include "MSS.h"
+#include "utils.hpp"
 
 
 
@@ -49,7 +47,7 @@ public:
                std::vector<glm::vec3> &Force,
                std::vector<glm::vec3> &A,
                std::vector<glm::vec3> &V,
-               std::vector<glm::vec3> &P,
+               std::vector<Vertex> &P,
                std::vector<float> &M,
                glm::vec3 gravite,
                MSS * _SystemeMasseRessort);
@@ -66,7 +64,7 @@ public:
     /*! Calcul des positions */
     void CalculPosition(int nb_som,
                         std::vector<glm::vec3> &V,
-                        std::vector<glm::vec3> &P);
+                        std::vector<Vertex> &P);
     
     
     /* Allocation des structures de donnees -
@@ -81,7 +79,7 @@ public:
      Utilisation formulation Volino ou Baraff */
     void Remplissage_df_dx_dv(int nb_som,
                               MSS * _SystemeMasseRessort,
-                              std::vector<glm::vec3> &P);
+                              std::vector<Vertex> &P);
     
     /* Re-initialisation : Df_Dx_diag, Df_Dv_diag, Y */
     void Initialisation(int nb_som, std::vector<glm::vec3> &Force);

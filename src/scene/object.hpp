@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <glm/glm.hpp>
+#include "scene/mesh.hpp"
 namespace TTe {
 
 class Object {
@@ -15,6 +16,9 @@ class Object {
     // https://en.wikipedia.org/wiki/Euler_angles#Rotation_matrix
     glm::mat4 mat4() const;
     glm::mat3 normalMatrix() const;
+
+    void draw(Mesh * mesh) const;
+
     uint32_t meshId;
    private:
 

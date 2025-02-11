@@ -26,10 +26,7 @@ Programme calculant pour chaque particule i d un MSS son etat au pas de temps su
 \brief Fonctions de calculs de la methode semi-implicite sur un systeme masses-ressorts.
 */ 
 
-#include <stdio.h>
 #include <math.h>
-#include <vector>
-#include <iostream>
 
 
 // #include "ObjetSimule.h"

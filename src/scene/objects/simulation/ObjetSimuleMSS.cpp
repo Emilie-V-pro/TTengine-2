@@ -26,8 +26,6 @@
 
 /** Librairies **/
 #include <math.h>
-#include <stdio.h>
-#include <string.h>
 
 #include <algorithm>
 #include <fstream>
@@ -43,6 +41,7 @@
 // #include "Viewer.h"
 #include "SolveurExpl.h"
 #include "SolveurImpl.h"
+#include "scene/mesh.hpp"
 
 // #include "draw.h"
 
@@ -157,11 +156,16 @@ void ObjetSimuleMSS::initObjetSimule() {
     _Size.x = fabs(Pmin.x - Pmax.x);
     _Size.y = fabs(Pmin.y - Pmax.y);
     _Size.z = fabs(Pmin.z - Pmax.z);
+    mesh.verticies.resize(pos.size());
 
     /*** Initialisation des tableaux pour chacun des sommets ***/
     for (int i = 0; i < pos.size(); ++i) {
+
+        mesh.verticies[i].pos = pos[i];
+        mesh.verticies[i].uv = uv[i];
         /** Vecteur nulle pour initialiser les vitesses,
          accel, forces, des normales des sommets **/
+        
         V.push_back(glm::vec3(0.0, 0.0, 0.0));
         A.push_back(glm::vec3(0.0, 0.0, 0.0));
         Force.push_back(glm::vec3(0.0, 0.0, 0.0));
@@ -243,25 +247,9 @@ void ObjetSimuleMSS::initObjetSimule() {
 
     // Allocation des structures de donnees dans le cas utilisation solveur implicite
     // X, Y, Df_Dx, Df_Dx_diag, Df_Dv, Df_Dv_diag
-    if (_Integration == "implicite") _SolveurImpl->Allocation_Structure(_Nb_Sommets);
+    if (_Integration == "implicite") _SolveurImpl->Allocation_Structure(mesh.verticies.size());
 }
 
-/**
- * Calcul de la normale a une face (a, b, c).
- */
-void ObjetSimuleMSS::NormaleFace(glm::vec3 &normale, int a, int b, int c) {
-    // Coordonnees des vecteurs AB et AC
-    glm::vec3 AB, AC;
-
-    /* Coordonnee du vecteur AB */
-    AB = (P[b] - P[a]);
-
-    /* Coordonnee du vecteur AC */
-    AC = (P[c] - P[a]);
-
-    /* Coordonnees de la normale */
-    normale = glm::normalize(cross(AB, AC));
-}
 
 /**
  * Modification du tableau des normales (lissage des normales).
@@ -276,41 +264,37 @@ void ObjetSimuleMSS::setNormals() {
     // Indices des sommets d une face
     int a, b, c;
 
-    /* Parcours des normales des sommets du maillage */
-    for (unsigned int i = 0; i < _Nb_Sommets; ++i) {
-        // Initialisation des normales
-        _vectNormals[i] = glm::vec3(0, 0, 0);
-    }
+  
 
     /* Parcours des faces du maillage */
-    for (unsigned int i = 0; i < _NFacets; ++i) {
+    for (unsigned int i = 0; i < mesh.indicies.size(); ++i) {
         // Sommets a, b, c de la face
-        a = _VIndices[3 * i];
-        b = _VIndices[(3 * i) + 1];
-        c = _VIndices[(3 * i) + 2];
+        a = mesh.indicies[3 * i];
+        b = mesh.indicies[(3 * i) + 1];
+        c = mesh.indicies[(3 * i) + 2];
 
-        // Calcul de la normale de la face
-        NormaleFace(normale, a, b, c);
+        Triangle tri = {mesh.verticies[a], mesh.verticies[b], mesh.verticies[c]};
+        normale = tri.getNormal();
+
+        
 
         // Modification des normales des sommets de la face
         // Normale du sommet a
-        _vectNormals[a] = _vectNormals[a] + normale;
+        mesh.verticies[a].normal = mesh.verticies[a].normal + normale;
 
         // Normale du sommet b
-        _vectNormals[b] = _vectNormals[b] + normale;
+        mesh.verticies[b].normal = mesh.verticies[b].normal + normale;
 
         // Normale du sommet c
-        _vectNormals[c] = _vectNormals[c] + normale;
+        mesh.verticies[c].normal = mesh.verticies[c].normal + normale;
 
     }  // for_i
 
     /* Parcours des normales des sommets */
     float norme;
 
-    for (unsigned int i = 0; i < _Nb_Sommets; i++) {
-        norme = length(_vectNormals[i]);
-
-        if (norme != 0) _vectNormals[i] = _vectNormals[i] * glm::vec1(1.0 / norme);
+    for(auto & vertex : mesh.verticies){
+        vertex.normal = glm::normalize(vertex.normal);
     }
 }
 
@@ -343,16 +327,16 @@ void ObjetSimuleMSS::Simulation(glm::vec3 gravite, float viscosite, int Tps) {
     /* Calcul des accelerations (avec ajout de la gravite aux forces) */
     // std::cout << "Accel.... " << std::endl;
     if (_Integration == "explicite")
-        _SolveurExpl->CalculAccel_ForceGravite(gravite, _Nb_Sommets, A, Force, M);
+        _SolveurExpl->CalculAccel_ForceGravite(gravite, mesh.verticies.size(), A, Force, M);
     else if (_Integration == "implicite")
-        _SolveurImpl->CalculAccel_ForceGravite(gravite, _Nb_Sommets, A, Force, M);
+        _SolveurImpl->CalculAccel_ForceGravite(gravite, mesh.verticies.size(), A, Force, M);
 
     /* Calcul des vitesses et positions au temps t */
     // std::cout << "Vit.... " << std::endl;
     if (_Integration == "explicite")
-        _SolveurExpl->Solve(viscosite, _Nb_Sommets, Tps, A, V, P);
+        _SolveurExpl->Solve(viscosite, mesh.verticies.size(), Tps, A, V, mesh.verticies);
     else if (_Integration == "implicite")
-        _SolveurImpl->Solve(viscosite, _Nb_Sommets, Tps, Force, A, V, P, M, gravite, _SystemeMasseRessort);
+        _SolveurImpl->Solve(viscosite, mesh.verticies.size(), Tps, Force, A, V, mesh.verticies, M, gravite, _SystemeMasseRessort);
 
     /* ! Gestion des collisions  */
     // Reponse : reste a la position du sol - arret des vitesses

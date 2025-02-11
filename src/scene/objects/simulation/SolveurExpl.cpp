@@ -29,6 +29,7 @@
 
 #include <glm/glm.hpp>
 #include <vector>
+#include "utils.hpp"
 
 // #include "vec.h"
 // #include "Viewer.h"
@@ -58,7 +59,7 @@ void SolveurExpl::CalculAccel_ForceGravite(
  *  x'(t+dt) = x'(t) + dt x"(t)
  *  x(t+dt) = x(t) + dt x'(t+dt)
  */
-void SolveurExpl::Solve(float visco, int nb_som, int Tps, std::vector<glm::vec3> &A, std::vector<glm::vec3> &V, std::vector<glm::vec3> &P) {
+void SolveurExpl::Solve(float visco, int nb_som, int Tps, std::vector<glm::vec3> &A, std::vector<glm::vec3> &V, std::vector<Vertex> &P) {
 
 }  // void
 }  // namespace TTe

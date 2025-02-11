@@ -9,7 +9,6 @@
 #ifndef _SAPPE_PROPERTIES_H_
 #define _SAPPE_PROPERTIES_H_
 
-#include <fstream>
 #include <string>
 #include <map>
 

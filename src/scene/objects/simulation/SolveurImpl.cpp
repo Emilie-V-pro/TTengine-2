@@ -26,9 +26,9 @@
  */
 
 #include <math.h>
-#include <stdio.h>
 
 #include <vector>
+#include "utils.hpp"
 
 // #include "vec.h"
 // #include "Viewer.h"
@@ -122,7 +122,7 @@ void SolveurImpl::Init(int nb_som, MSS *_SystemeMasseRessort) {
  * Remplissage matrices df/dx et df/dv dans le cas d un MSS
  * Utilisation formulation Volino ou Baraff.
  */
-void SolveurImpl::Remplissage_df_dx_dv(int nb_som, MSS *_SystemeMasseRessort, std::vector<glm::vec3> &P) {}
+void SolveurImpl::Remplissage_df_dx_dv(int nb_som, MSS *_SystemeMasseRessort, std::vector<Vertex> &P) {}
 
 /*
  * Re-initialisation des structures de donnees : Df_Dx_diag, Df_Dv_diag, Y, Force.

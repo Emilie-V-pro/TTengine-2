@@ -26,7 +26,6 @@
  * permettant le calcul des nouvelles vitesses et positions.
  */
 
-#include <stdio.h>
 #include <math.h>
 #include <glm/fwd.hpp>
 #include <iostream>
@@ -35,6 +34,7 @@
 
 // #include "Viewer.h"
 #include "SolveurImpl.h"
+#include "utils.hpp"
 
 
 
@@ -69,7 +69,7 @@ void SolveurImpl::Solve(float visco,
                         std::vector<glm::vec3> &Force,
                         std::vector<glm::vec3> &A,
                         std::vector<glm::vec3> &V,
-                        std::vector<glm::vec3> &P,
+                        std::vector<Vertex> &P,
                         std::vector<float> &M,
                         glm::vec3 gravite,
                         MSS * _SystemeMasseRessort)
@@ -277,7 +277,7 @@ void SolveurImpl::CalculVitesse(float visco,
  */
 void SolveurImpl::CalculPosition(int nb_som,
                                  std::vector<glm::vec3> &V,
-                                 std::vector<glm::vec3> &P)
+                                 std::vector<Vertex> &P)
 {
    
     

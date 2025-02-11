@@ -12,6 +12,7 @@
 /** Librairies de base **/
 #include <glm/fwd.hpp>
 #include <vector>
+#include "utils.hpp"
 
 // Fichiers de gkit2light
 // #include "mesh.h"
@@ -32,7 +33,7 @@ class SolveurExpl {
     void CalculAccel_ForceGravite(glm::vec3 g, int nb_som, std::vector<glm::vec3> &A, std::vector<glm::vec3> &Force, std::vector<float> &M);
 
     /*! Calcul des vitesses et positions */
-    void Solve(float visco, int nb_som, int Tps, std::vector<glm::vec3> &A, std::vector<glm::vec3> &V, std::vector<glm::vec3> &P);
+    void Solve(float visco, int nb_som, int Tps, std::vector<glm::vec3> &A, std::vector<glm::vec3> &V, std::vector<Vertex> &P);
 
     /// Pas de temps
     float _delta_t;

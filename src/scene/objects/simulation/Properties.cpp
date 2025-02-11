@@ -10,7 +10,7 @@
 
 #include "Properties.h"
 #include <iostream>
-#include <sstream>
+#include <fstream>
 #include <ctype.h>
 
 namespace TTe {

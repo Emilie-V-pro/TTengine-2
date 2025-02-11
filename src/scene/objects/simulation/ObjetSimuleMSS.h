@@ -9,18 +9,13 @@
 
 
 /** Librairies de base **/
-#include <stdio.h>
 #include <glm/fwd.hpp>
-#include <vector>
-#include <string.h>
-#include <fstream>
 
 
 // #include "mesh.h"
 
 // Fichiers de master_meca_sim
 #include "MSS.h"
-#include "Properties.h"
 #include "SolveurExpl.h"
 #include "SolveurImpl.h"
 #include "scene/objects/simulateObj.hpp"
