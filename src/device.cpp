@@ -124,6 +124,7 @@ void setRequiredExtensionsFeatures(vkb::PhysicalDeviceSelector &phys_device_sele
 void setRequiredFeatures10(vkb::PhysicalDeviceSelector &phys_device_selector) {
     auto required_features = make<VkPhysicalDeviceFeatures>();
     required_features.samplerAnisotropy = true;
+    required_features.shaderInt64 = true;
     phys_device_selector.set_required_features(required_features);
 }
 
