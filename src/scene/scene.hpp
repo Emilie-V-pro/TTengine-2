@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glm/fwd.hpp>
+#include <utility>
 #include <vector>
 
 #include "../utils.hpp"
@@ -11,6 +12,7 @@
 #include "descriptor/descriptorSet.hpp"
 #include "mesh.hpp"
 #include "scene/object.hpp"
+#include "scene/objects/animatic/BVH.h"
 #include "shader/pipeline/graphic_pipeline.hpp"
 
 namespace TTe {
@@ -32,7 +34,12 @@ class Scene {
     void updateBuffer();
     void updateCameraBuffer();
 
+    void addBVH(BVH& bvh);
+
     std::vector<Object> objects;
+
+    std::vector<std::pair<std::vector<Object>, BVH>> animaticOBJ; 
+    
     std::vector<Mesh> meshes;
     std::vector<Material> materials;
     std::vector<Image> textures;
@@ -44,10 +51,15 @@ class Scene {
 
     GraphicPipeline pipeline;
     GraphicPipeline backgroundPipeline;
+
+
     DescriptorSet sceneDescriptorSet;
+
     Buffer CameraBuffer;
     Buffer ObjectBuffer;
     Buffer MaterialBuffer;
+
+
 
     Device *device = nullptr;
     

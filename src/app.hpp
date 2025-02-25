@@ -32,18 +32,12 @@ class App : public IApp {
     void renderFrame(float deltatTime, CommandBuffer& cmdBuffer, uint32_t curentFrameIndex);
 
    private:
-    std::mutex testMutex;
-    ComputePipeline computePipeline;
-    Image image;
-
-    CircularQueue<Image, 3> renderedImage;
-    
-    DescriptorSet descriptorSet;
-    std::array<Semaphore, MAX_FRAMES_IN_FLIGHT> imageRenderdSemaphores;
+  
     SwapChain* swapchain;
     
     DynamicRenderPass renderPass;
     MovementController movementController;
+
     Scene scene;
 
     float time = 0.0f;

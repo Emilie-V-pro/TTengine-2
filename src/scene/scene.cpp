@@ -5,6 +5,7 @@
 #include <vector>
 #include "GPU_data/image.hpp"
 #include "descriptor/descriptorSet.hpp"
+#include "scene/object.hpp"
 #include "shader/pipeline/graphic_pipeline.hpp"
 #include "utils.hpp"
 
@@ -14,6 +15,35 @@ Scene::Scene(Device *device) {
     this->device = device;
     camera = Camera();
     // createDescriptorSets();
+}
+
+void Scene::addBVH(BVH& bvh) {
+
+    int objectOffset = this->objects.size();
+    std::vector<Object> skeleton; 
+    for(int i ; i < bvh.getNumberOfJoint(); i++) {
+        Object o;
+        auto &jointMat = bvh.getJoint(i);
+        
+        o.parentID = jointMat.getParentId();
+        jointMat.getOffset(o.translation.x, o.translation.y, o.translation.z);
+
+        skeleton.push_back(o);
+    }
+
+    for(auto &node : skeleton){
+        
+        auto actualNode = node;
+        node.worldMatrix = node.mat4();
+        node.worldNormalMatrix = node.normalMatrix();
+        while(actualNode.parentID != -1){
+            actualNode = skeleton[actualNode.parentID];
+            node.worldMatrix = actualNode.mat4() * node.worldMatrix;
+            node.worldNormalMatrix = actualNode.normalMatrix() * node.worldNormalMatrix;
+        }
+    }
+
+    this->animaticOBJ.push_back({skeleton, bvh});
 }
 
 void Scene::render(CommandBuffer &cmd) {
@@ -43,7 +73,6 @@ void Scene::render(CommandBuffer &cmd) {
         // draw
 
         vkCmdDrawIndexed(cmd, meshes[object.meshId].nbIndicies(), 1, 0, 0, 0);
-
     }
 
 }
@@ -98,5 +127,6 @@ void Scene::createDescriptorSets() {
     sceneDescriptorSet.writeImagesDescriptor(2, imageInfos);
     
 }
+
 
 }

@@ -273,7 +273,7 @@ void ObjetSimuleMSS::setNormals() {
         b = mesh.indicies[(3 * i) + 1];
         c = mesh.indicies[(3 * i) + 2];
 
-        Triangle tri = {mesh.verticies[a], mesh.verticies[b], mesh.verticies[c]};
+        struct Triangle tri = {mesh.verticies[a], mesh.verticies[b], mesh.verticies[c]};
         normale = tri.getNormal();
 
         

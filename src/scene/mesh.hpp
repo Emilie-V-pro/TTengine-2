@@ -12,6 +12,15 @@
 
 namespace TTe {
 
+enum BasicShape{
+    Triangle,
+    Sphere,
+    Cone,
+    Cylinder,
+    Cube,
+    Plane
+};
+
 struct Triangle {
     Vertex verts[3];
     glm::vec3 getNormal() const;
@@ -22,10 +31,14 @@ struct Triangle {
     float area() const;
 };
 
+
+
 class Mesh {
    public:
     Mesh(){};
     Mesh(Device *device, const std::vector<unsigned int> &indicies, const std::vector<Vertex> &verticies);
+
+    Mesh(Device *device, const BasicShape &b, uint resolution);
     
     //copy constructor
     Mesh(const Mesh &other){
@@ -64,14 +77,7 @@ class Mesh {
         }
         return *this;
     }
-
-
-
     ~Mesh(){};
-
-
-    
-
     void uploadToGPU();
 
     // Hit traceRay(Ray r, const float &distMin, const float &distMax) const;
@@ -85,6 +91,9 @@ class Mesh {
     Buffer& getIndexBuffer() { return indexBuffer; }
     // Triangle operator[](const int i);
     // Triangle operator[](const int i) const;
+
+
+    
 
     std::vector<Vertex> verticies;
     std::vector<uint32_t> indicies;
