@@ -55,6 +55,8 @@ class Scene {
 
     DescriptorSet sceneDescriptorSet;
 
+    Mesh sphere;
+
     Buffer CameraBuffer;
     Buffer ObjectBuffer;
     Buffer MaterialBuffer;

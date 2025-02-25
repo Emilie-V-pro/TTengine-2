@@ -1,8 +1,10 @@
 
 #include "scene.hpp"
+
 #include <glm/fwd.hpp>
 #include <iostream>
 #include <vector>
+
 #include "GPU_data/image.hpp"
 #include "descriptor/descriptorSet.hpp"
 #include "scene/object.hpp"
@@ -14,29 +16,29 @@ namespace TTe {
 Scene::Scene(Device *device) {
     this->device = device;
     camera = Camera();
+    sphere = Mesh(device, BasicShape::Sphere, 25);
+
     // createDescriptorSets();
 }
 
-void Scene::addBVH(BVH& bvh) {
-
+void Scene::addBVH(BVH &bvh) {
     int objectOffset = this->objects.size();
-    std::vector<Object> skeleton; 
-    for(int i ; i < bvh.getNumberOfJoint(); i++) {
+    std::vector<Object> skeleton;
+    for (int i = 0; i < bvh.getNumberOfJoint(); i++) {
         Object o;
         auto &jointMat = bvh.getJoint(i);
-        
+
         o.parentID = jointMat.getParentId();
         jointMat.getOffset(o.translation.x, o.translation.y, o.translation.z);
 
         skeleton.push_back(o);
     }
 
-    for(auto &node : skeleton){
-        
+    for (auto &node : skeleton) {
         auto actualNode = node;
         node.worldMatrix = node.mat4();
         node.worldNormalMatrix = node.normalMatrix();
-        while(actualNode.parentID != -1){
+        while (actualNode.parentID != -1) {
             actualNode = skeleton[actualNode.parentID];
             node.worldMatrix = actualNode.mat4() * node.worldMatrix;
             node.worldNormalMatrix = actualNode.normalMatrix() * node.worldNormalMatrix;
@@ -47,42 +49,61 @@ void Scene::addBVH(BVH& bvh) {
 }
 
 void Scene::render(CommandBuffer &cmd) {
-
-    std::vector<DescriptorSet*> descriptorSets = {&sceneDescriptorSet}; 
+    std::vector<DescriptorSet *> descriptorSets = {&sceneDescriptorSet};
     backgroundPipeline.bindPipeline(cmd);
     DescriptorSet::bindDescriptorSet(cmd, descriptorSets, pipeline.getPipelineLayout(), VK_PIPELINE_BIND_POINT_GRAPHICS);
     vkCmdDraw(cmd, 3, 1, 0, 0);
 
-    //bind pipeline
+    // bind pipeline
     pipeline.bindPipeline(cmd);
-    //bind descriptor set
+    // bind descriptor set
     DescriptorSet::bindDescriptorSet(cmd, descriptorSets, pipeline.getPipelineLayout(), VK_PIPELINE_BIND_POINT_GRAPHICS);
-    for(auto & object : objects){
-        //bind mesh
+    for (auto &object : objects) {
+        // bind mesh
         vkCmdBindIndexBuffer(cmd, meshes[object.meshId].getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
         VkBuffer vbuffers[] = {meshes[object.meshId].getVertexBuffer()};
         VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(cmd, 0, 1,vbuffers, offsets);
+        vkCmdBindVertexBuffers(cmd, 0, 1, vbuffers, offsets);
 
         // set push constant
 
         glm::mat4 model = object.mat4();
         vkCmdPushConstants(cmd, pipeline.getPipelineLayout(), pipeline.getPushConstantStage(), 0, sizeof(glm::mat4), &model);
         glm::mat4 normalMatrix = object.normalMatrix();
-        vkCmdPushConstants(cmd, pipeline.getPipelineLayout(), pipeline.getPushConstantStage(), sizeof(glm::mat4), sizeof(glm::mat4), &normalMatrix);
+        vkCmdPushConstants(
+            cmd, pipeline.getPipelineLayout(), pipeline.getPushConstantStage(), sizeof(glm::mat4), sizeof(glm::mat4), &normalMatrix);
         // draw
 
         vkCmdDrawIndexed(cmd, meshes[object.meshId].nbIndicies(), 1, 0, 0, 0);
     }
+    vkCmdBindIndexBuffer(cmd, sphere.getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+    VkBuffer vbuffers[] = {sphere.getVertexBuffer()};
+    VkDeviceSize offsets[] = {0};
+    vkCmdBindVertexBuffers(cmd, 0, 1, vbuffers, offsets);
 
+    for (auto animeObj : animaticOBJ) {
+        auto &skeleton = animeObj.first;
+        auto &bvh = animeObj.second;
+        for (auto &node : skeleton) {
+            // bind mesh
+            // set push constant
+            glm::mat4 model = node.worldMatrix;
+            vkCmdPushConstants(cmd, pipeline.getPipelineLayout(), pipeline.getPushConstantStage(), 0, sizeof(glm::mat4), &model);
+            glm::mat4 normalMatrix = node.worldNormalMatrix;
+            vkCmdPushConstants(
+                cmd, pipeline.getPipelineLayout(), pipeline.getPushConstantStage(), sizeof(glm::mat4), sizeof(glm::mat4), &normalMatrix);
+            // draw
+            vkCmdDrawIndexed(cmd, sphere.nbIndicies(), 1, 0, 0, 0);
+        }
+    }
 }
 
 void Scene::updateBuffer() {
     Ubo ubo;
-    ubo.projection = camera.getProjectionMatrix(16.0/9.0);
+    ubo.projection = camera.getProjectionMatrix(16.0 / 9.0);
     ubo.view = camera.getViewMatrix();
     ubo.invView = glm::inverse(camera.getViewMatrix());
-    
+
     CameraBuffer.writeToBuffer(&ubo, sizeof(Ubo));
     // ObjectBuffer.writeToBuffer(objects.data(), sizeof(Object) *objects.size(), 0);
     // MaterialBuffer.writeToBuffer(materials.data(), sizeof(Material)*materials.size(), 0);
@@ -90,15 +111,15 @@ void Scene::updateBuffer() {
 
 void Scene::updateCameraBuffer() {
     Ubo ubo;
-    ubo.projection = camera.getProjectionMatrix(16.0/9.0);
+    ubo.projection = camera.getProjectionMatrix(16.0 / 9.0);
     ubo.view = camera.getViewMatrix();
     ubo.invView = glm::inverse(camera.getViewMatrix());
     // show camera pos in console
     // std::cout << "camera pos : " << camera.translation.x << " " << camera.translation.y << " " << camera.translation.z << std::endl;
-    //clear console
+    // clear console
     // std::cout << "\033[2J\033[1;1H";
     // std::cout << "camera rot : " << camera.rotation.x << " " << camera.rotation.y << " " << camera.rotation.z << std::endl;
-    
+
     CameraBuffer.writeToBuffer(&ubo, sizeof(Ubo));
 }
 
@@ -118,15 +139,23 @@ void Scene::createDescriptorSets() {
 
     sceneDescriptorSet = DescriptorSet(device, pipeline.getDescriptorSetLayout(0));
 
-    sceneDescriptorSet.writeBufferDescriptor(0,CameraBuffer);
+    sceneDescriptorSet.writeBufferDescriptor(0, CameraBuffer);
     sceneDescriptorSet.writeBufferDescriptor(1, MaterialBuffer);
+
+    if(textures.size() == 0){
+        ImageCreateInfo imageCreateInfo;
+        imageCreateInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+        imageCreateInfo.width = 1;
+        imageCreateInfo.height = 1;
+        imageCreateInfo.usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        imageCreateInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        textures.push_back(Image(device, imageCreateInfo));
+    }
     std::vector<VkDescriptorImageInfo> imageInfos;
     for (auto &texture : textures) {
         imageInfos.push_back(texture.getDescriptorImageInfo(samplerType::LINEAR));
     }
     sceneDescriptorSet.writeImagesDescriptor(2, imageInfos);
-    
 }
 
-
-}
+}  // namespace TTe

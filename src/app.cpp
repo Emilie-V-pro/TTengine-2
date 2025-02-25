@@ -30,7 +30,7 @@ void App::init(Device *device, SwapChain *swapchain) {
     this->device = device;
 
     BVH bvh;
-    bvh.init("../data/anim/Robot.bvh");
+    bvh.init("../data/Robot.bvh");
 
     renderPass =
         DynamicRenderPass(device, {1280, 720}, {}, swapchain->getswapChainImages().size(), depthAndStencil::DEPTH, swapchain, nullptr);
@@ -67,6 +67,8 @@ void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
     //   float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
     //   float g = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
     //   float b = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+    cmdBuffer.endCommandBuffer();
+    cmdBuffer.submitCommandBuffer({}, {}, nullptr, true);
     movementController.moveInPlaneXZ(&windowObj, deltaTime, scene.camera);
     renderPass.setClearColor({0.01, 0.01, 0.01});
     scene.updateCameraBuffer();

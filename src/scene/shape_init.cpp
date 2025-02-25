@@ -1,4 +1,5 @@
 #include <sys/types.h>
+#include <cassert>
 #include <glm/fwd.hpp>
 #include <vector>
 #include "device.hpp"
@@ -210,6 +211,15 @@ Mesh init_cube(Device *d, uint res){
 }
 
 
-Mesh::Mesh(Device* d, const BasicShape& b, uint res) {}
+Mesh::Mesh(Device* d, const BasicShape& b, uint res) {
+    switch (b) {
+        case BasicShape::Sphere:
+            *this = init_sphere(d, res);
+            break;
+        default:
+            assert("Invalid shape");
+            break;
+    }
+}
 
 }  // namespace TTe
