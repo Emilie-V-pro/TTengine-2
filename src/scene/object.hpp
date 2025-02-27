@@ -22,7 +22,10 @@ class Object {
     glm::mat4 mat4() const;
     glm::mat3 normalMatrix() const;
 
+    glm::mat4 getTranslationRotationMatrix() const;
+    glm::mat3 getNormalTranslationRotationMatrix() const;
 
+    glm::mat4 getScaledMatrix() const;
     
     int parentID = -1;
     

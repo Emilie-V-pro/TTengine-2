@@ -339,11 +339,14 @@ void Image::loadImageFromFile(std::vector<std::string> &filename) {
     // stbi_set_flip_vertically_on_load(true);
     int nbOfchannel;
     int width, height;
+    test();
     stbi_info(filename[0].c_str(), &width, &height, &nbOfchannel);
     this->width = width;
     this->height = height;
     imageCreateInfo.width = width;
     imageCreateInfo.height = height;
+    imageCreateInfo.layers = filename.size();
+    this->layer = filename.size();
     for (size_t i = 0; i < filename.size(); i++) {
         imageCreateInfo.datas.push_back(stbi_load((filename[i]).c_str(), &width, &height, &nbOfchannel, 4));
     }

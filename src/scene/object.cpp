@@ -24,4 +24,18 @@ glm::mat4 Object::mat4() const {
 glm::mat3 Object::normalMatrix() const {
     return glm::inverseTranspose(glm::mat3(this->mat4()));
 }
+
+glm::mat4 Object::getTranslationRotationMatrix() const {
+    glm::mat4 translationMatrix = glm::translate(translation);
+    glm::mat4 rotationMatrix = glm::eulerAngleXYZ(rotation.x, rotation.y, rotation.z);
+    return translationMatrix * rotationMatrix;
+}
+
+glm::mat3 Object::getNormalTranslationRotationMatrix() const {
+    return glm::inverseTranspose(glm::mat3(this->getTranslationRotationMatrix()));
+}
+
+glm::mat4 Object::getScaledMatrix() const {
+    return glm::scale(scale);
+} 
 }

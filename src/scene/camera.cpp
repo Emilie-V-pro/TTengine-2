@@ -41,5 +41,5 @@ glm::mat4 Camera::getViewMatrix() {
 
 glm::mat4 Camera::getInvViewMatrix() { return glm::inverse(getViewMatrix()); }
 
-glm::mat4 Camera::getProjectionMatrix(float aspect) { return glm::perspective(fov, aspect, near, far); }
+glm::mat4 Camera::getProjectionMatrix() { return glm::perspective(glm::radians(fov), ((float) extent.width / (float) extent.height), near, far); }
 }  // namespace TTe

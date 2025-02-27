@@ -5,8 +5,6 @@
 
 const float M_PI = 3.1415926538;
 
-layout(location = 0) in vec2 fragOffset;
-
 layout(location = 0) out vec4 outColor;
 
 layout(set = 0, binding = 0) uniform GlobalUbo {
@@ -16,23 +14,15 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
 }
 ubo;
 
-struct Material {
-    vec4 color;
-    // float metallic;
-    // float roughness;
-    int color_texture_id;
-    // int metallic_roughness_texture_id;
-    int normalMap_texture_id;
+layout(set = 0 , binding = 1) uniform samplerCube samplerCubeMap;
+
+layout(push_constant) uniform constants {
+    ivec2 resolution;
 };
-
-layout(set = 0, binding = 1) uniform Mat { Material[1000] materials; }
-m;
-
-layout(set = 0, binding = 2) uniform sampler2D textures[1000];
 
 vec3 createRay(in ivec2 px) {
     // convert pixel to NDS
-    vec2 pxNDS = ((vec2(px.x, 720 - px.y)) / vec2(1280, 720)) * 2. - 1.;
+    vec2 pxNDS = ((vec2(px.x, resolution.y - px.y)) / vec2(resolution.x, resolution.y)) * 2. - 1.;
 
     // choose an arbitrary HitPoint in the viewing volume
     // z = -1 equals a HitPoint on the near plane, i.e. the screen
@@ -59,7 +49,9 @@ vec3 createRay(in ivec2 px) {
 void main() {
     ivec2 pixelPos = ivec2(gl_FragCoord.xy);
     vec3 ray = createRay(pixelPos);
-    outColor = vec4(ray, 1);
+
+    
+    outColor = texture(samplerCubeMap, ray);
 
 
     // color = PBR(sun, view, surfaceNormal, vec3(1, 1, 1), metalRoughness.r, metalRoughness.g, textColor.rgb, 2) + textColor.rgb * ambiant;

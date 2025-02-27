@@ -55,13 +55,17 @@ class Scene {
 
     DescriptorSet sceneDescriptorSet;
 
+    DescriptorSet backgroundDescriptorSet;
+
+    Image cubeTexture;
+
     Mesh sphere;
 
     Buffer CameraBuffer;
     Buffer ObjectBuffer;
     Buffer MaterialBuffer;
 
-
+    
 
     Device *device = nullptr;
     

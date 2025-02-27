@@ -124,10 +124,10 @@ void Engine::updateLoop(Engine &engine) {
             float deltatTime = std::chrono::duration<float, std::chrono::seconds::period>(newTime - start).count();
             start = newTime;
 
-            engine.updateCommandBuffer.beginCommandBuffer();
+            // engine.updateCommandBuffer.beginCommandBuffer();
             engine.app->update(deltatTime, engine.updateCommandBuffer, engine.window);
             engine.resizeMutex.unlock();
-            if (frameIndex == 10000) {
+            if (frameIndex == 10000000) {
                 engine.shouldClose = true;
             }
         }

@@ -166,6 +166,7 @@ uint64_t Buffer::getBufferDeviceAddress(uint32_t offset) const {
 
 void Buffer::writeToBuffer(void* data, VkDeviceSize size, VkDeviceSize offset) {
     vmaCopyMemoryToAllocation(device->getAllocator(), data, allocation, offset, size);
+    mappedMemory = nullptr;
 }
 
 void Buffer::copyBuffer(
