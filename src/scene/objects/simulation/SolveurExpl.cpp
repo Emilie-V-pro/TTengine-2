@@ -29,6 +29,7 @@
 
 #include <glm/glm.hpp>
 #include <vector>
+#include "struct.hpp"
 #include "utils.hpp"
 
 // #include "vec.h"

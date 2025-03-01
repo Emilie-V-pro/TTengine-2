@@ -12,18 +12,7 @@ namespace TTe {
 
 static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
-struct Vertex {
-    glm::vec3 pos;
-    glm::vec3 normal;
-    glm::vec2 uv;
-    uint32_t material_id;
-};
 
-struct Ubo{
-    glm::mat4 projection;
-    glm::mat4 view;
-    glm::mat4 invView;
-};
 
 inline VkAccessFlagBits2 getFlagFromPipelineStage(VkPipelineStageFlags2 pipelineStage) {
     VkAccessFlagBits2 returnFlag = 0;

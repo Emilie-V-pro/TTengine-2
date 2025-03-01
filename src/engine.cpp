@@ -13,8 +13,8 @@
 namespace TTe {
 
 Engine::~Engine() {
-    delete app;
     vkDeviceWaitIdle(device);
+    delete app;
     Image::destroySamplers(&device);
     // CommandPoolHandler::destroyCommandPools();
     

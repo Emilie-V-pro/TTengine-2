@@ -9,6 +9,7 @@
 #include "scene/camera.hpp"
 #include "scene/object.hpp"
 #include "shader/pipeline/graphic_pipeline.hpp"
+#include "struct.hpp"
 #include "utils.hpp"
 
 namespace TTe {
@@ -29,6 +30,7 @@ void Scene::addBVH(BVH &bvh) {
         auto &jointMat = bvh.getJoint(i);
 
         o.parentID = jointMat.getParentId();
+        o.scale = glm::vec3(5.);
         jointMat.getOffset(o.translation.x, o.translation.y, o.translation.z);
         skeleton.push_back(o);
     }
@@ -130,9 +132,14 @@ void Scene::updateCameraBuffer() {
 
 void Scene::createDescriptorSets() {
     CameraBuffer = Buffer(device, sizeof(Ubo), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
-    MaterialBuffer = Buffer(device, sizeof(Material), materials.size(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
-    
-    MaterialBuffer.writeToBuffer(materials.data(), sizeof(Material) * materials.size(), 0);
+    MaterialBuffer = Buffer(device, sizeof(MaterialGPU), materials.size(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
+    std::vector<MaterialGPU> materialsGPU;
+
+    for (auto &material : materials) {
+        materialsGPU.push_back({material.color, material.albido_tex_id, material.normal_tex_id});
+    }
+
+    MaterialBuffer.writeToBuffer(materialsGPU.data(), sizeof(materialsGPU) * materialsGPU.size(), 0);
     GraphicPipelineCreateInfo pipelineCreateInfo;
     pipelineCreateInfo.fragmentShaderFile = "hello_scene.frag";
     pipelineCreateInfo.vexterShaderFile = "hello_scene.vert";
@@ -143,12 +150,12 @@ void Scene::createDescriptorSets() {
     backgroundPipeline = GraphicPipeline(device, pipelineCreateInfo);
 
     ImageCreateInfo cubeTextureCreateInfo;
-    cubeTextureCreateInfo.filename.push_back("../textures/posx.jpg");
-    cubeTextureCreateInfo.filename.push_back("../textures/negx.jpg");
-    cubeTextureCreateInfo.filename.push_back("../textures/posy.jpg");
-    cubeTextureCreateInfo.filename.push_back("../textures/negy.jpg");
-    cubeTextureCreateInfo.filename.push_back("../textures/posz.jpg");
-    cubeTextureCreateInfo.filename.push_back("../textures/negz.jpg");
+    cubeTextureCreateInfo.filename.push_back("../data/textures/posx.jpg");
+    cubeTextureCreateInfo.filename.push_back("../data/textures/negx.jpg");
+    cubeTextureCreateInfo.filename.push_back("../data/textures/posy.jpg");
+    cubeTextureCreateInfo.filename.push_back("../data/textures/negy.jpg");
+    cubeTextureCreateInfo.filename.push_back("../data/textures/posz.jpg");
+    cubeTextureCreateInfo.filename.push_back("../data/textures/negz.jpg");
     cubeTextureCreateInfo.usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT;
     cubeTextureCreateInfo.isCubeTexture = true;
     cubeTexture = Image(device, cubeTextureCreateInfo);

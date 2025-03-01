@@ -15,6 +15,7 @@
 #include "scene/mesh.hpp"
 #include "scene/object.hpp"
 #include "scene/objects/animatic/BVH.h"
+#include "struct.hpp"
 #include "swapchain.hpp"
 #include "utils.hpp"
 
@@ -39,16 +40,29 @@ void App::init(Device *device, SwapChain *swapchain) {
 
     std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
     Mesh m = Mesh(device, indices, vertices);
+
+    Mesh m2 = Mesh(device, "../data/mesh/cubes.obj");
+
     scene = Scene(device);
     Object o = Object();
     o.meshId = 0;
     o.translation = {1, 1, 1};
     scene.objects.push_back(o);
-    scene.meshes.push_back(m);
-    scene.camera.translation = {100, 100, 100};
+    scene.meshes.push_back(m2);
+    scene.camera.translation = {10, 10, 10};
     scene.camera.extent = {1280, 720};
-    scene.materials.push_back({{1, 0, 1, 1}, -1, -1});
-    scene.addBVH(bvh);
+    scene.materials.push_back( {"",{1, 0, 1, 1}, -1, -1});
+    scene.materials.push_back( {"",{1, 1, 1, 1}, -1, -1});
+
+    scene.materials.push_back( {"",{0, 0, 1, 1}, -1, -1});
+
+    scene.materials.push_back( {"",{1, 0, 0, 1}, -1, -1});
+    scene.materials.push_back( {"",{0, 0, 0, 1}, -1, -1});
+
+
+
+
+    // scene.addBVH(bvh);
 
     // scene.textures.push_back(image);
 

@@ -3,11 +3,13 @@
 #include <cstdint>
 #include <glm/fwd.hpp>
 #include <glm/glm.hpp>
+#include <string>
 #include <vector>
 
 #include "../utils.hpp"
 #include "GPU_data/buffer.hpp"
 #include "device.hpp"
+#include "struct.hpp"
 // #include "object.hpp"
 
 namespace TTe {
@@ -37,6 +39,7 @@ class Mesh {
    public:
     Mesh(){};
     Mesh(Device *device, const std::vector<unsigned int> &indicies, const std::vector<Vertex> &verticies);
+    Mesh(Device *device, std::string path);
 
     Mesh(Device *device, const BasicShape &b, uint resolution);
     
@@ -92,7 +95,7 @@ class Mesh {
     // Triangle operator[](const int i);
     // Triangle operator[](const int i) const;
 
-
+    std::vector<Material> material;
     
 
     std::vector<Vertex> verticies;

@@ -17,6 +17,7 @@
 
 // Fichiers de master_meca_sim
 #include "MSS.h"
+#include "struct.hpp"
 #include "utils.hpp"
 
 

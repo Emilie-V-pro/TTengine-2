@@ -12,6 +12,7 @@
 /** Librairies de base **/
 #include <glm/fwd.hpp>
 #include <vector>
+#include "struct.hpp"
 #include "utils.hpp"
 
 // Fichiers de gkit2light

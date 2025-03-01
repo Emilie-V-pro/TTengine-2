@@ -28,7 +28,7 @@ struct Material {
     int normalMap_texture_id;
 };
 
-layout(set = 0, binding = 1) uniform Mat { Material[1000] materials; }
+layout(set = 0, binding = 1, scalar) uniform Mat { Material[1000] materials; }
 m;
 
 layout(set = 0, binding = 2) uniform sampler2D textures[1000];

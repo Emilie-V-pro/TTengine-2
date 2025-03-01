@@ -23,7 +23,6 @@ layout(push_constant) uniform constants {
 vec3 createRay(in ivec2 px) {
     // convert pixel to NDS
     vec2 pxNDS = ((vec2(px.x, resolution.y - px.y)) / vec2(resolution.x, resolution.y)) * 2. - 1.;
-
     // choose an arbitrary HitPoint in the viewing volume
     // z = -1 equals a HitPoint on the near plane, i.e. the screen
     vec3 HitPointNDS = vec3(pxNDS, 0.1);

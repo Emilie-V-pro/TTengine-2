@@ -17,13 +17,6 @@
 
 namespace TTe {
 
-struct Material{
-    glm::vec4 color;
-    int albido_tex_id;
-    int normal_tex_id;
-
-};
-
 class Scene {
    public:
     Scene() {};

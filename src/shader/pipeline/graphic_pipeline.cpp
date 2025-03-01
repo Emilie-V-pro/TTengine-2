@@ -5,6 +5,7 @@
 #include <cstddef>
 
 #include "commandBuffer/command_buffer.hpp"
+#include "struct.hpp"
 #include "structs_vk.hpp"
 #include "utils.hpp"
 
