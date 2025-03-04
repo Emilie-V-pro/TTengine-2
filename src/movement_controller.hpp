@@ -9,6 +9,10 @@ namespace TTe {
 class MovementController {
    public:
    MovementController(){};
+
+   void setCursors(Window* window) {
+       glfwSetCursorPosCallback(*window, mouseMoveCallback);
+    }
     struct KeyMappings {
         int moveLeft = GLFW_KEY_A;
         int moveRight = GLFW_KEY_D;
@@ -25,6 +29,16 @@ class MovementController {
 
     void moveInPlaneXZ(Window* window, float dt, Camera& cam);
     KeyMappings keys{};
+
+    
+
+    static void mouseMoveCallback(GLFWwindow* window, double xpos, double ypos);
+
+    
+
+
+
+
     bool waspressed = false;
     float moveSpeed{3.f};
     float lookSpeed{1.5f};

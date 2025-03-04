@@ -2,13 +2,13 @@
 
 #include <glm/glm.hpp>
 #include <string>
+#include <chrono>
 
 #include "volk.h"
 #include "VkBootstrap.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-
 
 namespace TTe {
 class Window {
@@ -29,7 +29,7 @@ class Window {
     operator GLFWwindow *() const { return window; }
 
     // getter
-    VkSurfaceKHR &getSurface (const vkb::Instance &vkInstance);
+    VkSurfaceKHR &getSurface(const vkb::Instance &vkInstance);
     const VkExtent2D &getExtent() const { return size; }
     const GLFWwindow *getGLFWwindow() const { return window; }
     bool wasWindowResized() const { return framebufferResized; }
@@ -37,6 +37,11 @@ class Window {
 
     // setter
     void resetWindowResizedFlag() { framebufferResized = false; }
+
+    glm::vec3 mouseMove{0};
+    double lastX{0}, lastY{0};
+    std::chrono::time_point<std::chrono::system_clock> mouseLastMoved;
+
 
    private:
     static void framebufferResizeCallback(GLFWwindow *window, int width, int height);
@@ -47,4 +52,4 @@ class Window {
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     GLFWwindow *window = nullptr;
 };
-}  // namespace vk_stage
+}  // namespace TTe

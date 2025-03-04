@@ -43,6 +43,10 @@ class Buffer : public vk_cmdBuffer_OBJ, public Ressource {
         addressInfo.range = total_size;
         return addressInfo;
     }
+    
+    uint64_t getBufferDeviceAddress(uint32_t offset = 0) const;
+
+    uint32_t getInstancesCount() const { return instance_count; }
 
     void* mapMemory()  {
         if(mappedMemory == nullptr)
@@ -55,7 +59,6 @@ class Buffer : public vk_cmdBuffer_OBJ, public Ressource {
         mappedMemory = nullptr;
         }
 
-    uint64_t getBufferDeviceAddress(uint32_t offset = 0) const;
 
     void writeToBuffer(void* data, VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
 

@@ -12,13 +12,19 @@
 namespace TTe {
 
 glm::mat4 Camera::getViewMatrix() {
-    glm::vec3 orientation;
-    float xzLen = cos(rotation.y);
-    orientation.x = std::sin(rotation.x) * std::cos(rotation.y);
-    orientation.y = std::sin(rotation.x) * std::sin(rotation.y);
-    orientation.z = std::cos(rotation.x);
+    const float yaw = rotation.y;
+    const float pitch = rotation.x;
 
-    return glm::lookAt(translation, translation+glm::normalize(rotation),  up);
+    glm::vec3 forward{
+        std::sin(yaw) * std::cos(pitch),
+        std::sin(pitch),
+        std::cos(yaw) * std::cos(pitch)
+    };
+
+    // Position cible en fonction de la direction
+    glm::vec3 target = translation + forward;
+
+    return glm::lookAt(translation, target,  up);
     // const glm::vec3 w{glm::normalize(rotation)};
     // const glm::vec3 u{glm::normalize(glm::cross(w, up))};
     // const glm::vec3 v{glm::cross(w, u)};

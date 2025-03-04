@@ -19,6 +19,8 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
 }
 ubo;
 
+layout(set = 0 , binding = 3) uniform samplerCube samplerCubeMap;
+
 struct Material {
     vec4 color;
     // float metallic;
@@ -33,6 +35,8 @@ m;
 
 layout(set = 0, binding = 2) uniform sampler2D textures[1000];
 
+
+
 struct ObjectInfo {
     mat4 modelMatrix;
     mat4 normalMatrix;
@@ -44,7 +48,6 @@ layout(push_constant) uniform constants {
     mat4 normalMatrix;
 }
 PushConstants;
-
 
 // http://www.thetenthplanet.de/archives/1180
 mat3 cotangent_frame(vec3 N, vec3 p, vec2 uv) {
@@ -71,8 +74,121 @@ vec3 perturb_normal(vec3 N, vec3 V, int texId, vec2 texcoord) {
     return normalize(TBN * map);
 }
 
-
 float dotClamp(vec3 v1, vec3 v2) { return clamp(dot(v1, v2), 0.0, 1.0); }
+
+//////////////////////////////////////////////////////////////////////////
+// Disney BRDF
+// based on Acerola implementation (https://github.com/GarrettGunnell/Disney-PBR/blob/main/Assets/Shaders/DisneyBRDF.shader)
+// and schuttejoe https://schuttejoe.github.io/post/disneybsdf/
+//////////////////////////////////////////////////////////////////////////
+
+float luminance(vec3 color) { return dot(color, vec3(0.299f, 0.587f, 0.114f)); }
+
+float SchlickFresnel(float x) {
+    x = clamp((1.0f - x), 0.0, 1.0);
+    float x2 = x * x;
+
+    return x2 * x2 * x;  // While this is equivalent to pow(1 - x, 5) it is two less mult instructions
+}
+
+float rcp(float x) { return 1.0f / x; }
+
+float GTR1(float ndoth, float a) {
+    float a2 = a * a;
+    float t = 1.0f + (a2 - 1.0f) * ndoth * ndoth;
+    return (a2 - 1.0f) / (M_PI * log(a2) * t);
+}
+
+
+float DistributionGGX(float ndoth, float roughness)
+{
+    float a      = roughness*roughness;
+    float a2     = a*a;
+    float NdotH2 = ndoth*ndoth;
+	
+    float num   = a2;
+    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+    denom = M_PI * denom * denom;
+	
+    return num / denom;
+}
+
+float GeometrySchlickGGX(float NdotV, float roughness)
+{
+    float r = (roughness + 1.0);
+    float k = (r*r) / 8.0;
+
+    float num   = NdotV;
+    float denom = NdotV * (1.0 - k) + k;
+	
+    return num / denom;
+}
+float GeometrySmith(float ndotl, float ndotv, float roughness)
+{
+    float ggx2  = GeometrySchlickGGX(ndotv, roughness);
+    float ggx1  = GeometrySchlickGGX(ndotl, roughness);
+    return ggx1 * ggx2;
+}
+
+struct BRDFResults {
+    vec3 diffuse;
+    vec3 specular;
+    vec3 clearcoat;
+};
+
+BRDFResults DisneyDiffuse(vec3 baseColor, float metallic, float roughness, vec3 N, vec3 V, vec3 L) {
+    BRDFResults result;
+    result.diffuse = vec3(0.0f);
+    result.specular = vec3(0.0f);
+    result.clearcoat = vec3(0.0f);
+
+    vec3 H = normalize(L + V);
+
+    float ndotl = dotClamp(N, L);
+    float ndotv = dotClamp(N, V);
+    float ndoth = dotClamp(N, H);
+    float ldoth = dotClamp(L, H);
+
+    float Cdlum = luminance(baseColor);
+    float _Specular = 0.5f;
+    vec3 Ctint = (Cdlum > 0.0f) ? (baseColor / Cdlum) : vec3(1.0f);
+    vec3 Cspec0 = mix(_Specular * 0.08f * mix(vec3(1.0f), Ctint, 1.0), baseColor, metallic);
+    //         float3 Csheen = lerp(1.0f, Ctint, _SheenTint);
+
+    // Disney Diffuse
+    float FL = SchlickFresnel(ndotl);
+    float FV = SchlickFresnel(ndotv);
+
+    float Fss90 = ldoth * ldoth * roughness;
+    float Fd90 = 0.5f + 2.0f * Fss90;
+
+    float Fd = mix(1.0f, Fd90, FL) * mix(1.0f, Fd90, FV);
+
+    // Subsurface Diffuse (Hanrahan-Krueger brdf approximation)
+
+    float Fss = mix(1.0f, Fss90, FL) * mix(1.0f, Fss90, FV);
+    float ss = 1.25f * (Fss * (rcp(ndotl + ndotv) - 0.5f) + 0.5f);
+
+    // Specular
+    float NDF = DistributionGGX(ndoth, roughness);       
+    float G = GeometrySmith(ndotl, ndotv, roughness); 
+
+    float FH = SchlickFresnel(ldoth);
+    vec3 F = mix(Cspec0, vec3(1.0f), FH);
+
+    result.diffuse = (1.0f / M_PI) * (mix(Fd, ss, 0) * baseColor + 0) * (1 - metallic);
+    result.specular = F * G * NDF / (4 * ndotl * ndotv);
+    return result;
+}
+
+//////////////////////////////////////////////////////////////////////////
+// hemisphere sampling
+//////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////////
+// Main
+//////////////////////////////////////////////////////////////////////////
 
 void main() {
     // if (false) {
@@ -95,14 +211,59 @@ void main() {
     if (m.materials[fragmaterial].normalMap_texture_id != -1) {
         surfaceNormal = perturb_normal(surfaceNormal, view, m.materials[fragmaterial].normalMap_texture_id, fraguv);
     }
-   
+
     if (textColor.a < 0.3) {
         discard;
     }
-    outColor = vec4(textColor.rgb, 1);
+
+    // vec3 sunDirection = vec3(0.744015, 0.666869, 0.0415573);
+    vec3 color = vec3(0.0);
+    
+    vec3 lightDir = surfaceNormal;
+    vec4 cubeMapColor = texture(samplerCubeMap, lightDir); 
+    BRDFResults res = DisneyDiffuse(textColor.rgb, 0.0, 0.1, surfaceNormal, view, lightDir);
+    color += ((res.diffuse + res.specular) * cubeMapColor.rgb) * 0.111111111;
+
+    lightDir = normalize(surfaceNormal + vec3(0, 0, 0.1));
+    cubeMapColor = texture(samplerCubeMap, lightDir); 
+    res = DisneyDiffuse(textColor.rgb, 0.0, 0.1, surfaceNormal, view, lightDir);
+    color += ((res.diffuse + res.specular) * cubeMapColor.rgb) * 0.111111111;
+
+    lightDir = normalize(surfaceNormal + vec3(0, 0.1, 0));
+    cubeMapColor = texture(samplerCubeMap, lightDir); 
+    res = DisneyDiffuse(textColor.rgb, 0.0, 0.1, surfaceNormal, view, lightDir);
+    color += ((res.diffuse + res.specular) * cubeMapColor.rgb) * 0.111111111;
+
+    lightDir = normalize(surfaceNormal + vec3(0, 0.1, 0.1));
+    cubeMapColor = texture(samplerCubeMap, lightDir); 
+    res = DisneyDiffuse(textColor.rgb, 0.0, 0.1, surfaceNormal, view, lightDir);
+    color += ((res.diffuse + res.specular) * cubeMapColor.rgb) * 0.111111111;
+
+    lightDir = normalize(surfaceNormal + vec3(0.1, 0, 0.0));
+    cubeMapColor = texture(samplerCubeMap, lightDir); 
+    res = DisneyDiffuse(textColor.rgb, 0.0, 0.1, surfaceNormal, view, lightDir);
+    color += ((res.diffuse + res.specular) * cubeMapColor.rgb) * 0.111111111;
+
+    lightDir = normalize(surfaceNormal + vec3(0.1, 0, 0.1));
+    cubeMapColor = texture(samplerCubeMap, lightDir); 
+    res = DisneyDiffuse(textColor.rgb, 0.0, 0.1, surfaceNormal, view, lightDir);
+    color += ((res.diffuse + res.specular) * cubeMapColor.rgb) * 0.111111111;
+
+    lightDir = normalize(surfaceNormal + vec3(0.1, 0.1, 0.0));
+    cubeMapColor = texture(samplerCubeMap, lightDir); 
+    res = DisneyDiffuse(textColor.rgb, 0.0, 0.1, surfaceNormal, view, lightDir);
+    color += ((res.diffuse + res.specular) * cubeMapColor.rgb) * 0.111111111;
+
+    lightDir = normalize(surfaceNormal + vec3(0.1, 0.1, 0.1));
+    cubeMapColor = texture(samplerCubeMap, lightDir); 
+    res = DisneyDiffuse(textColor.rgb, 0.0, 0.1, surfaceNormal, view, lightDir);
+    color += ((res.diffuse + res.specular) * cubeMapColor.rgb) * 0.111111111;
+
+    
+
+    
 
 
-    // color = PBR(sun, view, surfaceNormal, vec3(1, 1, 1), metalRoughness.r, metalRoughness.g, textColor.rgb, 2) + textColor.rgb * ambiant;
-    // color = color / (color + vec3(1.0));
-    // color = pow(color, vec3(1.6f / 2.2));
+
+    outColor = vec4(color, 1);
 }

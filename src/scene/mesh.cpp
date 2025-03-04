@@ -1,5 +1,6 @@
 
 #include "mesh.hpp"
+#include <vulkan/vulkan_core.h>
 
 #include <tuple>
 #include <vector>
@@ -40,15 +41,24 @@ Mesh::Mesh(Device* device, std::string path) : device(device) {
     verticies = data.vertices;
     indicies = data.indices;
 
-
-    vertexBuffer = Buffer(device, sizeof(Vertex), verticies.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
-    indexBuffer = Buffer(device, sizeof(unsigned int), indicies.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
     uploadToGPU();
 }
 
 void Mesh::uploadToGPU() {
+    if(vertexBuffer == VK_NULL_HANDLE || indexBuffer == VK_NULL_HANDLE || vertexBuffer.getInstancesCount() != verticies.size() * sizeof(Vertex) || indexBuffer.getInstancesCount() != indicies.size() * sizeof(unsigned int)) {
+        vertexBuffer = Buffer(device, sizeof(Vertex), verticies.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
+        indexBuffer = Buffer(device, sizeof(unsigned int), indicies.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
+    }
+
     vertexBuffer.writeToBuffer(verticies.data(), verticies.size() * sizeof(Vertex));
     indexBuffer.writeToBuffer(indicies.data(), indicies.size() * sizeof(unsigned int));
+}
+
+void Mesh::bindMesh(CommandBuffer &cmd) {
+    VkBuffer vbuffers[] = {vertexBuffer};
+    VkDeviceSize offsets[] = {0};
+    vkCmdBindVertexBuffers(cmd, 0, 1, vbuffers, offsets);
+    vkCmdBindIndexBuffer(cmd, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 }
 
 glm::vec3 Triangle::getNormal() const { return glm::triangleNormal(verts[0].pos, verts[1].pos, verts[2].pos); };

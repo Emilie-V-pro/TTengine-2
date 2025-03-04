@@ -1,14 +1,16 @@
 #pragma once
 #include <string>
 
+#include "device.hpp"
 #include "scene/mesh.hpp"
 #include "scene/object.hpp"
 namespace TTe {
 class SimulateObj : public Object {
    public:
     // SimulateObj(){}
-    SimulateObj(std::string &paramFile){
+    SimulateObj(Device *device, std::string &paramFile) : device(device) {
         Param_mesh(paramFile);
+        mesh = Mesh(device);
     }
     // ~SimulateObj();
 
@@ -35,6 +37,7 @@ class SimulateObj : public Object {
 
     /*! Affichage des positions de chaque sommet */
     void AffichagePos(int tps);
+    Mesh mesh;
 
     protected:
     /// Fichier de donnees contenant les points
@@ -61,6 +64,7 @@ class SimulateObj : public Object {
 
     /// Declaration du tableau des masses
     std::vector<float> M;
-    Mesh mesh;
+    
+    Device *device;
 };
 }  // namespace TTe

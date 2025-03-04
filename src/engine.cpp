@@ -127,9 +127,6 @@ void Engine::updateLoop(Engine &engine) {
             // engine.updateCommandBuffer.beginCommandBuffer();
             engine.app->update(deltatTime, engine.updateCommandBuffer, engine.window);
             engine.resizeMutex.unlock();
-            if (frameIndex == 10000000) {
-                engine.shouldClose = true;
-            }
         }
     }
 }

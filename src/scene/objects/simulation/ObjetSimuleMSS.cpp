@@ -28,6 +28,7 @@
 #include <math.h>
 
 #include <algorithm>
+#include <cstdint>
 #include <fstream>
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
@@ -50,7 +51,7 @@ namespace TTe {
 /**
  * Constructeur de la class ObjetSimuleMSS.
  */
-ObjetSimuleMSS::ObjetSimuleMSS(std::string &fich_param) : SimulateObj(fich_param), _Size(), _SystemeMasseRessort(0) {
+ObjetSimuleMSS::ObjetSimuleMSS(Device *device, std::string fich_param) : SimulateObj(device, fich_param), _Size(), _SystemeMasseRessort(0) {
     /* Allocation du systeme masse-ressort */
     _SystemeMasseRessort = new MSS();
 
@@ -89,6 +90,9 @@ void ObjetSimuleMSS::initObjetSimule() {
         // Arret du programme
         exit(1);
     }
+    uint32_t   _Nb_Sommets;
+    _FichIn_Points >> _Nb_Sommets;
+    std::cout << "Nombre de sommets " << _Nb_Sommets <<std::endl;
 
     /// Lecture du nombre de sommets
     std::vector<glm::vec3> pos;
@@ -224,11 +228,14 @@ void ObjetSimuleMSS::initObjetSimule() {
         _SystemeMasseRessort->MakeFace(
             _SystemeMasseRessort->GetParticule(vertexIds[2]), _SystemeMasseRessort->GetParticule(vertexIds[1]),
             _SystemeMasseRessort->GetParticule(vertexIds[0]), &_SystemeMasseRessort->_RessOS);
-
+        if(vertexIds[0] >= pos.size() || vertexIds[1] >= pos.size() || vertexIds[2] >= pos.size()){
+            std::cout << "Erreur dans les indices des sommets" << std::endl;
+            exit(1);
+        }
         // Recopie dans le tableau des indices des sommets
-        mesh.indicies.push_back(vertexIds[0]);
-        mesh.indicies.push_back(vertexIds[1]);
         mesh.indicies.push_back(vertexIds[2]);
+        mesh.indicies.push_back(vertexIds[1]);
+        mesh.indicies.push_back(vertexIds[0]);
         nb_facet++;
     }
 
@@ -267,7 +274,7 @@ void ObjetSimuleMSS::setNormals() {
   
 
     /* Parcours des faces du maillage */
-    for (unsigned int i = 0; i < mesh.indicies.size(); ++i) {
+    for (unsigned int i = 0; i < mesh.indicies.size()/3; ++i) {
         // Sommets a, b, c de la face
         a = mesh.indicies[3 * i];
         b = mesh.indicies[(3 * i) + 1];
@@ -304,7 +311,7 @@ void ObjetSimuleMSS::setNormals() {
  */
 void ObjetSimuleMSS::initMeshObjet() {
     // std::cout << "------ ObjetSimule::init_Mesh_Object() ----------- " << std::endl;
-
+    mesh.uploadToGPU();
     std::cout << "Maillage du MSS pour affichage build ..." << std::endl;
 }
 
@@ -314,6 +321,7 @@ void ObjetSimuleMSS::initMeshObjet() {
  */
 void ObjetSimuleMSS::updateVertex() {
     // std::cout << "ObjetSimuleMSS::updateVertex() ..." << std::endl;
+    mesh.uploadToGPU();
 }
 
 /**

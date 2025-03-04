@@ -48,6 +48,15 @@ namespace TTe {
 
 void SolveurExpl::CalculAccel_ForceGravite(
     glm::vec3 g, int nb_som, std::vector<glm::vec3> &A, std::vector<glm::vec3> &Force, std::vector<float> &M) {
+    for (int i = 0; i < nb_som; ++i) {
+        if(M[i] == 0.0) {
+            A[i] = glm::vec3(0.0, 0.0, 0.0);
+            continue;
+        }
+        A[i] = Force[i] / M[i] + g;
+        Force[i] = glm::vec3(0.0, 0.0, 0.0);
+    }
+    
     //// Cas SPH
     // On a calcule dans Force[i] : fij / rho_i
     // Il ne reste qu a ajoute le vecteur g

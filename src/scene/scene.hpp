@@ -13,6 +13,7 @@
 #include "mesh.hpp"
 #include "scene/object.hpp"
 #include "scene/objects/animatic/BVH.h"
+#include "scene/objects/simulation/ObjetSimuleMSS.h"
 #include "shader/pipeline/graphic_pipeline.hpp"
 
 namespace TTe {
@@ -28,9 +29,12 @@ class Scene {
     void updateCameraBuffer();
 
     void addBVH(BVH& bvh);
+    void addMssObject(ObjetSimuleMSS &mss);
+    void Param(std::string Fichier_Param);
 
     std::vector<Object> objects;
 
+    std::vector<ObjetSimuleMSS> mssObjects;
     std::vector<std::pair<std::vector<Object>, BVH>> animaticOBJ; 
     
     std::vector<Mesh> meshes;
@@ -40,7 +44,12 @@ class Scene {
     
    private:
 
+    
+
     glm::vec3 gravity = glm::vec3(0.0f, -9.81f, 0.0f);
+    float _visco;
+    /// Nombre d iterations de la boucle de simulation 
+	int _nb_iter;
 
     GraphicPipeline pipeline;
     GraphicPipeline backgroundPipeline;

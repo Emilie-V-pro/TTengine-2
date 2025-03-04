@@ -14,14 +14,7 @@
 
 namespace TTe {
 
-enum BasicShape{
-    Triangle,
-    Sphere,
-    Cone,
-    Cylinder,
-    Cube,
-    Plane
-};
+enum BasicShape { Triangle, Sphere, Cone, Cylinder, Cube, Plane };
 
 struct Triangle {
     Vertex verts[3];
@@ -33,26 +26,25 @@ struct Triangle {
     float area() const;
 };
 
-
-
 class Mesh {
    public:
-    Mesh(){};
+    Mesh() {};
+    Mesh(Device *device) : device(device) {};
     Mesh(Device *device, const std::vector<unsigned int> &indicies, const std::vector<Vertex> &verticies);
     Mesh(Device *device, std::string path);
 
     Mesh(Device *device, const BasicShape &b, uint resolution);
-    
-    //copy constructor
-    Mesh(const Mesh &other){
+
+    // copy constructor
+    Mesh(const Mesh &other) {
         this->device = other.device;
         this->indicies = other.indicies;
         this->verticies = other.verticies;
         this->vertexBuffer = other.vertexBuffer;
         this->indexBuffer = other.indexBuffer;
     }
-    Mesh &operator=(const Mesh &other){
-        if(this != &other){
+    Mesh &operator=(const Mesh &other) {
+        if (this != &other) {
             this->device = other.device;
             this->indicies = other.indicies;
             this->verticies = other.verticies;
@@ -62,16 +54,16 @@ class Mesh {
         return *this;
     }
 
-    //move constructor
-    Mesh(Mesh &&other){
+    // move constructor
+    Mesh(Mesh &&other) {
         this->device = other.device;
         this->indicies = std::move(other.indicies);
         this->verticies = std::move(other.verticies);
         this->vertexBuffer = std::move(other.vertexBuffer);
         this->indexBuffer = std::move(other.indexBuffer);
     }
-    Mesh &operator=(Mesh &&other){
-        if(this != &other){
+    Mesh &operator=(Mesh &&other) {
+        if (this != &other) {
             this->device = other.device;
             this->indicies = std::move(other.indicies);
             this->verticies = std::move(other.verticies);
@@ -80,8 +72,10 @@ class Mesh {
         }
         return *this;
     }
-    ~Mesh(){};
+    ~Mesh() {};
     void uploadToGPU();
+
+    void bindMesh(CommandBuffer &cmd);
 
     // Hit traceRay(Ray r, const float &distMin, const float &distMax) const;
 
@@ -89,23 +83,21 @@ class Mesh {
     int nbVerticies() const { return verticies.size(); };
     int nbIndicies() const { return indicies.size(); };
 
-
-    Buffer& getVertexBuffer() { return vertexBuffer; }
-    Buffer& getIndexBuffer() { return indexBuffer; }
+    Buffer &getVertexBuffer() { return vertexBuffer; }
+    Buffer &getIndexBuffer() { return indexBuffer; }
     // Triangle operator[](const int i);
     // Triangle operator[](const int i) const;
 
     std::vector<Material> material;
-    
 
     std::vector<Vertex> verticies;
     std::vector<uint32_t> indicies;
+
    private:
     glm::vec3 min = {FLT_MAX, FLT_MAX, FLT_MAX};
     glm::vec3 max = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
 
     // bool intersectAABBbox(Ray r) const;
-
 
     Buffer vertexBuffer;
     Buffer indexBuffer;

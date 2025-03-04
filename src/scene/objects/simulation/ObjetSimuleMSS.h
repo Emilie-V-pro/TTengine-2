@@ -18,6 +18,7 @@
 #include "MSS.h"
 #include "SolveurExpl.h"
 #include "SolveurImpl.h"
+#include "device.hpp"
 #include "scene/objects/simulateObj.hpp"
 
 namespace TTe {
@@ -31,7 +32,7 @@ class ObjetSimuleMSS: public SimulateObj
 public:
     
     /*! Constructeur */
-    ObjetSimuleMSS(std::string &fich_param);
+    ObjetSimuleMSS(Device *device, std::string fich_param);
     
     /*! Lecture des parametres lies au systeme masses-ressorts */
     void Param_mss(std::string fich_param);

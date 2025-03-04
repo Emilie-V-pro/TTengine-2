@@ -27,10 +27,13 @@ Programme calculant pour chaque particule i d un MSS son etat au pas de temps su
 */ 
 
 #include <math.h>
+#include <glm/fwd.hpp>
+#include <glm/geometric.hpp>
 
 
 // #include "ObjetSimule.h"
 #include "ObjetSimuleMSS.h"
+#include "scene/objects/simulation/MSS.h"
 // #include "Viewer.h"
 
 using namespace std;
@@ -45,7 +48,21 @@ namespace TTe {
 * Calcul des forces appliquees sur les particules du systeme masses-ressorts.
  */
 void ObjetSimuleMSS::CalculForceSpring()
-{
+{	
+	for (auto & particule : _SystemeMasseRessort->GetPartList()){
+		glm::vec3 Fe(0.0, 0.0, 0.0);
+		glm::vec3 Fv(0.0, 0.0, 0.0);
+		for(auto & ressort : particule->GetRessortList()){
+			Particule *other = ressort->GetOtherParticule(particule);
+
+			glm::vec3 direction = particule->GetPosition() - other->GetPosition();
+			glm::vec3 direction_norm = glm::normalize(direction);
+
+			Fe += ressort->GetRaideur() * (glm::length(direction) - ressort->GetLrepos()) * direction_norm;
+			Fv += (ressort->GetAmortissement() * (direction) * direction_norm) * direction_norm;
+		}
+	}
+	
 	/// f = somme_i (ki * (l(i,j)-l_0(i,j)) * uij ) + (nuij * (vi - vj) * uij) + (m*g) + force_ext
 	
 	/// Rq : Les forces dues a la gravite et au vent sont ajoutees lors du calcul de l acceleration

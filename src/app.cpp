@@ -15,6 +15,7 @@
 #include "scene/mesh.hpp"
 #include "scene/object.hpp"
 #include "scene/objects/animatic/BVH.h"
+#include "scene/objects/simulation/ObjetSimuleMSS.h"
 #include "struct.hpp"
 #include "swapchain.hpp"
 #include "utils.hpp"
@@ -60,6 +61,11 @@ void App::init(Device *device, SwapChain *swapchain) {
     scene.materials.push_back( {"",{0, 0, 0, 1}, -1, -1});
 
 
+    scene.Param("../data/simu/Fichier_Param.simu");
+    auto obj = ObjetSimuleMSS(device, "../data/simu/Fichier_Param.objet1");
+    scene.addMssObject(obj);
+
+
 
 
     // scene.addBVH(bvh);
@@ -79,6 +85,9 @@ void App::resize(int width, int height) {
     scene.camera.extent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
 }
 void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
+    if(time == 0) {
+        movementController.setCursors(&windowObj);
+    }
     time += deltaTime;
 
     //   float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
@@ -86,7 +95,7 @@ void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
     //   float b = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
     movementController.moveInPlaneXZ(&windowObj, deltaTime, scene.camera);
     renderPass.setClearColor({0.01, 0.01, 0.01});
-    scene.camera.rotation = glm::normalize(glm::vec3(-1));
+    // scene.camera.rotation = glm::normalize(glm::vec3(-1));
     // std::cout << time << std::endl;
     // std::cout << "camera rot : " << scene.camera.rotation.x << " " << scene.camera.rotation.y << " " << scene.camera.rotation.z << std::endl;
     scene.updateCameraBuffer();

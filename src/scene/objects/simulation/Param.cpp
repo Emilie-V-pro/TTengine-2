@@ -34,6 +34,7 @@
 // #include "Scene.h"
 #include "scene/objects/simulateObj.hpp"
 #include "ObjetSimuleMSS.h"
+#include "scene/scene.hpp"
 // #include "ObjetSimuleParticule.h"
 // #include "ObjetSimuleRigidBody.h"
 // #include "ObjetSimuleSPH.h"
@@ -59,47 +60,47 @@ namespace TTe {
 /**
 * Lecture des parametres de l execution relatifs a la scene.
  */
-// void Scene::Param(std::string Fichier_Param)
-// {
-// 	/** Donnees du fichier contenant les parametres de l execution **/
-// 	/* Proprietes du fichier */
-// 	Properties Prop;
+void Scene::Param(std::string Fichier_Param)
+{
+	/** Donnees du fichier contenant les parametres de l execution **/
+	/* Proprietes du fichier */
+	Properties Prop;
 	
-// 	/* Chargement du fichier */
-// 	Prop.load(Fichier_Param);
+	/* Chargement du fichier */
+	Prop.load(Fichier_Param);
 		
-// 	/* Viscosite du milieu */
-// 	GET_PARAM("viscosite", _visco);
+	/* Viscosite du milieu */
+	GET_PARAM("viscosite", _visco);
 	
-// 	/* Coordonnee de la gravite */
-// 	float vargx, vargy, vargz;
+	/* Coordonnee de la gravite */
+	float vargx, vargy, vargz;
 	
-// 	/* Coordonnee en x de la gravite */
-// 	GET_PARAM("gx", vargx); 
-// 	_g.x = vargx;
+	/* Coordonnee en x de la gravite */
+	GET_PARAM("gx", vargx); 
+	gravity.x = vargx;
 	
-// 	/* Coordonnee en y de la gravite */
-// 	GET_PARAM("gy", vargy);
-// 	_g.y = vargy;
+	/* Coordonnee en y de la gravite */
+	GET_PARAM("gy", vargy);
+	gravity.y = vargy;
 	
-// 	/* Coordonnee en z de la gravite */
-// 	GET_PARAM("gz", vargz);
-// 	_g.z = vargz;
+	/* Coordonnee en z de la gravite */
+	GET_PARAM("gz", vargz);
+	gravity.z = vargz;
 	
-// 	/* Nombre d iterations de la boucle de simulation */
-// 	GET_PARAM("nbiter", _nb_iter);
+	/* Nombre d iterations de la boucle de simulation */
+	GET_PARAM("nbiter", _nb_iter);
     
-//     /* Type d objet simule */
-//     std::string typeObjet;
+    /* Type d objet simule */
+    std::string typeObjet;
     
-//     for (int i=1; i<= _NbObj ; i++){
-//         typeObjet = "objet";
-//         typeObjet += '0' + i;
+    // for (int i=1; i<= _NbObj ; i++){
+    //     typeObjet = "objet";
+    //     typeObjet += '0' + i;
 
-//         GET_PARAM(typeObjet, _type_objet[i-1]);
-//     }
+    //     GET_PARAM(typeObjet, _type_objet[i-1]);
+    // }
 	
-// }
+}
 
 
 /**

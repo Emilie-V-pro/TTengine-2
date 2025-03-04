@@ -131,6 +131,13 @@ class Ressort {
     /*! Pour acceder a la particuleA */
     inline Particule *GetParticuleB() { return _ParticuleB; }
 
+    inline Particule *GetOtherParticule(Particule *P) {
+        if (P == _ParticuleA)
+            return _ParticuleB;
+        else
+            return _ParticuleA;
+    }
+
     /*! Pour acceder aux caracteristiques du ressort */
     inline Spring *GetSpring() { return _Spring; }
 

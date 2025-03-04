@@ -49,6 +49,13 @@ void Scene::addBVH(BVH &bvh) {
     this->animaticOBJ.push_back({skeleton, bvh});
 }
 
+
+void Scene::addMssObject(ObjetSimuleMSS &mss) {
+    mss.initObjetSimule();
+    mss.initMeshObjet();
+    mssObjects.push_back(mss);
+}
+
 void Scene::render(CommandBuffer &cmd) {
     std::vector<DescriptorSet *> descriptorSets = {&backgroundDescriptorSet};
     backgroundPipeline.bindPipeline(cmd);
@@ -102,6 +109,19 @@ void Scene::render(CommandBuffer &cmd) {
             // draw
             vkCmdDrawIndexed(cmd, sphere.nbIndicies(), 1, 0, 0, 0);
         }
+    }
+
+    for(auto &mss : mssObjects){
+        mss.mesh.bindMesh(cmd);
+
+        glm::mat4 model = mss.mat4();
+        vkCmdPushConstants(cmd, pipeline.getPipelineLayout(), pipeline.getPushConstantStage(), 0, sizeof(glm::mat4), &model);
+        glm::mat4 normalMatrix = mss.normalMatrix();
+        vkCmdPushConstants(
+            cmd, pipeline.getPipelineLayout(), pipeline.getPushConstantStage(), sizeof(glm::mat4), sizeof(glm::mat4), &normalMatrix);
+
+        vkCmdDrawIndexed(cmd, mss.mesh.nbIndicies(), 1, 0, 0, 0);
+
     }
 }
 
@@ -185,6 +205,7 @@ void Scene::createDescriptorSets() {
         imageInfos.push_back(texture.getDescriptorImageInfo(samplerType::LINEAR));
     }
     sceneDescriptorSet.writeImagesDescriptor(2, imageInfos);
+    sceneDescriptorSet.writeImageDescriptor(3, cubeTexture.getDescriptorImageInfo(samplerType::LINEAR));
 }
 
 }  // namespace TTe

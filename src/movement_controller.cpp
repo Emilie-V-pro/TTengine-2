@@ -24,7 +24,8 @@ void MovementController::moveInPlaneXZ(Window* window, float dt, Camera& cam) {
     if (glm::dot(rotate, rotate) > std::numeric_limits<float>::epsilon()) {
         cam.rotation += lookSpeed * dt * glm::normalize(rotate);
     }
-
+    cam.rotation += window->mouseMove;
+    window->mouseMove = glm::vec3(0);
     
     // limit pitch values between about +/- 85ish degrees
     cam.rotation.x = glm::clamp(cam.rotation.x, -1.5f, 1.5f);
@@ -36,10 +37,10 @@ void MovementController::moveInPlaneXZ(Window* window, float dt, Camera& cam) {
     const glm::vec3 upDir{0.f, 1.f, 0.f};
 
     glm::vec3 moveDir{0.f};
-    if (glfwGetKey(*window, keys.moveForward) == GLFW_PRESS) moveDir -= forwardDir;
-    if (glfwGetKey(*window, keys.moveBackward) == GLFW_PRESS) moveDir += forwardDir;
-    if (glfwGetKey(*window, keys.moveRight) == GLFW_PRESS) moveDir += rightDir;
-    if (glfwGetKey(*window, keys.moveLeft) == GLFW_PRESS) moveDir -= rightDir;
+    if (glfwGetKey(*window, keys.moveForward) == GLFW_PRESS) moveDir += forwardDir;
+    if (glfwGetKey(*window, keys.moveBackward) == GLFW_PRESS) moveDir -= forwardDir;
+    if (glfwGetKey(*window, keys.moveRight) == GLFW_PRESS) moveDir -= rightDir;
+    if (glfwGetKey(*window, keys.moveLeft) == GLFW_PRESS) moveDir += rightDir;
     if (glfwGetKey(*window, keys.moveUp) == GLFW_PRESS) moveDir += upDir;
     if (glfwGetKey(*window, keys.moveDown) == GLFW_PRESS) moveDir -= upDir;
 
@@ -48,6 +49,27 @@ void MovementController::moveInPlaneXZ(Window* window, float dt, Camera& cam) {
     }
 }
 
+void MovementController::mouseMoveCallback(GLFWwindow* window, double xpos, double ypos) {
+    Window* windowObj = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+    
+    double xoffset =  windowObj->lastX - xpos ;
+    double yoffset = windowObj->lastY - ypos; // reversed since y-coordinates go from bottom to top
 
+    // std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
+    // std::chrono::duration<double> elapsed = now - windowObj->mouseLastMoved;
+    // windowObj->mouseLastMoved = now;
+
+    windowObj->lastX = xpos;
+    windowObj->lastY = ypos;
+
+    xoffset *= 0.005;
+    yoffset *= 0.005;
+
+    windowObj->mouseMove += glm::vec3(yoffset, xoffset, 0);
+
+    
+
+
+}
 
 }  // namespace vk_stage
