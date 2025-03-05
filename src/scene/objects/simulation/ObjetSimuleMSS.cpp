@@ -327,7 +327,7 @@ void ObjetSimuleMSS::updateVertex() {
 /**
  * Simulation de l objet.
  */
-void ObjetSimuleMSS::Simulation(glm::vec3 gravite, float viscosite, int Tps) {
+void ObjetSimuleMSS::Simulation(glm::vec3 gravite, float viscosite, int Tps, float dt, float t) {
     /* Calcul des forces dues aux ressorts */
     // std::cout << "Force.... " << std::endl;
     CalculForceSpring();
@@ -335,27 +335,28 @@ void ObjetSimuleMSS::Simulation(glm::vec3 gravite, float viscosite, int Tps) {
     /* Calcul des accelerations (avec ajout de la gravite aux forces) */
     // std::cout << "Accel.... " << std::endl;
     if (_Integration == "explicite")
-        _SolveurExpl->CalculAccel_ForceGravite(gravite, mesh.verticies.size(), A, Force, M);
+        _SolveurExpl->CalculAccel_ForceGravite(gravite, mesh.verticies.size(), t, A, Force, M);
     else if (_Integration == "implicite")
         _SolveurImpl->CalculAccel_ForceGravite(gravite, mesh.verticies.size(), A, Force, M);
 
     /* Calcul des vitesses et positions au temps t */
     // std::cout << "Vit.... " << std::endl;
     if (_Integration == "explicite")
-        _SolveurExpl->Solve(viscosite, mesh.verticies.size(), Tps, A, V, mesh.verticies);
+        _SolveurExpl->Solve(viscosite, mesh.verticies.size(), dt, A, V, mesh.verticies);
     else if (_Integration == "implicite")
         _SolveurImpl->Solve(viscosite, mesh.verticies.size(), Tps, Force, A, V, mesh.verticies, M, gravite, _SystemeMasseRessort);
 
     /* ! Gestion des collisions  */
     // Reponse : reste a la position du sol - arret des vitesses
     // Penser au Translate de l objet dans la scene pour trouver plan coherent
-    // Collision();
+    Collision();
 
     // Affichage des positions
     //  AffichagePos(Tps);
 
     /** Modification des normales **/
     setNormals();
+    updateVertex();
 }
 
 }  // namespace TTe

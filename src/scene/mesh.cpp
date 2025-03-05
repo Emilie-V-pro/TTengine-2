@@ -45,7 +45,7 @@ Mesh::Mesh(Device* device, std::string path) : device(device) {
 }
 
 void Mesh::uploadToGPU() {
-    if(vertexBuffer == VK_NULL_HANDLE || indexBuffer == VK_NULL_HANDLE || vertexBuffer.getInstancesCount() != verticies.size() * sizeof(Vertex) || indexBuffer.getInstancesCount() != indicies.size() * sizeof(unsigned int)) {
+    if((vertexBuffer == VK_NULL_HANDLE || indexBuffer == VK_NULL_HANDLE) || (vertexBuffer.getInstancesCount() != verticies.size()  || indexBuffer.getInstancesCount() != indicies.size())) {
         vertexBuffer = Buffer(device, sizeof(Vertex), verticies.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
         indexBuffer = Buffer(device, sizeof(unsigned int), indicies.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
     }

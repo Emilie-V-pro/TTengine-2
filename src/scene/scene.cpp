@@ -8,6 +8,7 @@
 #include "descriptor/descriptorSet.hpp"
 #include "scene/camera.hpp"
 #include "scene/object.hpp"
+#include "scene/objects/simulateObj.hpp"
 #include "shader/pipeline/graphic_pipeline.hpp"
 #include "struct.hpp"
 #include "utils.hpp"
@@ -125,6 +126,12 @@ void Scene::render(CommandBuffer &cmd) {
     }
 }
 
+void Scene::updateSimu(float dt, float t){
+    for(auto &obj : mssObjects){
+        obj.Simulation(gravity, _visco, 0, dt, t);
+    }
+}
+
 void Scene::updateBuffer() {
     Ubo ubo;
     ubo.projection = camera.getProjectionMatrix();
@@ -156,7 +163,7 @@ void Scene::createDescriptorSets() {
     std::vector<MaterialGPU> materialsGPU;
 
     for (auto &material : materials) {
-        materialsGPU.push_back({material.color, material.albido_tex_id, material.normal_tex_id});
+        materialsGPU.push_back({material.color, material.metallic, material.roughness, material.albedo_tex_id, material.metallic_roughness_tex_id, material.normal_tex_id});
     }
 
     MaterialBuffer.writeToBuffer(materialsGPU.data(), sizeof(materialsGPU) * materialsGPU.size(), 0);

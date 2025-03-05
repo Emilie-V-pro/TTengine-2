@@ -49,7 +49,7 @@ public:
     void CalculForceSpring();
 
     /*! Simulation de l objet */
-    void Simulation(glm::vec3 gravite, float viscosite, int Tps);
+    void Simulation(glm::vec3 gravite, float viscosite, int Tps, float dt, float t);
     
     /*! Gestion des collisions */
     void Collision();

@@ -23,11 +23,11 @@ ubo;
 
 struct Material {
     vec4 color;
-    // float metallic;
-    // float roughness;
-    int color_texture_id;
-    // int metallic_roughness_texture_id;
-    int normalMap_texture_id;
+    float metallic;
+    float roughness;
+    int albedo_tex_id;
+    int metallic_roughness_tex_id;
+    int normal_tex_id;
 };
 
 layout(set = 0, binding = 1, scalar) uniform Mat { Material[1000] materials; }

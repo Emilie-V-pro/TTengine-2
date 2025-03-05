@@ -1,5 +1,6 @@
 #pragma once
 
+#include <glm/fwd.hpp>
 #include <glm/glm.hpp>
 #include <string>
 
@@ -8,13 +9,20 @@ namespace TTe {
 struct Material {
     std::string name;
     glm::vec4 color;
-    int albido_tex_id;
+    float metallic;
+    float roughness;
+    int albedo_tex_id;
+    int metallic_roughness_tex_id;
     int normal_tex_id;
+
 };
 
 struct MaterialGPU {
     glm::vec4 color;
-    int albido_tex_id;
+    float metallic;
+    float roughness;
+    int albedo_tex_id;
+    int metallic_roughness_tex_id;
     int normal_tex_id;
 };
 

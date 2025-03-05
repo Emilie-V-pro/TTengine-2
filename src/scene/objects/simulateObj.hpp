@@ -30,7 +30,7 @@ class SimulateObj : public Object {
     virtual void Collision() = 0;
 
     /*! Simulation de l objet */
-    virtual void Simulation(glm::vec3 gravite, float viscosite, int Tps) = 0;
+    virtual void Simulation(glm::vec3 gravite, float viscosite, int Tps,  float dt, float t) = 0;
 
     /*! Interaction avec l utilisateur */
     void Interaction(glm::ivec2 MousePos);

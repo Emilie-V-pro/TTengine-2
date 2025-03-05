@@ -121,7 +121,7 @@ void DescriptorSet::writeSamplersDescriptor(uint32_t binding, const std::vector<
 void DescriptorSet::writeBuffersDescriptor(uint32_t binding, const std::vector<VkDescriptorAddressInfoEXT> &buffersInfo) {
     auto descriptorGetInfo = make<VkDescriptorGetInfoEXT>();
     char *data = (char *)descriptor_buffer.mapMemory();
-
+    
     descriptorGetInfo.type = descriptorSetLayout->getLayoutBindings()[binding].descriptorType;
     descriptorGetInfo.data.pStorageBuffer = buffersInfo.data();
     vkGetDescriptorEXT(
@@ -132,12 +132,15 @@ void DescriptorSet::writeBuffersDescriptor(uint32_t binding, const std::vector<V
 void DescriptorSet::writeImagesDescriptor(uint32_t binding, const std::vector<VkDescriptorImageInfo> &imagesInfo) {
     auto descriptorGetInfo = make<VkDescriptorGetInfoEXT>();
     char *data = (char *)descriptor_buffer.mapMemory();
+     descriptorGetInfo.type = descriptorSetLayout->getLayoutBindings()[binding].descriptorType;
 
-    descriptorGetInfo.type = descriptorSetLayout->getLayoutBindings()[binding].descriptorType;
-    descriptorGetInfo.data.pCombinedImageSampler = imagesInfo.data();
-    vkGetDescriptorEXT(
-        *device, &descriptorGetInfo, descriptorSetLayout->getSizeOfDescriptorType(binding) * imagesInfo.size(),
-        data + descriptorSetLayout->getLayoutOffsets()[binding]);
+    for(size_t i = 0; i < imagesInfo.size(); i++){
+        descriptorGetInfo.data.pStorageImage = &imagesInfo[i];
+        vkGetDescriptorEXT(
+            *device, &descriptorGetInfo, descriptorSetLayout->getSizeOfDescriptorType(binding),
+            data + descriptorSetLayout->getLayoutOffsets()[binding] + i * descriptorSetLayout->getSizeOfDescriptorType(binding));
+    
+    }
 }
 
 void DescriptorSet::bindDescriptorSet(

@@ -27,6 +27,7 @@ class Scene {
     void render(CommandBuffer &cmd);
     void updateBuffer();
     void updateCameraBuffer();
+    void updateSimu(float dt, float t);
 
     void addBVH(BVH& bvh);
     void addMssObject(ObjetSimuleMSS &mss);

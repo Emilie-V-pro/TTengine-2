@@ -31,10 +31,10 @@ class SolveurExpl {
     SolveurExpl() {}
 
     /*! Calcul des accelerations (avec ajout de la gravite aux forces) */
-    void CalculAccel_ForceGravite(glm::vec3 g, int nb_som, std::vector<glm::vec3> &A, std::vector<glm::vec3> &Force, std::vector<float> &M);
+    void CalculAccel_ForceGravite(glm::vec3 g, int nb_som, float t, std::vector<glm::vec3> &A, std::vector<glm::vec3> &Force, std::vector<float> &M);
 
     /*! Calcul des vitesses et positions */
-    void Solve(float visco, int nb_som, int Tps, std::vector<glm::vec3> &A, std::vector<glm::vec3> &V, std::vector<Vertex> &P);
+    void Solve(float visco, int nb_som, float deltaT, std::vector<glm::vec3> &A, std::vector<glm::vec3> &V, std::vector<Vertex> &P);
 
     /// Pas de temps
     float _delta_t;

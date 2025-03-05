@@ -29,6 +29,7 @@ Programme calculant pour chaque particule i d un MSS son etat au pas de temps su
 #include <math.h>
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
+#include <iostream>
 
 
 // #include "ObjetSimule.h"
@@ -49,18 +50,25 @@ namespace TTe {
  */
 void ObjetSimuleMSS::CalculForceSpring()
 {	
+	int i = 0;
 	for (auto & particule : _SystemeMasseRessort->GetPartList()){
 		glm::vec3 Fe(0.0, 0.0, 0.0);
 		glm::vec3 Fv(0.0, 0.0, 0.0);
 		for(auto & ressort : particule->GetRessortList()){
+			
 			Particule *other = ressort->GetOtherParticule(particule);
 
-			glm::vec3 direction = particule->GetPosition() - other->GetPosition();
+			glm::vec3 direction = mesh.verticies[other->GetId()].pos - mesh.verticies[particule->GetId()].pos;
 			glm::vec3 direction_norm = glm::normalize(direction);
 
-			Fe += ressort->GetRaideur() * (glm::length(direction) - ressort->GetLrepos()) * direction_norm;
-			Fv += (ressort->GetAmortissement() * (direction) * direction_norm) * direction_norm;
+			Fe += ressort->GetRaideur() * (glm::length(direction) - (ressort->GetLrepos() / 2.0f)) * direction_norm;
+			Fv += ressort->GetAmortissement() * glm::dot((V[particule->GetId()]  -V[other->GetId()] ), direction_norm) * direction_norm;
+
+			
 		}
+		// std::cout << glm::length(Fe + Fv) << "\n";
+		this->Force[i] += Fe + Fv;
+		i++;
 	}
 	
 	/// f = somme_i (ki * (l(i,j)-l_0(i,j)) * uij ) + (nuij * (vi - vj) * uij) + (m*g) + force_ext

@@ -10,6 +10,7 @@
 #include <vector>
 
 
+#include "GPU_data/image.hpp"
 #include "device.hpp"
 #include "dynamic_renderpass.hpp"
 #include "scene/mesh.hpp"
@@ -52,13 +53,40 @@ void App::init(Device *device, SwapChain *swapchain) {
     scene.meshes.push_back(m2);
     scene.camera.translation = {10, 10, 10};
     scene.camera.extent = {1280, 720};
-    scene.materials.push_back( {"",{1, 0, 1, 1}, -1, -1});
-    scene.materials.push_back( {"",{1, 1, 1, 1}, -1, -1});
 
-    scene.materials.push_back( {"",{0, 0, 1, 1}, -1, -1});
 
-    scene.materials.push_back( {"",{1, 0, 0, 1}, -1, -1});
-    scene.materials.push_back( {"",{0, 0, 0, 1}, -1, -1});
+    ImageCreateInfo imageCreateInfo;
+    imageCreateInfo.filename.push_back("../data/textures/albedo.jpg");
+    imageCreateInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageCreateInfo.usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    Image image = Image(device, imageCreateInfo);
+
+    imageCreateInfo.filename.clear();
+    imageCreateInfo.filename.push_back("../data/textures/normal.jpg");
+    imageCreateInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    Image normal = Image(device, imageCreateInfo);
+
+    imageCreateInfo.filename.clear();
+    imageCreateInfo.filename.push_back("../data/textures/mr.jpg");
+
+    Image mr = Image(device, imageCreateInfo);
+
+    Material mat = Material();
+    mat.color = {1, 1, 1, 1};
+    mat.metallic = 0.5;
+    mat.roughness = 0.5;
+    mat.albedo_tex_id = 0;
+    mat.normal_tex_id = 1;
+    mat.metallic_roughness_tex_id = 2;
+
+    scene.materials.push_back(mat);
+    scene.materials.push_back(mat);
+    scene.materials.push_back(mat);
+    scene.materials.push_back(mat);
+    scene.materials.push_back(mat);
+    scene.materials.push_back(mat);
 
 
     scene.Param("../data/simu/Fichier_Param.simu");
@@ -70,7 +98,9 @@ void App::init(Device *device, SwapChain *swapchain) {
 
     // scene.addBVH(bvh);
 
-    // scene.textures.push_back(image);
+    scene.textures.push_back(image);
+    scene.textures.push_back(normal);
+    scene.textures.push_back(mr);
 
     scene.createDescriptorSets();
 
@@ -93,6 +123,7 @@ void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
     //   float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
     //   float g = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
     //   float b = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+    scene.updateSimu(deltaTime, time);
     movementController.moveInPlaneXZ(&windowObj, deltaTime, scene.camera);
     renderPass.setClearColor({0.01, 0.01, 0.01});
     // scene.camera.rotation = glm::normalize(glm::vec3(-1));

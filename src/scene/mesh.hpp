@@ -72,6 +72,7 @@ class Mesh {
         }
         return *this;
     }
+
     ~Mesh() {};
     void uploadToGPU();
 
@@ -87,6 +88,14 @@ class Mesh {
     Buffer &getIndexBuffer() { return indexBuffer; }
     // Triangle operator[](const int i);
     // Triangle operator[](const int i) const;
+
+    void setMaterial(uint i) {
+         for(auto v : verticies){
+        v.material_id = i;
+    } 
+    uploadToGPU();
+
+}
 
     std::vector<Material> material;
 

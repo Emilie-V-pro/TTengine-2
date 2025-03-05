@@ -23,13 +23,12 @@ layout(set = 0 , binding = 3) uniform samplerCube samplerCubeMap;
 
 struct Material {
     vec4 color;
-    // float metallic;
-    // float roughness;
-    int color_texture_id;
-    // int metallic_roughness_texture_id;
-    int normalMap_texture_id;
+    float metallic;
+    float roughness;
+    int albedo_tex_id;
+    int metallic_roughness_tex_id;
+    int normal_tex_id;
 };
-
 layout(set = 0, binding = 1, scalar) uniform Mat { Material[1000] materials; }
 m;
 
@@ -136,7 +135,7 @@ struct BRDFResults {
     vec3 clearcoat;
 };
 
-BRDFResults DisneyDiffuse(vec3 baseColor, float metallic, float roughness, vec3 N, vec3 V, vec3 L) {
+BRDFResults DisneyBRDF(vec3 baseColor, float metallic, float roughness, vec3 N, vec3 V, vec3 L) {
     BRDFResults result;
     result.diffuse = vec3(0.0f);
     result.specular = vec3(0.0f);
@@ -200,7 +199,7 @@ void main() {
     vec3 pos = ubo.invView[3].xyz;
     vec3 view = normalize(pos - fragPosWorld);
     // vec3 sun = normalize(vec3(-1, 1, -1));
-    int texId = m.materials[fragmaterial].color_texture_id;
+    int texId = m.materials[fragmaterial].albedo_tex_id;
     // vec3 H = normalize(sun + view);
     if (texId != -1) {
         textColor = textureLod(textures[texId], fraguv, 0);
@@ -208,8 +207,18 @@ void main() {
         textColor = m.materials[fragmaterial].color;
     }
     vec3 surfaceNormal = normalize(fragNormalWorld);
-    if (m.materials[fragmaterial].normalMap_texture_id != -1) {
-        surfaceNormal = perturb_normal(surfaceNormal, view, m.materials[fragmaterial].normalMap_texture_id, fraguv);
+    if(!gl_FrontFacing){
+        surfaceNormal = -surfaceNormal;
+    }
+    if (m.materials[fragmaterial].normal_tex_id != -1) {
+        surfaceNormal = perturb_normal(surfaceNormal, view, m.materials[fragmaterial].normal_tex_id, fraguv);
+    }
+
+    if(m.materials[fragmaterial].metallic_roughness_tex_id != -1){
+        metalRoughness = textureLod(textures[m.materials[fragmaterial].metallic_roughness_tex_id], fraguv, 0).rg;
+    }
+    else{
+        metalRoughness = vec2(m.materials[fragmaterial].metallic, m.materials[fragmaterial].roughness);
     }
 
     if (textColor.a < 0.3) {
@@ -221,48 +230,8 @@ void main() {
     
     vec3 lightDir = surfaceNormal;
     vec4 cubeMapColor = texture(samplerCubeMap, lightDir); 
-    BRDFResults res = DisneyDiffuse(textColor.rgb, 0.0, 0.1, surfaceNormal, view, lightDir);
-    color += ((res.diffuse + res.specular) * cubeMapColor.rgb) * 0.111111111;
-
-    lightDir = normalize(surfaceNormal + vec3(0, 0, 0.1));
-    cubeMapColor = texture(samplerCubeMap, lightDir); 
-    res = DisneyDiffuse(textColor.rgb, 0.0, 0.1, surfaceNormal, view, lightDir);
-    color += ((res.diffuse + res.specular) * cubeMapColor.rgb) * 0.111111111;
-
-    lightDir = normalize(surfaceNormal + vec3(0, 0.1, 0));
-    cubeMapColor = texture(samplerCubeMap, lightDir); 
-    res = DisneyDiffuse(textColor.rgb, 0.0, 0.1, surfaceNormal, view, lightDir);
-    color += ((res.diffuse + res.specular) * cubeMapColor.rgb) * 0.111111111;
-
-    lightDir = normalize(surfaceNormal + vec3(0, 0.1, 0.1));
-    cubeMapColor = texture(samplerCubeMap, lightDir); 
-    res = DisneyDiffuse(textColor.rgb, 0.0, 0.1, surfaceNormal, view, lightDir);
-    color += ((res.diffuse + res.specular) * cubeMapColor.rgb) * 0.111111111;
-
-    lightDir = normalize(surfaceNormal + vec3(0.1, 0, 0.0));
-    cubeMapColor = texture(samplerCubeMap, lightDir); 
-    res = DisneyDiffuse(textColor.rgb, 0.0, 0.1, surfaceNormal, view, lightDir);
-    color += ((res.diffuse + res.specular) * cubeMapColor.rgb) * 0.111111111;
-
-    lightDir = normalize(surfaceNormal + vec3(0.1, 0, 0.1));
-    cubeMapColor = texture(samplerCubeMap, lightDir); 
-    res = DisneyDiffuse(textColor.rgb, 0.0, 0.1, surfaceNormal, view, lightDir);
-    color += ((res.diffuse + res.specular) * cubeMapColor.rgb) * 0.111111111;
-
-    lightDir = normalize(surfaceNormal + vec3(0.1, 0.1, 0.0));
-    cubeMapColor = texture(samplerCubeMap, lightDir); 
-    res = DisneyDiffuse(textColor.rgb, 0.0, 0.1, surfaceNormal, view, lightDir);
-    color += ((res.diffuse + res.specular) * cubeMapColor.rgb) * 0.111111111;
-
-    lightDir = normalize(surfaceNormal + vec3(0.1, 0.1, 0.1));
-    cubeMapColor = texture(samplerCubeMap, lightDir); 
-    res = DisneyDiffuse(textColor.rgb, 0.0, 0.1, surfaceNormal, view, lightDir);
-    color += ((res.diffuse + res.specular) * cubeMapColor.rgb) * 0.111111111;
-
-    
-
-    
-
+    BRDFResults res = DisneyBRDF(textColor.rgb, metalRoughness.r, metalRoughness.g, surfaceNormal, view, lightDir);
+    color += ((res.diffuse + res.specular) * cubeMapColor.rgb);
 
 
     outColor = vec4(color, 1);
