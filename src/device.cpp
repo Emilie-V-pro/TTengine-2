@@ -37,6 +37,7 @@ void Device::createInstance() {
     vkbInstance = std::move(instance_builder_return.value());
     volkInitialize();
     volkLoadInstance(vkbInstance.instance);
+    vk_instance = vkbInstance.instance;
 }
 
 void Device::selectPhysicalDevice(Window &window) {

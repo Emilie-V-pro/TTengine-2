@@ -48,6 +48,7 @@ class Image : public vk_cmdBuffer_OBJ {
     operator VkImageView() const { return imageView; }
     operator VkImageLayout() const { return actualImageLayout; }
 
+    VkFormat getFormat() const { return imageFormat; }
     uint32_t getWidth() const { return width; }
     uint32_t getHeight() const { return height; }
     VkDescriptorImageInfo getDescriptorImageInfo() const {
@@ -81,7 +82,7 @@ class Image : public vk_cmdBuffer_OBJ {
     void addImageMemoryBarrier(const CommandBuffer &extCmdBuffer, VkPipelineStageFlags2 srcStageMask, VkPipelineStageFlags2 dstStageMask);
     void transferQueueOwnership(const CommandBuffer &extCmdBuffer, uint32_t queueIndex);
 
-    void generateMipmaps();
+    void generateMipmaps(CommandBuffer *extCmdBuffer = nullptr);
 
     static void blitImage(Device *device, Image &srcImage, Image &dstImage, CommandBuffer *extCmdBuffer = nullptr);
     static void copyImage(Device *device, Image &srcImage, Image &dstImage, CommandBuffer *extCmdBuffer = nullptr);

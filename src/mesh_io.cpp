@@ -253,7 +253,7 @@ bool read_meshio_data(const char *filename, MeshIOData &data) {
             }
 
             // force une matiere par defaut, si necessaire
-            std::cout << material_id << std::endl;
+            
             if (material_id == -1) material_id = 0;
 
             if (object_id == -1) {
@@ -308,7 +308,7 @@ bool read_meshio_data(const char *filename, MeshIOData &data) {
         else if (line[0] == 'u') {
             if (sscanf(line, "usemtl %[^\r\n]", tmp) == 1){
                 int i = 0;
-                std::cout << "materials_filenamematerials_filenamematerials_filenamematerials_filenamematerials_filename" << std::endl;
+                
                 for(auto &m : data.materials){
 
                     if(m.name == tmp){

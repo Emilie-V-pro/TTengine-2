@@ -13,6 +13,7 @@
 #include "mesh.hpp"
 #include "scene/object.hpp"
 #include "scene/objects/animatic/BVH.h"
+#include "scene/objects/collision_obj.hpp"
 #include "scene/objects/simulation/ObjetSimuleMSS.h"
 #include "shader/pipeline/graphic_pipeline.hpp"
 
@@ -38,6 +39,8 @@ class Scene {
     std::vector<ObjetSimuleMSS> mssObjects;
     std::vector<std::pair<std::vector<Object>, BVH>> animaticOBJ; 
     
+    std::vector<CollisionObject> collisionObjects;
+
     std::vector<Mesh> meshes;
     std::vector<Material> materials;
     std::vector<Image> textures;

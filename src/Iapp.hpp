@@ -11,7 +11,7 @@ class IApp {
    public:
     // set up the application
     virtual ~IApp() = default;
-    void virtual init(Device* device, SwapChain* swapchainImages) = 0;
+    void virtual init(Device* device, SwapChain* swapchainImages, Window* window) = 0;
     void virtual resize(int width, int height) = 0;
 
     // update the application

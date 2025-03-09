@@ -1,9 +1,11 @@
 #pragma once
+#include <glm/fwd.hpp>
 #include <string>
 
 #include "device.hpp"
 #include "scene/mesh.hpp"
 #include "scene/object.hpp"
+#include "scene/objects/collision_obj.hpp"
 namespace TTe {
 class SimulateObj : public Object {
    public:
@@ -27,10 +29,13 @@ class SimulateObj : public Object {
     virtual void initMeshObjet() = 0;
 
     /*! Gestion des collisions */
-    virtual void Collision() = 0;
+    virtual void Collision(std::vector<CollisionObject> &collisionObjects) = 0;
 
     /*! Simulation de l objet */
-    virtual void Simulation(glm::vec3 gravite, float viscosite, int Tps,  float dt, float t) = 0;
+    virtual void Simulation(glm::vec3 gravite, float viscosite, int Tps,  float dt, float t, std::vector<CollisionObject> &collisionObjects) = 0;
+
+    virtual void applyForceGravity(float t, glm::vec3 g) = 0;
+    virtual void solveExplicit(float visco, float deltaT) = 0;
 
     /*! Interaction avec l utilisateur */
     void Interaction(glm::ivec2 MousePos);

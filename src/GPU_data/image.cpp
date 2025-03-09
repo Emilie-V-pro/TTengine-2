@@ -2,6 +2,7 @@
 #include "GPU_data/image.hpp"
 
 #include <iostream>
+#include "commandBuffer/command_buffer.hpp"
 #define STB_IMAGE_IMPLEMENTATION
 #include <cstddef>
 
@@ -26,7 +27,9 @@ Image::Image(Device *device, ImageCreateInfo &imageCreateInfo, CommandBuffer *cm
       imageFormat(imageCreateInfo.format),
       imageLayout(imageCreateInfo.imageLayout),
       device(device) {
-    refCount.store(std::make_shared<int>(1), std::memory_order_relaxed);
+    CommandBuffer *cmd = nullptr;
+    
+        refCount.store(std::make_shared<int>(1), std::memory_order_relaxed);
     if (!this->imageCreateInfo.filename.empty()) {
         loadImageFromFile(imageCreateInfo.filename);
     }
@@ -35,6 +38,11 @@ Image::Image(Device *device, ImageCreateInfo &imageCreateInfo, CommandBuffer *cm
 
     if (this->imageCreateInfo.datas.size() > 0) {
         loadImageToGPU(cmdBuffer);
+        if(imageCreateInfo.enableMipMap){
+            generateMipmaps(cmdBuffer);
+        }
+    }else{
+        transitionImageLayout(imageLayout, cmdBuffer);
     }
 }
 
@@ -247,11 +255,61 @@ void Image::transferQueueOwnership(const CommandBuffer &extCmdBuffer, uint32_t q
         &imageMemoryBarrier);
 }
 
-void Image::generateMipmaps() {}
+void Image::generateMipmaps(CommandBuffer *extCmdBuffer) {
+    CommandBuffer* cmd;
+    if (extCmdBuffer == nullptr) {
+        cmd = new CommandBuffer(std::move(CommandPoolHandler::getCommandPool(device, device->getRenderQueue())->createCommandBuffer(1)[0]));
+        cmd->beginCommandBuffer();
+    } else {
+        cmd = extCmdBuffer;
+    }
+
+    for (uint32_t i = 1; i < mipLevels; i++) {
+        VkImageBlit imageBlit{};
+
+        // Source
+        imageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        imageBlit.srcSubresource.layerCount = layer;
+        imageBlit.srcSubresource.mipLevel = i - 1;
+        imageBlit.srcOffsets[1].x = int32_t(this->width >> (i - 1));
+        imageBlit.srcOffsets[1].y = int32_t(this->height >> (i - 1));
+        imageBlit.srcOffsets[1].z = 1;
+
+        // Destination
+        imageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        imageBlit.dstSubresource.layerCount = layer;
+        imageBlit.dstSubresource.mipLevel = i;
+        imageBlit.dstOffsets[1].x = int32_t(this->width >> i);
+        imageBlit.dstOffsets[1].y = int32_t(this->height >> i);
+        imageBlit.dstOffsets[1].z = 1;
+
+        VkImageSubresourceRange mipSubRange = {};
+        mipSubRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        mipSubRange.baseMipLevel = i;
+        mipSubRange.levelCount = 1;
+        mipSubRange.layerCount = layer;
+
+        // Prepare current mip level as image blit destination
+        transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, i, 1, cmd);
+
+        // Blit from previous level
+        vkCmdBlitImage(
+            *cmd, this->vk_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, this->vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
+            &imageBlit, VK_FILTER_LINEAR);
+
+        // // Prepare current mip level as image blit source for next level
+        transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, i, 1, cmd);
+    }
+    if(extCmdBuffer == nullptr){
+        cmd->endCommandBuffer();
+        cmd->addRessourceToDestroy(cmd);
+        cmd->submitCommandBuffer({}, {}, nullptr, true);
+    }
+}
 
 void Image::createImage() {
     if (imageCreateInfo.enableMipMap) {
-        imageCreateInfo.usageFlags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        imageCreateInfo.usageFlags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
         mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(imageCreateInfo.width, imageCreateInfo.width)))) + 1;
     }
     auto imageInfo = make<VkImageCreateInfo>();
@@ -270,6 +328,8 @@ void Image::createImage() {
     if (imageCreateInfo.datas.size() > 0) {
         imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     }
+
+
     imageInfo.extent = {imageCreateInfo.width, imageCreateInfo.height, 1};
     // imageInfo.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
     if (imageCreateInfo.isCubeTexture) {
@@ -383,7 +443,7 @@ void Image::loadImageToGPU(CommandBuffer *extCmdBuffer) {
         cmdBuffer->endCommandBuffer();
         cmdBuffer->addRessourceToDestroy(cmdBuffer);
         cmdBuffer->addRessourceToDestroy(b);
-        cmdBuffer->submitCommandBuffer({}, {}, nullptr, false);
+        cmdBuffer->submitCommandBuffer({}, {}, nullptr, true);
     }
 }
 

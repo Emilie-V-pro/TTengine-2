@@ -55,7 +55,6 @@ void Buffer::destruction(){
 }
 
 Buffer::~Buffer() {
-    std::cout << "Buffer destruction" << std::endl;
     destruction();
 }
 

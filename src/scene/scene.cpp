@@ -128,7 +128,7 @@ void Scene::render(CommandBuffer &cmd) {
 
 void Scene::updateSimu(float dt, float t){
     for(auto &obj : mssObjects){
-        obj.Simulation(gravity, _visco, 0, dt, t);
+        obj.Simulation(gravity, _visco, 0, dt, t, collisionObjects);
     }
 }
 
@@ -148,12 +148,6 @@ void Scene::updateCameraBuffer() {
     ubo.projection = camera.getProjectionMatrix();
     ubo.view = camera.getViewMatrix();
     ubo.invView = glm::inverse(camera.getViewMatrix());
-    // show camera pos in console
-    // std::cout << "camera pos : " << camera.translation.x << " " << camera.translation.y << " " << camera.translation.z << std::endl;
-    // clear console
-    // std::cout << "\033[2J\033[1;1H";
-    // std::cout << "camera rot : " << camera.rotation.x << " " << camera.rotation.y << " " << camera.rotation.z << std::endl;
-
     CameraBuffer.writeToBuffer(&ubo, sizeof(Ubo));
 }
 

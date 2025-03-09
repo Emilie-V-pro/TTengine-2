@@ -59,6 +59,7 @@ class DynamicRenderPass  {
 
     void resize(VkExtent2D frameSize);
     void setClearColor(glm::vec3 rgb);
+    void setClearEnable(bool enable);
     void transitionColorAttachment(uint32_t frameIndex, VkImageLayout newLayout, CommandBuffer &commandBuffer);
 
 

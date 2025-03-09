@@ -10,6 +10,7 @@
 #include "commandBuffer/commandPool_handler.hpp"
 #include "commandBuffer/command_buffer.hpp"
 #include "device.hpp"
+#include "dynamic_renderpass.hpp"
 #include "swapchain.hpp"
 #include "synchronisation/semaphore.hpp"
 #include "utils.hpp"
@@ -46,12 +47,12 @@ class Engine {
     bool shouldClose = false;
 
     std::mutex resizeMutex;
-
+    
     Window window{1280, 720, "mon napli"};
     Device device{window};
     SwapChain swapChain{&device, window.getExtent(), vkb::SwapchainBuilder::BufferMode::DOUBLE_BUFFERING};
     IApp *app;
-
+    DynamicRenderPass renderPass;
     std::vector<Semaphore> waitToPresentSemaphores;
 
     CommandBufferPool* commandBufferPool= CommandPoolHandler::getCommandPool(&device, device.getRenderQueue());

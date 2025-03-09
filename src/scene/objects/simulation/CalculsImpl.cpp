@@ -246,7 +246,7 @@ void SolveurImpl::Resolution(int nb_som,
         // Nouveau facteur d erreur
         _beta = _alpha;
         
-        std::cout << "beta " << _beta << std::endl;
+     
         
     } while(_beta < eps2);
 

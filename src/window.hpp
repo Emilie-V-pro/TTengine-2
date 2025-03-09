@@ -39,12 +39,14 @@ class Window {
     void resetWindowResizedFlag() { framebufferResized = false; }
 
     glm::vec3 mouseMove{0};
+    bool moveCam = false;
     double lastX{0}, lastY{0};
     std::chrono::time_point<std::chrono::system_clock> mouseLastMoved;
 
 
    private:
     static void framebufferResizeCallback(GLFWwindow *window, int width, int height);
+
 
     VkExtent2D size = {0, 0};
 

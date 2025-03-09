@@ -27,6 +27,7 @@
 
 #include <math.h>
 
+#include <cstdio>
 #include <glm/geometric.hpp>
 #include <glm/glm.hpp>
 #include <vector>
@@ -50,12 +51,14 @@ namespace TTe {
 
 void SolveurExpl::CalculAccel_ForceGravite(
     glm::vec3 g, int nb_som, float t, std::vector<glm::vec3> &A, std::vector<glm::vec3> &Force, std::vector<float> &M) {
+    // #pragma omp parallel for schedule(dynamic, 1)
+
     for (int i = 0; i < nb_som; ++i) {
         if (M[i] == 0.0) {
             A[i] = glm::vec3(0.0, 0.0, 0.0);
             continue;
         }
-        A[i] = Force[i] / M[i] + g + glm::normalize(glm::vec3(1.0, 0.0, 1.0)) * 2.f * glm::sin(t);
+        A[i] = Force[i] / M[i] + g + glm::normalize(glm::vec3(1.0, 0.0, 1.0)) * 5.f * glm::sin(t);
         Force[i] = glm::vec3(0.0, 0.0, 0.0);
     }
 
@@ -73,6 +76,9 @@ void SolveurExpl::CalculAccel_ForceGravite(
  */
 void SolveurExpl::Solve(
     float visco, int nb_som, float deltaT, std::vector<glm::vec3> &A, std::vector<glm::vec3> &V, std::vector<Vertex> &P) {
+    deltaT = max(deltaT, 0.0005f);
+
+    // #pragma omp parallel for schedule(dynamic, 1)
     for (int i = 0; i < nb_som; ++i) {
         V[i] = (V[i] + deltaT * A[i]) * visco;
         P[i].pos = P[i].pos + deltaT * V[i];

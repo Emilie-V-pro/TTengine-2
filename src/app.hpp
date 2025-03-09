@@ -17,6 +17,7 @@
 #include "synchronisation/semaphore.hpp"
 #include "circular_queue.hpp"
 #include "utils.hpp"
+#include "window.hpp"
 
 namespace TTe {
 class App : public IApp {
@@ -24,7 +25,7 @@ class App : public IApp {
     App() {};
     ~App() {};
     // set up the application
-    void init(Device* device, SwapChain* swapchain);
+    void init(Device* device, SwapChain* swapchain, Window* window);
     void resize(int width, int height);
 
     // update the application

@@ -12,6 +12,7 @@ class MovementController {
 
    void setCursors(Window* window) {
        glfwSetCursorPosCallback(*window, mouseMoveCallback);
+         glfwSetMouseButtonCallback(*window, mouseButtonCallback);
     }
     struct KeyMappings {
         int moveLeft = GLFW_KEY_A;
@@ -25,6 +26,8 @@ class MovementController {
         int lookUp = GLFW_KEY_UP;
         int lookDown = GLFW_KEY_DOWN;
         int space = GLFW_KEY_SPACE;
+        int alt = GLFW_KEY_LEFT_ALT;
+
     };
 
     void moveInPlaneXZ(Window* window, float dt, Camera& cam);
@@ -33,7 +36,7 @@ class MovementController {
     
 
     static void mouseMoveCallback(GLFWwindow* window, double xpos, double ypos);
-
+    static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
     
 
 

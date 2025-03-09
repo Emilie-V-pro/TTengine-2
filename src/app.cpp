@@ -16,16 +16,18 @@
 #include "scene/mesh.hpp"
 #include "scene/object.hpp"
 #include "scene/objects/animatic/BVH.h"
+#include "scene/objects/collision_obj.hpp"
 #include "scene/objects/simulation/ObjetSimuleMSS.h"
 #include "struct.hpp"
 #include "swapchain.hpp"
-#include "utils.hpp"
 
 namespace TTe {
 
-void App::init(Device *device, SwapChain *swapchain) {
+void App::init(Device *device, SwapChain *swapchain, Window* window) {
     this->swapchain = swapchain;
     this->device = device;
+
+    movementController.setCursors(window);
 
     BVH bvh;
     bvh.init("../data/Robot.bvh");
@@ -48,19 +50,23 @@ void App::init(Device *device, SwapChain *swapchain) {
     scene = Scene(device);
     Object o = Object();
     o.meshId = 0;
-    o.translation = {1, 1, 1};
+    o.translation = {4, -2, -3};
+    o.scale = {0.95, 0.95, 0.95};
     scene.objects.push_back(o);
-    scene.meshes.push_back(m2);
-    scene.camera.translation = {10, 10, 10};
+    // scene.meshes.push_back(m2);
+    scene.camera.translation = {0, 2, -10};
     scene.camera.extent = {1280, 720};
 
+    scene.meshes.push_back(Mesh(device, BasicShape::Sphere, 2));
 
     ImageCreateInfo imageCreateInfo;
     imageCreateInfo.filename.push_back("../data/textures/albedo.jpg");
     imageCreateInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     imageCreateInfo.usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT;
+    imageCreateInfo.enableMipMap = true;
 
     Image image = Image(device, imageCreateInfo);
+    // image.generateMipmaps();
 
     imageCreateInfo.filename.clear();
     imageCreateInfo.filename.push_back("../data/textures/normal.jpg");
@@ -91,11 +97,13 @@ void App::init(Device *device, SwapChain *swapchain) {
 
     scene.Param("../data/simu/Fichier_Param.simu");
     auto obj = ObjetSimuleMSS(device, "../data/simu/Fichier_Param.objet1");
+    obj.rotation = {M_PI/2.0, 0, 0};
     scene.addMssObject(obj);
 
-
-
-
+    CollisionObject co (CollisionObject::sphere);
+    scene.collisionObjects.push_back(co);
+    scene.collisionObjects[0].translation = {4, -2, -3};
+    // scene.collisionObjects[0].scale = {0.1, 0.1, 0.1};
     // scene.addBVH(bvh);
 
     scene.textures.push_back(image);
@@ -115,14 +123,13 @@ void App::resize(int width, int height) {
     scene.camera.extent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
 }
 void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
-    if(time == 0) {
-        movementController.setCursors(&windowObj);
-    }
+   
     time += deltaTime;
 
     //   float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
     //   float g = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
     //   float b = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+    // scene.collisionObjects[0].translation = scene.camera.translation;
     scene.updateSimu(deltaTime, time);
     movementController.moveInPlaneXZ(&windowObj, deltaTime, scene.camera);
     renderPass.setClearColor({0.01, 0.01, 0.01});

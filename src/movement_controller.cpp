@@ -5,6 +5,7 @@
 // std
 #include <glm/gtc/constants.hpp>
 #include <limits>
+#include "imgui.h"
 #include "window.hpp"
 
 
@@ -47,6 +48,9 @@ void MovementController::moveInPlaneXZ(Window* window, float dt, Camera& cam) {
     if (glm::dot(moveDir, moveDir) > std::numeric_limits<float>::epsilon()) {
         cam.translation += moveSpeed * dt * glm::normalize(moveDir);
     }
+
+
+    
 }
 
 void MovementController::mouseMoveCallback(GLFWwindow* window, double xpos, double ypos) {
@@ -61,15 +65,38 @@ void MovementController::mouseMoveCallback(GLFWwindow* window, double xpos, doub
 
     windowObj->lastX = xpos;
     windowObj->lastY = ypos;
+    if(windowObj->moveCam == false) return;
 
     xoffset *= 0.005;
     yoffset *= 0.005;
 
     windowObj->mouseMove += glm::vec3(yoffset, xoffset, 0);
-
-    
-
-
 }
+
+void MovementController::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+    Window* windowObj = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+
+    ImGuiIO& io = ImGui::GetIO();
+    if(!io.WantCaptureMouse){
+
+        if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+            if(windowObj->moveCam == false){
+                windowObj->moveCam = true;
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                
+                io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
+            }
+        }
+        else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
+            if(windowObj->moveCam == true){
+                windowObj->moveCam = false;
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                io.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
+            }
+        
+        }
+
+    }
+}  // namespace TTe
 
 }  // namespace vk_stage

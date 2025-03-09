@@ -1,5 +1,6 @@
 
 #include "dynamic_renderpass.hpp"
+#include <vulkan/vulkan_core.h>
 
 
 
@@ -235,6 +236,16 @@ void DynamicRenderPass::setClearColor(glm::vec3 rgb) {
     for (int i = 0; i < this->numberOfFrame; i++) {
         for (auto &a : attachments[i].colorAttachments) {
             a.clearValue = {rgb.r, rgb.g, rgb.b, 0.0};
+        }
+    }
+}
+
+void DynamicRenderPass::setClearEnable(bool enable) {
+    for (int i = 0; i < this->numberOfFrame; i++) {
+        for (auto &a : attachments[i].colorAttachments) {
+  
+             
+            a.loadOp = enable ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
         }
     }
 }

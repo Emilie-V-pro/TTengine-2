@@ -1,6 +1,7 @@
 #pragma once
 
 #include <volk.h>
+
 #include <cstdint>
 #define VK_NO_PROTOTYPES
 #include "VkBootstrap.h"
@@ -36,6 +37,8 @@ class Device {
         return -1;
      }
 
+    VkInstance getInstance() const { return vk_instance; }
+
     const VkQueue& getRenderQueue() const { return renderQueue; }
     const VkQueue& getComputeQueue() const { return computeQueue; }
     const VkQueue& getTransferQueue() const { return transferQueue; }
@@ -62,6 +65,7 @@ class Device {
     void queryPhysicalDeviceProperties();
 
     VkDevice vk_device = VK_NULL_HANDLE;
+    VkInstance vk_instance = VK_NULL_HANDLE;
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     VmaAllocator _allocator ;
      VmaVulkanFunctions vma_vulkan_func{};

@@ -19,6 +19,7 @@
 #include "SolveurExpl.h"
 #include "SolveurImpl.h"
 #include "device.hpp"
+#include "scene/objects/collision_obj.hpp"
 #include "scene/objects/simulateObj.hpp"
 
 namespace TTe {
@@ -49,10 +50,13 @@ public:
     void CalculForceSpring();
 
     /*! Simulation de l objet */
-    void Simulation(glm::vec3 gravite, float viscosite, int Tps, float dt, float t);
+    void Simulation(glm::vec3 gravite, float viscosite, int Tps, float dt, float t, std::vector<CollisionObject> &collisionObjects);
+
+    void applyForceGravity(float t, glm::vec3 g);
+    void solveExplicit(float visco, float deltaT);
     
     /*! Gestion des collisions */
-    void Collision();
+    void Collision(std::vector<CollisionObject> &collisionObjects);
     
     /*! Mise a jour du Mesh (pour affichage) de l objet en fonction des nouvelles positions calculees */
     void updateVertex();

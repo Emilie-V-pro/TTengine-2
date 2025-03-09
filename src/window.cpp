@@ -10,7 +10,7 @@ Window::Window(unsigned int width, unsigned int height, std::string name) : size
 
     window = glfwCreateWindow(width, height, name.c_str(), nullptr, nullptr);
     glfwSetWindowUserPointer(window, this);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    
     if (glfwRawMouseMotionSupported()) glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 
     glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
