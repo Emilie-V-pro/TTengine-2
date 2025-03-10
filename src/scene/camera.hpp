@@ -11,8 +11,8 @@ namespace TTe {
 class Camera : public Object {
    public:
    Camera() {
-       translation = {0,0,0};
-       rotation = {};
+       transform.pos = {0,0,0};
+       transform.rot = glm::vec3{};
        }
     float fov = 80;
     float near = 0.01;

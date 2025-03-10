@@ -50,11 +50,11 @@ void App::init(Device *device, SwapChain *swapchain, Window* window) {
     scene = Scene(device);
     Object o = Object();
     o.meshId = 0;
-    o.translation = {4, -2, -3};
-    o.scale = {0.95, 0.95, 0.95};
+    o.transform.pos = {4, -2, -3};
+    o.transform.scale = {0.95, 0.95, 0.95};
     scene.objects.push_back(o);
     // scene.meshes.push_back(m2);
-    scene.camera.translation = {0, 2, -10};
+    scene.camera.transform.pos = {0, 2, -10};
     scene.camera.extent = {1280, 720};
 
     scene.meshes.push_back(Mesh(device, BasicShape::Sphere, 2));
@@ -63,7 +63,7 @@ void App::init(Device *device, SwapChain *swapchain, Window* window) {
     imageCreateInfo.filename.push_back("../data/textures/albedo.jpg");
     imageCreateInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     imageCreateInfo.usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT;
-    imageCreateInfo.enableMipMap = true;
+    // imageCreateInfo.enableMipMap = true;
 
     Image image = Image(device, imageCreateInfo);
     // image.generateMipmaps();
@@ -97,12 +97,12 @@ void App::init(Device *device, SwapChain *swapchain, Window* window) {
 
     scene.Param("../data/simu/Fichier_Param.simu");
     auto obj = ObjetSimuleMSS(device, "../data/simu/Fichier_Param.objet1");
-    obj.rotation = {M_PI/2.0, 0, 0};
+    obj.transform.rot = {M_PI/2.0, 0, 0};
     scene.addMssObject(obj);
 
     CollisionObject co (CollisionObject::sphere);
     scene.collisionObjects.push_back(co);
-    scene.collisionObjects[0].translation = {4, -2, -3};
+    scene.collisionObjects[0].transform.pos = {4, -2, -3};
     // scene.collisionObjects[0].scale = {0.1, 0.1, 0.1};
     // scene.addBVH(bvh);
 
@@ -125,7 +125,7 @@ void App::resize(int width, int height) {
 void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
    
     time += deltaTime;
-
+    printf("time : %f\n", deltaTime);
     //   float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
     //   float g = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
     //   float b = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);

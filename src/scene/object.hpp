@@ -4,14 +4,13 @@
 #include <glm/fwd.hpp>
 #include <glm/glm.hpp>
 #include "scene/mesh.hpp"
+#include "struct.hpp"
 namespace TTe {
 
 class Object {
    public:
-    glm::vec3 translation{};
-    glm::vec3 scale{1.f, 1.f, 1.f};
-    glm::vec3 rotation{};
-
+    TransformComponent transform;
+    
 
     glm::mat4 worldMatrix;
     glm::mat3 worldNormalMatrix;
@@ -19,8 +18,10 @@ class Object {
     // Matrix corrsponds to Translate * Ry * Rx * Rz * Scale
     // Rotations correspond to Tait-bryan angles of Y(1), X(2), Z(3)
     // https://en.wikipedia.org/wiki/Euler_angles#Rotation_matrix
-    glm::mat4 mat4() const;
-    glm::mat3 normalMatrix() const;
+    glm::mat4 mat4() ;
+    bool dirty = true;
+    glm::mat3 normalMatrix();
+    bool normalDirty = true;
 
     glm::mat4 getTranslationRotationMatrix() const;
     glm::mat3 getNormalTranslationRotationMatrix() const;

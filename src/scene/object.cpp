@@ -2,6 +2,7 @@
 #include "object.hpp"
 #include <cmath>
 #include <glm/ext/matrix_float4x4.hpp>
+#include <glm/fwd.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 #include <glm/matrix.hpp>
@@ -13,21 +14,31 @@
 
 namespace TTe {
 
-glm::mat4 Object::mat4() const {
-    glm::mat4 scaleMatrix = glm::scale(scale);
-    glm::mat4 translationMatrix = glm::translate(translation);
-    glm::mat4 rotationMatrix = glm::eulerAngleXYZ(rotation.x, rotation.y, rotation.z);
-
-    return translationMatrix * rotationMatrix  * scaleMatrix;
+glm::mat4 Object::mat4()  {
+    
+    if(dirty) {
+        transform.scale += glm::vec3(0.0001);
+        glm::mat4 scaleMatrix = glm::scale(transform.scale.value);
+        glm::mat4 translationMatrix = glm::translate(transform.pos.value);
+        glm::mat4 rotationMatrix = glm::eulerAngleXYZ(transform.rot.value.x, transform.rot.value.y, transform.rot.value.z);
+        worldMatrix = translationMatrix * rotationMatrix * scaleMatrix;
+        dirty = false;
+    }
+   
+    return worldMatrix;
 }
 
-glm::mat3 Object::normalMatrix() const {
-    return glm::inverseTranspose(glm::mat3(this->mat4()));
+glm::mat3 Object::normalMatrix() {
+    if(normalDirty) {
+        worldNormalMatrix = glm::inverseTranspose(glm::mat3(this->mat4()));
+        normalDirty = false;
+    }
+    return worldNormalMatrix;
 }
 
 glm::mat4 Object::getTranslationRotationMatrix() const {
-    glm::mat4 translationMatrix = glm::translate(translation);
-    glm::mat4 rotationMatrix = glm::eulerAngleXYZ(rotation.x, rotation.y, rotation.z);
+    glm::mat4 translationMatrix = glm::translate(transform.pos.value);
+    glm::mat4 rotationMatrix = glm::eulerAngleXYZ(transform.rot.value.x, transform.rot.value.y, transform.rot.value.z);
     return translationMatrix * rotationMatrix;
 }
 
@@ -36,6 +47,6 @@ glm::mat3 Object::getNormalTranslationRotationMatrix() const {
 }
 
 glm::mat4 Object::getScaledMatrix() const {
-    return glm::scale(scale);
+    return glm::scale(transform.scale.value);
 } 
 }

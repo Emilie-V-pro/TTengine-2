@@ -12,8 +12,9 @@
 namespace TTe {
 
 glm::mat4 Camera::getViewMatrix() {
-    const float yaw = rotation.y;
-    const float pitch = rotation.x;
+    const float yaw = transform.rot->y;
+    // transform.rot.
+    const float pitch = transform.rot->x;
 
     glm::vec3 forward{
         std::sin(yaw) * std::cos(pitch),
@@ -22,9 +23,9 @@ glm::mat4 Camera::getViewMatrix() {
     };
 
     // Position cible en fonction de la direction
-    glm::vec3 target = translation + forward;
+    glm::vec3 target = transform.pos + forward;
 
-    return glm::lookAt(translation, target,  up);
+    return glm::lookAt(transform.pos.value, target,  up);
     // const glm::vec3 w{glm::normalize(rotation)};
     // const glm::vec3 u{glm::normalize(glm::cross(w, up))};
     // const glm::vec3 v{glm::cross(w, u)};

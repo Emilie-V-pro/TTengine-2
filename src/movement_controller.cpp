@@ -23,16 +23,16 @@ void MovementController::moveInPlaneXZ(Window* window, float dt, Camera& cam) {
     if (glfwGetKey(*window, keys.lookDown) == GLFW_PRESS) rotate.x -= 1.f;
 
     if (glm::dot(rotate, rotate) > std::numeric_limits<float>::epsilon()) {
-        cam.rotation += lookSpeed * dt * glm::normalize(rotate);
+        cam.transform.rot += lookSpeed * dt * glm::normalize(rotate);
     }
-    cam.rotation += window->mouseMove;
+    cam.transform.rot += window->mouseMove;
     window->mouseMove = glm::vec3(0);
     
     // limit pitch values between about +/- 85ish degrees
-    cam.rotation.x = glm::clamp(cam.rotation.x, -1.5f, 1.5f);
-    cam.rotation.y = glm::mod(cam.rotation.y, glm::two_pi<float>());
+    cam.transform.rot->x = glm::clamp(cam.transform.rot->x, -1.5f, 1.5f);
+    cam.transform.rot->y = glm::mod(cam.transform.rot->y, glm::two_pi<float>());
 
-    float yaw = cam.rotation.y;
+    float yaw = cam.transform.rot->y;
     const glm::vec3 forwardDir{sin(yaw), 0.f, cos(yaw)};
     const glm::vec3 rightDir{forwardDir.z, 0.f, -forwardDir.x};
     const glm::vec3 upDir{0.f, 1.f, 0.f};
@@ -46,7 +46,7 @@ void MovementController::moveInPlaneXZ(Window* window, float dt, Camera& cam) {
     if (glfwGetKey(*window, keys.moveDown) == GLFW_PRESS) moveDir -= upDir;
 
     if (glm::dot(moveDir, moveDir) > std::numeric_limits<float>::epsilon()) {
-        cam.translation += moveSpeed * dt * glm::normalize(moveDir);
+        cam.transform.pos += moveSpeed * dt * glm::normalize(moveDir);
     }
 
 

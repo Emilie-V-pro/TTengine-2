@@ -31,8 +31,8 @@ void Scene::addBVH(BVH &bvh) {
         auto &jointMat = bvh.getJoint(i);
 
         o.parentID = jointMat.getParentId();
-        o.scale = glm::vec3(5.);
-        jointMat.getOffset(o.translation.x, o.translation.y, o.translation.z);
+        o.transform.scale = glm::vec3(5.);
+        jointMat.getOffset(o.transform.pos->x, o.transform.pos->y, o.transform.pos->z);
         skeleton.push_back(o);
     }
 
