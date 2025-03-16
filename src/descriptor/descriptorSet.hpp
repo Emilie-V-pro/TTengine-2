@@ -25,8 +25,8 @@ class DescriptorSet {
     ~DescriptorSet();
 
     // Copy and move constructors
-    DescriptorSet(DescriptorSet &other);
-    DescriptorSet &operator=(DescriptorSet &other);
+    DescriptorSet(const DescriptorSet &other);
+    DescriptorSet &operator=(const DescriptorSet &other);
     DescriptorSet(DescriptorSet &&other);
     DescriptorSet &operator=(DescriptorSet &&other);
 

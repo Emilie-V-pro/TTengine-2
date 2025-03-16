@@ -18,6 +18,8 @@
 #include "scene/objects/animatic/BVH.h"
 #include "scene/objects/collision_obj.hpp"
 #include "scene/objects/simulation/ObjetSimuleMSS.h"
+#include "sceneV2/scene.hpp"
+#include "sceneV2/staticMeshObj.hpp"
 #include "struct.hpp"
 #include "swapchain.hpp"
 
@@ -56,6 +58,7 @@ void App::init(Device *device, SwapChain *swapchain, Window* window) {
     // scene.meshes.push_back(m2);
     scene.camera.transform.pos = {0, 2, -10};
     scene.camera.extent = {1280, 720};
+
 
     scene.meshes.push_back(Mesh(device, BasicShape::Sphere, 2));
 
@@ -115,7 +118,26 @@ void App::init(Device *device, SwapChain *swapchain, Window* window) {
     
     scene.updateBuffer();
 
+    scene2 = Scene2(device);
+    scene2.addMesh(m2);
     
+    StaticMeshObj obj2 = StaticMeshObj();
+    obj2.setMeshId(0);
+
+    scene2.addNode(-1, std::make_shared<StaticMeshObj>());
+    scene2.addMaterial(mat);
+    scene2.addMaterial(mat);
+    scene2.addMaterial(mat);
+    scene2.addMaterial(mat);
+    scene2.addMaterial(mat);
+
+
+    scene2.addImage(image);
+    scene2.addImage(normal);
+    scene2.addImage(mr);
+    
+    scene2.updateDescriptorSets();
+    scene2.updateMaterialBuffer();
 }
 
 void App::resize(int width, int height) { 
@@ -132,6 +154,8 @@ void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
     // scene.collisionObjects[0].translation = scene.camera.translation;
     scene.updateSimu(deltaTime, time);
     movementController.moveInPlaneXZ(&windowObj, deltaTime, scene.camera);
+
+    movementController.moveInPlaneXZ(&windowObj, deltaTime, scene2.getMainCamera());
     renderPass.setClearColor({0.01, 0.01, 0.01});
     // scene.camera.rotation = glm::normalize(glm::vec3(-1));
     // std::cout << time << std::endl;

@@ -32,17 +32,15 @@ Buffer::Buffer(
     allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
     VmaAllocationInfo getAllocInfo;
     vmaCreateBuffer(device->getAllocator(), &bufferInfo, &allocInfo, &vk_buffer, &allocation, &getAllocInfo);
-    //check if match VMA_ALLOCATION_CREATE_MAPPED_BIT
+    // check if match VMA_ALLOCATION_CREATE_MAPPED_BIT
     if (bufferType == BufferType::STAGING || bufferType == BufferType::READBACK || bufferType == BufferType::DYNAMIC) {
         mappedMemory = getAllocInfo.pMappedData;
     }
-
 }
 
 Buffer::Buffer() {}
 
-
-void Buffer::destruction(){
+void Buffer::destruction() {
     if (vk_buffer != VK_NULL_HANDLE) {
         if (refCount.load(std::memory_order_relaxed) && --(*refCount.load()) == 0) {
             if (mappedMemory != nullptr) {
@@ -54,9 +52,7 @@ void Buffer::destruction(){
     }
 }
 
-Buffer::~Buffer() {
-    destruction();
-}
+Buffer::~Buffer() { destruction(); }
 
 Buffer::Buffer(const Buffer& other)
     : allocInfo(other.allocInfo),
@@ -123,7 +119,6 @@ Buffer& Buffer::operator=(Buffer&& other) {
         other.allocation = VK_NULL_HANDLE;
         other.device = nullptr;
         refCount.store(other.refCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
-        
     }
     return *this;
 }
@@ -165,8 +160,10 @@ uint64_t Buffer::getBufferDeviceAddress(uint32_t offset) const {
 }
 
 void Buffer::writeToBuffer(void* data, VkDeviceSize size, VkDeviceSize offset) {
-    vmaCopyMemoryToAllocation(device->getAllocator(), data, allocation, offset, size);
-    mappedMemory = nullptr;
+    if (size > 0) {
+        vmaCopyMemoryToAllocation(device->getAllocator(), data, allocation, offset, size);
+        mappedMemory = nullptr;
+    }
 }
 
 void Buffer::copyBuffer(

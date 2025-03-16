@@ -24,7 +24,7 @@ DescriptorSet::DescriptorSet(Device *device, std::shared_ptr<DescriptorSetLayout
 
 DescriptorSet::~DescriptorSet() {}
 
-DescriptorSet::DescriptorSet(DescriptorSet &other)
+DescriptorSet::DescriptorSet(const DescriptorSet &other)
     : descriptor_buffer(other.descriptor_buffer),
       descriptor_buffer_address(descriptor_buffer.getBufferDeviceAddress()),
       descriptorSetLayout(other.descriptorSetLayout),
@@ -38,7 +38,7 @@ DescriptorSet::DescriptorSet(DescriptorSet &&other)
       descriptorInfo(other.descriptorInfo),
       device(other.device) {}
 
-DescriptorSet &DescriptorSet::operator=(DescriptorSet &other) {
+DescriptorSet &DescriptorSet::operator=(const DescriptorSet &other) {
     if (this != &other) {
         descriptor_buffer = other.descriptor_buffer;
         descriptor_buffer_address = descriptor_buffer.getBufferDeviceAddress();

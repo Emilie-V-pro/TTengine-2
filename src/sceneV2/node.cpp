@@ -1,6 +1,7 @@
 
 #include "node.hpp"
 #include <algorithm>
+#include <memory>
 #include "sceneV2/scene.hpp"
 
 #define GLM_FORCE_RADIANS
@@ -18,9 +19,8 @@ Node::Node(int id) : id(id) {}
 
 Node::~Node() {
     for (auto &child : children) {
-        scene->removeNode(child->id);    
+        child->setParent(nullptr);
     }
-    scene->removeNode(id);
 }
 
 glm::mat4 Node::wMatrix() {
@@ -32,6 +32,7 @@ glm::mat4 Node::wMatrix() {
         worldMatrix = translationMatrix * rotationMatrix * scaleMatrix;
         dirty = false;
     }
+    worldMatrix = parent ? parent->wMatrix() * worldMatrix : worldMatrix;
     return worldMatrix;
 }
 
@@ -40,27 +41,32 @@ glm::mat3 Node::wNormalMatrix() {
         worldNormalMatrix = glm::inverseTranspose(glm::mat3(this->wMatrix()));
         normalDirty = false;
     }
+    worldNormalMatrix = parent ? parent->wNormalMatrix() * worldNormalMatrix : worldNormalMatrix;
     return worldNormalMatrix;
 }
 
-Node *Node::getParent() const { return parent; }
+Node * Node::getParent() const { return parent; }
 
-void Node::setParent(Node *parent) { this->parent = parent; }
+void Node::setParent(Node* parent) { this->parent = parent; }
 
-Node *Node::getChild(int index) const { return children[index]; }
+int Node::getId() const { return id; }
 
-std::vector<Node *> &Node::getChildren() { return children; }
+void Node::setId(int id) { this->id = id; }
 
-void Node::addChild(Node child) {
+std::shared_ptr<Node> Node::getChild(int index) const { return children[index]; }
+
+std::vector<std::shared_ptr<Node>> &Node::getChildren() { return children; }
+
+void Node::addChild(std::shared_ptr<Node> child) {
     children.push_back(child);
-    scene->addNode(child->id);
     child->setParent(this);
 }
 
-void Node::removeChild(Node *child) {
+void Node::removeChild(std::shared_ptr<Node> child) {
     auto it = std::find(children.begin(), children.end(), child);
     if (it != children.end()) {
-        scene->removeNode(child->id);
+        children.erase(it);
+        child->setParent(nullptr);
     }
 }
 

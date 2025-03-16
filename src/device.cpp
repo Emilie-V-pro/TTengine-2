@@ -42,6 +42,7 @@ void Device::createInstance() {
 
 void Device::selectPhysicalDevice(Window &window) {
     this->surface = window.getSurface(vkbInstance);
+    std::cout << "surface created" << std::endl;
     vkb::PhysicalDeviceSelector phys_device_selector(vkbInstance);
     phys_device_selector.set_surface(surface);
     setRequiredExtensions(phys_device_selector);

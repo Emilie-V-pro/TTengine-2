@@ -316,6 +316,9 @@ Mesh::Mesh(Device *d, const BasicShape &b, uint res) {
         case BasicShape::Sphere:
             *this = init_sphere(d, res);
             break;
+        case BasicShape::Cube:
+            *this = init_cube(d, res);
+            break;
         default:
             assert("Invalid shape");
             break;

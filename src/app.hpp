@@ -12,6 +12,7 @@
 #include "dynamic_renderpass.hpp"
 #include "movement_controller.hpp"
 #include "scene/scene.hpp"
+#include "sceneV2/scene.hpp"
 #include "shader/pipeline/compute_pipeline.hpp"
 #include "swapchain.hpp"
 #include "synchronisation/semaphore.hpp"
@@ -40,6 +41,7 @@ class App : public IApp {
     MovementController movementController;
 
     Scene scene;
+    Scene2 scene2;
 
     float time = 0.0f;
 };

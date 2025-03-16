@@ -2,23 +2,20 @@
 
 
 
+#include <memory>
 #include "struct.hpp"
 
 namespace TTe {
 
-    class Scene2;
+class Scene2;
 class Node {
    public:
     Node();
     Node(int id);
 
-    // delete copy and move constructors
-    Node(Node const&) = delete;             // Copy construct
-    Node(Node&&) = delete;                  // Move construct
-    Node& operator=(Node const&) = delete;  // Copy assign
-    Node& operator=(Node &&) = delete;      // Move assign
 
-    ~Node();
+
+    virtual ~Node() = 0;
 
     TransformComponent transform;
 
@@ -29,21 +26,22 @@ class Node {
     glm::mat4 wMatrix();
     glm::mat3 wNormalMatrix();
 
-    Node *getParent() const;
-    void setParent(Node *parent);
+    Node * getParent() const;
+    void setParent(Node * parent);
+    int getId() const;
+    void setId(int id);
 
-    Node *getChild(int index) const;
-    std::vector<Node *> &getChildren();
-    void addChild(Node child);
-    void removeChild(Node *child);
+    std::shared_ptr<Node> getChild(int index) const;
+    std::vector<std::shared_ptr<Node>> &getChildren();
+    void addChild(std::shared_ptr<Node> child);
+    void removeChild(std::shared_ptr<Node> child);
 
-   private:
+   protected:
     int id;
     glm::mat4 worldMatrix;
     glm::mat3 worldNormalMatrix;
 
-    Scene2 *scene;
     Node *parent;
-    std::vector<Node *> children;
+    std::vector<std::shared_ptr<Node>> children;
 };
 }  // namespace TTe

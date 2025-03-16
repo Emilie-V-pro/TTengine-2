@@ -1,29 +1,127 @@
 #pragma once
 
-
-
+#include <array>
 #include <cstdint>
+#include <map>
 #include <memory>
 #include <unordered_map>
 #include <vector>
+
+#include "GPU_data/buffer.hpp"
 #include "GPU_data/image.hpp"
+#include "descriptor/descriptorSet.hpp"
+#include "device.hpp"
 #include "scene/mesh.hpp"
+#include "scene/objects/animaticObj.hpp"
+#include "sceneV2/Irenderable.hpp"
+#include "sceneV2/cameraV2.hpp"
 #include "sceneV2/node.hpp"
+#include "shader/pipeline.hpp"
+#include "shader/pipeline/graphic_pipeline.hpp"
 
 namespace TTe {
-    class Scene2 : Node {
-    public:
-        Scene2();
-        ~Scene2();
+class Scene2 : public Node {
+   public:
+    Scene2(){};
+    Scene2(Device *device);
+    ~Scene2();
 
-        void addNode(uint32_t Parent_id, Node node);
-        void removeNode(uint32_t id);
-    private:
-        std::vector<Mesh> meshes;
-        std::vector<Image> images;
-        std::vector<Material> materials;
-
-        
-        std::unordered_map<uint32_t, std::shared_ptr<Node>> objects;
+    //copy constructor
+    Scene2(const Scene2 &scene){
+        this->device = scene.device;
+        this->meshes = scene.meshes;
+        this->basicMeshes = scene.basicMeshes;
+        this->images = scene.images;
+        this->materials = scene.materials;
+        this->skyboxImage = scene.skyboxImage;
+         this->sceneDescriptorSet = scene.sceneDescriptorSet;
+        this->cameraBuffer = scene.cameraBuffer;
+        this->materialBuffer = scene.materialBuffer;
+        this->mainCamera = scene.mainCamera;
+        this->cameras = scene.cameras;
+        this->animaticObjs = scene.animaticObjs;
+        this->renderables = scene.renderables;
+        this->objects = scene.objects;
+        this->freeIDs = scene.freeIDs;
+        this->nextID = scene.nextID;
+        // this->skyboxPipeline = scene.skyboxPipeline;
+        // this->meshPipeline = scene.meshPipeline;
     };
-}
+
+    //copy assignment
+    Scene2 &operator=(const Scene2 &scene){
+        this->device = scene.device;
+        this->meshes = scene.meshes;
+        this->basicMeshes = scene.basicMeshes;
+        this->images = scene.images;
+        this->materials = scene.materials;
+        this->skyboxImage = scene.skyboxImage;
+        this->sceneDescriptorSet = scene.sceneDescriptorSet;
+        this->cameraBuffer = scene.cameraBuffer;
+        this->materialBuffer = scene.materialBuffer;
+        this->mainCamera = scene.mainCamera;
+        this->cameras = scene.cameras;
+        this->animaticObjs = scene.animaticObjs;
+        this->renderables = scene.renderables;
+        this->objects = scene.objects;
+        this->freeIDs = scene.freeIDs;
+        this->nextID = scene.nextID;
+        // this->skyboxPipeline = scene.skyboxPipeline;
+        // this->meshPipeline = scene.meshPipeline;
+        return *this;
+    };
+
+    void render(CommandBuffer &cmd);
+
+    void addNode(uint32_t Parent_id, std::shared_ptr<Node> node);
+    void removeNode(uint32_t id);
+
+    void addMaterial(Material material);
+
+    void addMesh(Mesh mesh);
+
+    void addImage(Image image);
+
+    std::shared_ptr<CameraV2> getMainCamera() { return mainCamera; }
+
+    void updateCameraBuffer();
+    void updateMaterialBuffer();
+    void updateDescriptorSets();
+   private:
+    glm::vec3 gravity{0.0f, -9.81f, 0.0f};
+    float _visco;
+
+    
+
+    void createPipelines();
+    void createDescriptorSets();
+
+    std::vector<Mesh> meshes;
+    std::map<BasicShape, Mesh> basicMeshes;
+    std::vector<Image> images;
+    std::vector<Material> materials;
+
+    Image skyboxImage;
+
+    DescriptorSet sceneDescriptorSet;
+
+    Buffer cameraBuffer;
+    Buffer materialBuffer;
+
+    std::shared_ptr<CameraV2> mainCamera;
+    std::vector<std::shared_ptr<CameraV2>> cameras;
+    std::vector<std::shared_ptr<AnimaticObj>> animaticObjs;
+    std::vector<std::shared_ptr<IRenderable>> renderables;
+
+    std::unordered_map<uint32_t, std::shared_ptr<Node>> objects;
+
+    std::vector<uint32_t> freeIDs;
+    int nextID = 1;
+    uint32_t getNewID();
+
+    GraphicPipeline skyboxPipeline;
+    GraphicPipeline meshPipeline;
+
+    Device *device = nullptr;
+};
+}  // namespace TTe
