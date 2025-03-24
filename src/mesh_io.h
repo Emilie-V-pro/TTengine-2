@@ -25,13 +25,12 @@ struct MeshIOData
     std::vector<unsigned> indices;
     
     std::vector<Material> materials;
-    std::vector<int> material_indices;
     
     std::vector<std::string> object_names;
     std::vector<int> object_indices;
   
     int find_object( const char *name );
-    std::vector<MeshIOGroup> sort_by_material( ) { return groups(material_indices); }
+
     std::vector<MeshIOGroup> sort_by_object( ) { return groups(object_indices); }
     std::vector<MeshIOGroup> groups( const std::vector<int>& properties );
 };

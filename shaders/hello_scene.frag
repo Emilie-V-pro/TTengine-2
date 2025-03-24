@@ -19,7 +19,6 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
 }
 ubo;
 
-layout(set = 0 , binding = 3) uniform samplerCube samplerCubeMap;
 
 struct Material {
     vec4 color;
@@ -34,6 +33,7 @@ m;
 
 layout(set = 0, binding = 2) uniform sampler2D textures[1000];
 
+layout(set = 0 , binding = 3) uniform samplerCube samplerCubeMap;
 
 
 struct ObjectInfo {

@@ -1,18 +1,18 @@
 
-#include "mesh_io.h"
+#include "objLoader.hpp"
 
 #include <algorithm>
-#include <cassert>
-#include <cstdlib>
-#include <glm/fwd.hpp>
-#include <iostream>
+#include <cstdint>
 #include <map>
+#include <stdexcept>
 #include <vector>
-#include "struct.hpp"
+
+#include "GPU_data/image.hpp"
+#include "scene/mesh.hpp"
 
 namespace TTe {
 
-bool read_materials_mtl(const char *filename, std::vector<Material> &materials) {
+bool ObjLoader::read_materials_mtl(const char *filename, std::vector<Material> &materials) {
     FILE *in = fopen(filename, "rt");
     if (!in) {
         printf("[error] loading materials '%s'...\n", filename);
@@ -41,7 +41,6 @@ bool read_materials_mtl(const char *filename, std::vector<Material> &materials) 
 
         if (line[0] == 'n') {
             if (sscanf(line, "newmtl %[^\r\n]", tmp) == 1) {
-
                 materials.push_back(Material());
                 material = &materials.back();
                 material->name = tmp;
@@ -54,7 +53,7 @@ bool read_materials_mtl(const char *filename, std::vector<Material> &materials) 
         //     float r, g, b;
         //     if (sscanf(line, "Kd %f %f %f", &r, &g, &b) == 3)
         //         material->color = glm::vec4(r, g, b, 0);
-    
+
         // }
 
         // else if (line[0] == 'N') {
@@ -69,16 +68,16 @@ bool read_materials_mtl(const char *filename, std::vector<Material> &materials) 
         //         material->transmission = Color(r, g, b);
         // }
 
-        // else if (line[0] == 'm') {
-        //     if (sscanf(line, "map_Kd %[^\r\n]", tmp) == 1)
-        //         material->albido_tex_id = materials.insert_texture(absolute_filename(pathname(filename), tmp).c_str());
+        else if (line[0] == 'm') {
+            if (sscanf(line, "map_Kd %[^\r\n]", tmp) == 1)
+                material->albedo_tex_id = insert_texture(tmp);
 
-        //     else if (sscanf(line, "map_Ks %[^\r\n]", tmp) == 1)
-        //         material->specular_texture = materials.insert_texture(absolute_filename(pathname(filename), tmp).c_str());
+            // else if (sscanf(line, "map_Ks %[^\r\n]", tmp) == 1)
+            //     material->specular_texture = materials.insert_texture(absolute_filename(pathname(filename), tmp).c_str());
 
-        //     else if (sscanf(line, "map_Ns %[^\r\n]", tmp) == 1)
-        //         material->ns_texture = materials.insert_texture(absolute_filename(pathname(filename), tmp).c_str());
-        // }
+            // else if (sscanf(line, "map_Ns %[^\r\n]", tmp) == 1)
+            //     material->ns_texture = materials.insert_texture(absolute_filename(pathname(filename), tmp).c_str());
+        }
     }
 
     fclose(in);
@@ -86,6 +85,19 @@ bool read_materials_mtl(const char *filename, std::vector<Material> &materials) 
     if (error) printf("[error] parsing line :\n%s\n", line_buffer);
 
     return !error;
+}
+
+int ObjLoader::insert_texture(const char *name) {
+    for (unsigned i = 0; i < textures.size(); i++)
+        if (textures[i].name == name) return i;
+
+    ImageCreateInfo imageCreateInfo;
+    imageCreateInfo.filename.push_back(name);
+    imageCreateInfo.enableMipMap = false;
+    imageCreateInfo.usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT ;
+    imageCreateInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    textures.push_back(Image(device, imageCreateInfo));
+    return textures.size() - 1;
 }
 
 // representation de l'indexation complete d'un sommet .obj / wavefront
@@ -108,77 +120,51 @@ struct vertex {
     }
 };
 
-int MeshIOData::find_object(const char *name) {
+int ObjLoader::find_object(const char *name) {
     for (unsigned i = 0; i < object_names.size(); i++)
         if (object_names[i] == name) return i;
 
     return -1;
 }
 
-std::vector<MeshIOGroup> MeshIOData::groups(const std::vector<int> &properties) {
+std::vector<std::vector<unsigned>>  ObjLoader::groups(const std::vector<int> &properties) {
     std::vector<int> remap(properties.size());
     for (unsigned i = 0; i < remap.size(); i++) remap[i] = i;
 
-    std::stable_sort(remap.begin(), remap.end(), [&](const int a, const int b) { return properties[a] < properties[b]; });
+    std::stable_sort(remap.begin(), remap.end(), [&](const int a, const int b) { 
+        return properties[a] < properties[b]; 
+    });
 
-    // re-organise l'index buffer
-    std::vector<unsigned> tmp;
-    tmp.reserve(indices.size());
+    // Re-organise l'index buffer et stocke les indices par groupes
+    std::vector<std::vector<unsigned>> grouped_indices;
+    int current_id = properties[remap[0]];
+    std::vector<unsigned> current_group;
+
     for (unsigned i = 0; i < remap.size(); i++) {
-        int id = remap[i];
-        tmp.push_back(indices[3 * id]);
-        tmp.push_back(indices[3 * id + 1]);
-        tmp.push_back(indices[3 * id + 2]);
-    }
-
-    std::swap(indices, tmp);
-
-    // construit les groupes de triangles
-    std::vector<MeshIOGroup> groups;
-
-    // first group
-    int id = properties[remap[0]];
-    unsigned first = 0;
-    unsigned count = 1;
-    for (unsigned i = 1; i < remap.size(); i++) {
-        if (properties[remap[i]] != id) {
-            groups.push_back({id, first, count});
-            // restart
-            id = properties[remap[i]];
-            first = i;
-            count = 0;
+        int id = properties[remap[i]];
+        if (id != current_id) {
+            grouped_indices.push_back(std::move(current_group));
+            current_group.clear();
+            current_id = id;
         }
-
-        count++;
+        current_group.push_back(indices[3 * remap[i]]);
+        current_group.push_back(indices[3 * remap[i] + 1]);
+        current_group.push_back(indices[3 * remap[i] + 2]);
     }
-
-    // last group
-    groups.push_back({id, first, count});
-
-    {
-        // re-organise aussi les indices de matieres
-        std::vector<int> tmp;
-        tmp.reserve(remap.size());
     
-
-        // re-organise aussi les indices d'objets
-        tmp.clear();
-        for (unsigned i = 0; i < remap.size(); i++) tmp.push_back(object_indices[remap[i]]);
-
-        std::swap(object_indices, tmp);
-    }
-
-    return groups;
+    // Ajoute le dernier groupe
+    grouped_indices.push_back(std::move(current_group));
+    return grouped_indices;
 }
 
-bool read_meshio_data(const char *filename, MeshIOData &data) {
-    FILE *in = fopen(filename, "rt");
+ObjectFileData ObjLoader::loadObject(std::string objectPath) {
+    ObjectFileData returnValue;
+    FILE *in = fopen(objectPath.c_str(), "rt");
     if (!in) {
-        printf("[error] loading indexed mesh '%s'...\n", filename);
-        return false;
+        throw std::runtime_error("[error] loading indexed mesh " + objectPath + "...\n");
     }
 
-    printf("loading indexed mesh '%s'...\n", filename);
+    printf("loading indexed mesh '%s'...\n", objectPath.c_str());
 
     std::vector<glm::vec3> wpositions;
     std::vector<glm::vec3> wtexcoords;
@@ -251,21 +237,21 @@ bool read_meshio_data(const char *filename, MeshIOData &data) {
             }
 
             // force une matiere par defaut, si necessaire
-            
+
             if (material_id == -1) material_id = 0;
 
             if (object_id == -1) {
-                object_id = data.find_object("default");
+                object_id = find_object("default");
                 if (object_id == -1) {
-                    object_id = data.object_names.size();
-                    data.object_names.push_back("default");
+                    object_id = object_names.size();
+                    object_names.push_back("default");
                 }
             }
 
             // triangule la face
             for (unsigned v = 2; v + 1 < wp.size(); v++) {
-               
-                data.object_indices.push_back(object_id);
+                // data.material_indices.push_back(material_id);
+                object_indices.push_back(object_id);
 
                 unsigned idv[3] = {0, v - 1, v};
                 for (unsigned i = 0; i < 3; i++) {
@@ -280,12 +266,12 @@ bool read_meshio_data(const char *filename, MeshIOData &data) {
                     // recherche / insere le sommet
                     auto found = remap.insert(std::make_pair(vertex(material_id, p, t, n), unsigned(remap.size())));
                     if (found.second) {
-                        data.vertices.push_back(Vertex(wpositions[p], wnormals[n], wtexcoords[t], material_id));
+                        vertices.push_back(Vertex(wpositions[p], wnormals[n], wtexcoords[t], material_id));
                     }
 
                     // construit l'index buffer
-                    assert(found.first->second < data.vertices.size());
-                    data.indices.push_back(found.first->second);
+                    assert(found.first->second < vertices.size());
+                    indices.push_back(found.first->second);
                 }
             }
         }
@@ -299,31 +285,30 @@ bool read_meshio_data(const char *filename, MeshIOData &data) {
                 materials_filename = std::string(tmp);
 
                 // charge les matieres, ou pas...
-                read_materials_mtl(("../data/mesh/" + materials_filename).c_str(), data.materials);
+                read_materials_mtl(("../data/mesh/" + materials_filename).c_str(), returnValue.materials);
             }
         }
 
         else if (line[0] == 'u') {
-            if (sscanf(line, "usemtl %[^\r\n]", tmp) == 1){
+            if (sscanf(line, "usemtl %[^\r\n]", tmp) == 1) {
                 int i = 0;
-                
-                for(auto &m : data.materials){
 
-                    if(m.name == tmp){
+                for (auto &m : returnValue.materials) {
+                    if (m.name == tmp) {
                         material_id = i;
                         break;
                     }
                     i++;
                 }
-            } 
+            }
         }
 
         else if (line[0] == 'o') {
             if (sscanf(line, "o %s", tmp) == 1) {
-                object_id = data.find_object(tmp);
+                object_id = find_object(tmp);
                 if (object_id == -1) {
-                    object_id = data.object_names.size();
-                    data.object_names.push_back(tmp);
+                    object_id = object_names.size();
+                    object_names.push_back(tmp);
                 }
 
                 //~ printf("object '%s': %d\n", tmp, object_id);
@@ -351,11 +336,15 @@ bool read_meshio_data(const char *filename, MeshIOData &data) {
     fclose(in);
 
     if (error) {
-        printf("[error] loading indexed mesh '%s'...\n%s\n\n", filename, line_buffer);
-        return false;
+        throw std::runtime_error("[error] parsing line :\n" + std::string(line_buffer) + "\n");
     }
-
-    return true;
+    auto group_indices = groups(object_indices);
+    for (auto &group : group_indices) {
+        Mesh mesh = Mesh(device, group, vertices);
+        returnValue.meshes.push_back(mesh);
+    }
+    returnValue.images = std::move(textures);
+    return returnValue;
 }
 
 }  // namespace TTe

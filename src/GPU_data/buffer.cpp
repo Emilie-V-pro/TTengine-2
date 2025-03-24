@@ -1,5 +1,6 @@
 
 #include "buffer.hpp"
+#include <vulkan/vulkan_core.h>
 
 #include <iostream>
 
@@ -31,7 +32,9 @@ Buffer::Buffer(
 
     allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
     VmaAllocationInfo getAllocInfo;
-    vmaCreateBuffer(device->getAllocator(), &bufferInfo, &allocInfo, &vk_buffer, &allocation, &getAllocInfo);
+    VkResult res = vmaCreateBuffer(device->getAllocator(), &bufferInfo, &allocInfo, &vk_buffer, &allocation, &getAllocInfo);
+    // std::cout << res << std::endl;
+   
     // check if match VMA_ALLOCATION_CREATE_MAPPED_BIT
     if (bufferType == BufferType::STAGING || bufferType == BufferType::READBACK || bufferType == BufferType::DYNAMIC) {
         mappedMemory = getAllocInfo.pMappedData;
@@ -161,6 +164,7 @@ uint64_t Buffer::getBufferDeviceAddress(uint32_t offset) const {
 
 void Buffer::writeToBuffer(void* data, VkDeviceSize size, VkDeviceSize offset) {
     if (size > 0) {
+        // std::cout << "size : " << size << " allocator : " << device->getAllocator() << " src ptr : " << data << " dst alloc : " << allocation << std::endl;
         vmaCopyMemoryToAllocation(device->getAllocator(), data, allocation, offset, size);
         mappedMemory = nullptr;
     }

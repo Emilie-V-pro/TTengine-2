@@ -21,9 +21,6 @@ class GraphicPipeline : Pipeline {
     GraphicPipeline(Device *device, GraphicPipelineCreateInfo& pipelineCreateInfo);
     ~GraphicPipeline();
 
-    // Remove copy constructor
-    GraphicPipeline(const GraphicPipeline &) = delete;
-    GraphicPipeline &operator=(const GraphicPipeline &) = delete;
 
     // Move constructor
     GraphicPipeline(GraphicPipeline &&other);

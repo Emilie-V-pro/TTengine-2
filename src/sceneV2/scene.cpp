@@ -12,12 +12,12 @@ Scene2::Scene2(Device *device) : device(device) {
     basicMeshes[Cube] = Mesh(device, Cube, 1);
 
     ImageCreateInfo skyboxImageCreateInfo;
-    skyboxImageCreateInfo.filename.push_back("../data/textures/posx.jpg");
-    skyboxImageCreateInfo.filename.push_back("../data/textures/negx.jpg");
-    skyboxImageCreateInfo.filename.push_back("../data/textures/posy.jpg");
-    skyboxImageCreateInfo.filename.push_back("../data/textures/negy.jpg");
-    skyboxImageCreateInfo.filename.push_back("../data/textures/posz.jpg");
-    skyboxImageCreateInfo.filename.push_back("../data/textures/negz.jpg");
+    skyboxImageCreateInfo.filename.push_back("posx.jpg");
+    skyboxImageCreateInfo.filename.push_back("negx.jpg");
+    skyboxImageCreateInfo.filename.push_back("posy.jpg");
+    skyboxImageCreateInfo.filename.push_back("negy.jpg");
+    skyboxImageCreateInfo.filename.push_back("posz.jpg");
+    skyboxImageCreateInfo.filename.push_back("negz.jpg");
     skyboxImageCreateInfo.usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT;
     skyboxImageCreateInfo.isCubeTexture = true;
     skyboxImage = Image(device, skyboxImageCreateInfo);
@@ -34,9 +34,24 @@ Scene2::Scene2(Device *device) : device(device) {
 Scene2::~Scene2() {}
 
 void Scene2::render(CommandBuffer &cmd) {
+    
+    std::vector<DescriptorSet *> descriptorSets = {&sceneDescriptorSet};
+
+    meshPipeline.bindPipeline(cmd);
+    DescriptorSet::bindDescriptorSet(cmd, descriptorSets, meshPipeline.getPipelineLayout(), VK_PIPELINE_BIND_POINT_GRAPHICS);
+
     for (auto &renderable : renderables) {
         renderable->render(cmd, meshPipeline, meshes, basicMeshes);
     }
+}
+
+void Scene2::renderSkybox(CommandBuffer &cmd) {
+    skyboxPipeline.bindPipeline(cmd);
+    std::vector<DescriptorSet *> descriptorSets = {&sceneDescriptorSet};
+    DescriptorSet::bindDescriptorSet(cmd, descriptorSets, skyboxPipeline.getPipelineLayout(), VK_PIPELINE_BIND_POINT_GRAPHICS);
+
+    basicMeshes[Cube].bindMesh(cmd);
+    vkCmdDrawIndexed(cmd, basicMeshes[Cube].nbIndicies(), 1, 0, 0, 0);
 }
 
 uint32_t Scene2::getNewID() {
@@ -75,6 +90,24 @@ void Scene2::removeNode(uint32_t id) {}
 void Scene2::addMaterial(Material material) { materials.push_back(material); }
 
 void Scene2::addMesh(Mesh mesh) { meshes.push_back(mesh); }
+
+void Scene2::addObjectFileData(ObjectFileData &data) {
+    for (auto &mesh : data.meshes) {
+        mesh.applyMaterialOffset(materials.size());
+    }
+    for (auto &mesh : data.meshes) {
+        addMesh(mesh);
+    }
+    for (auto &material : data.materials) {
+        material.applyTextureOffset(images.size());
+    }
+    for (auto &material : data.materials) {
+        addMaterial(material);
+    }
+    for (auto &image : data.images) {
+        addImage(image);
+    }
+}
 
 void Scene2::addImage(Image image) { images.push_back(image); }
 
@@ -134,8 +167,8 @@ void Scene2::createPipelines() {
     pipelineCreateInfo.vexterShaderFile = "hello_scene.vert";
     meshPipeline = GraphicPipeline(device, pipelineCreateInfo);
 
-    pipelineCreateInfo.fragmentShaderFile = "bg.frag";
-    pipelineCreateInfo.vexterShaderFile = "bg.vert";
+    pipelineCreateInfo.fragmentShaderFile = "bgV2.frag";
+    pipelineCreateInfo.vexterShaderFile = "bgV2.vert";
     skyboxPipeline = GraphicPipeline(device, pipelineCreateInfo);
 }
 

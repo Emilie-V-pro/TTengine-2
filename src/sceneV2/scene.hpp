@@ -5,6 +5,7 @@
 #include <map>
 #include <memory>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "GPU_data/buffer.hpp"
@@ -15,6 +16,7 @@
 #include "scene/objects/animaticObj.hpp"
 #include "sceneV2/Irenderable.hpp"
 #include "sceneV2/cameraV2.hpp"
+#include "sceneV2/i_object_file_loader.hpp"
 #include "sceneV2/node.hpp"
 #include "shader/pipeline.hpp"
 #include "shader/pipeline/graphic_pipeline.hpp"
@@ -27,7 +29,7 @@ class Scene2 : public Node {
     ~Scene2();
 
     //copy constructor
-    Scene2(const Scene2 &scene){
+    Scene2( Scene2 &&scene){
         this->device = scene.device;
         this->meshes = scene.meshes;
         this->basicMeshes = scene.basicMeshes;
@@ -44,12 +46,12 @@ class Scene2 : public Node {
         this->objects = scene.objects;
         this->freeIDs = scene.freeIDs;
         this->nextID = scene.nextID;
-        // this->skyboxPipeline = scene.skyboxPipeline;
-        // this->meshPipeline = scene.meshPipeline;
+        this->skyboxPipeline = std::move(scene.skyboxPipeline);
+        this->meshPipeline = std::move(scene.meshPipeline);
     };
 
     //copy assignment
-    Scene2 &operator=(const Scene2 &scene){
+    Scene2 &operator=( Scene2 &&scene){
         this->device = scene.device;
         this->meshes = scene.meshes;
         this->basicMeshes = scene.basicMeshes;
@@ -66,12 +68,13 @@ class Scene2 : public Node {
         this->objects = scene.objects;
         this->freeIDs = scene.freeIDs;
         this->nextID = scene.nextID;
-        // this->skyboxPipeline = scene.skyboxPipeline;
-        // this->meshPipeline = scene.meshPipeline;
+        this->skyboxPipeline = std::move(scene.skyboxPipeline);
+        this->meshPipeline = std::move(scene.meshPipeline);
         return *this;
     };
 
     void render(CommandBuffer &cmd);
+    void renderSkybox(CommandBuffer &cmd);
 
     void addNode(uint32_t Parent_id, std::shared_ptr<Node> node);
     void removeNode(uint32_t id);
@@ -81,6 +84,8 @@ class Scene2 : public Node {
     void addMesh(Mesh mesh);
 
     void addImage(Image image);
+
+    void addObjectFileData(ObjectFileData &data);
 
     std::shared_ptr<CameraV2> getMainCamera() { return mainCamera; }
 

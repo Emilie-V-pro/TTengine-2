@@ -1,10 +1,13 @@
 
 #include "swapchain.hpp"
+#include <vulkan/vulkan_core.h>
 
 
 
 
 #include <cstdint>
+#include <cstdio>
+#include <iostream>
 #include <vector>
 
 #include "synchronisation/fence.hpp"
@@ -25,7 +28,7 @@ SwapChain::SwapChain(Device *device, VkExtent2D windowExtent, vkb::SwapchainBuil
     swapchain_builder.set_desired_format({VK_FORMAT_B8G8R8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR});
     swapchain_builder.set_image_usage_flags(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
-    // swapchain_builder.set_desired_present_mode(VK_PRESENT_MODE_IMMEDIATE_KHR);
+    swapchain_builder.set_desired_present_mode(VK_PRESENT_MODE_MAILBOX_KHR);
     auto swap_ret = swapchain_builder.build();
 
     if (!swap_ret) {
@@ -86,22 +89,28 @@ void SwapChain::recreateSwapchain(VkExtent2D windowExtent) {
 
 
 VkResult SwapChain::acquireNextImage(uint32_t& currentSwapchainImage, int* renderIndex, Semaphore*& aquireFrameSemaphore, Fence*& fence) {
+    
+
     Fence::waitForFences(device, imageAvailableFences, false, renderIndex);
     if (*renderIndex == -1) {
         return VK_TIMEOUT;
     }
 
+   
+
     imageAvailableFences[*renderIndex]->resetFence();
     fence = imageAvailableFences[*renderIndex];
+    
+
 
     VkResult result = vkAcquireNextImageKHR(
         *device, vkbSwapchain.swapchain, std::numeric_limits<uint64_t>::max(),
         imageAvailableSemaphores[*renderIndex],  // must be a not signaled semaphore
         VK_NULL_HANDLE, &currentSwapchainImage);
-        
+    
+  
     imageAvailableSemaphores[*renderIndex].signalStage = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
     aquireFrameSemaphore = &imageAvailableSemaphores[*renderIndex];
-    
 
     return result;
 }
@@ -132,7 +141,7 @@ void SwapChain::createSyncObjects() {
     for (unsigned int i = 0; i < numberOfFrame - 1; i++) {
         imageAvailableFences.emplace_back(new Fence(device, true));
         imageAvailableSemaphores.emplace_back(device, VK_SEMAPHORE_TYPE_BINARY);
-        imageAvailableSemaphores[i].signalStage = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
+        imageAvailableSemaphores[i].signalStage = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
     }
 }
 }  // namespace TTe

@@ -3,6 +3,7 @@
 #include <atomic>
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "IRessource.hpp"
@@ -89,6 +90,8 @@ class Image : public vk_cmdBuffer_OBJ {
 
     void static createsamplers(Device *device);
     void static destroySamplers(Device *device);
+
+    std::string name;
 
    private:
     void createImage();

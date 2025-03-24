@@ -42,6 +42,7 @@ class Mesh {
         this->verticies = other.verticies;
         this->vertexBuffer = other.vertexBuffer;
         this->indexBuffer = other.indexBuffer;
+        this->name = other.name;
     }
     Mesh &operator=(const Mesh &other) {
         if (this != &other) {
@@ -50,6 +51,7 @@ class Mesh {
             this->verticies = other.verticies;
             this->vertexBuffer = other.vertexBuffer;
             this->indexBuffer = other.indexBuffer;
+            this->name = other.name;
         }
         return *this;
     }
@@ -61,6 +63,7 @@ class Mesh {
         this->verticies = std::move(other.verticies);
         this->vertexBuffer = std::move(other.vertexBuffer);
         this->indexBuffer = std::move(other.indexBuffer);
+        this->name = std::move(other.name);
     }
     Mesh &operator=(Mesh &&other) {
         if (this != &other) {
@@ -69,6 +72,7 @@ class Mesh {
             this->verticies = std::move(other.verticies);
             this->vertexBuffer = std::move(other.vertexBuffer);
             this->indexBuffer = std::move(other.indexBuffer);
+            this->name = std::move(other.name);
         }
         return *this;
     }
@@ -90,19 +94,27 @@ class Mesh {
     // Triangle operator[](const int i) const;
 
     void setMaterial(uint i) {
-         for(auto v : verticies){
-        v.material_id = i;
-    } 
-    uploadToGPU();
+        for (auto v : verticies) {
+            v.material_id = i;
+        }
 
-}
+        uploadToGPU();
+    }
 
-    std::vector<Material> material;
+    void applyMaterialOffset(uint offset){
+        for (auto &v : verticies) {
+            v.material_id += offset;
+        }
+        uploadToGPU();
+    }
+
+ 
 
     std::vector<Vertex> verticies;
     std::vector<uint32_t> indicies;
 
    private:
+    std::string name;
     glm::vec3 min = {FLT_MAX, FLT_MAX, FLT_MAX};
     glm::vec3 max = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
 

@@ -1,8 +1,7 @@
 
 #include "dynamic_renderpass.hpp"
+
 #include <vulkan/vulkan_core.h>
-
-
 
 #include <cassert>
 #include <glm/fwd.hpp>
@@ -10,7 +9,6 @@
 
 #include "commandBuffer/command_buffer.hpp"
 #include "device.hpp"
-
 #include "structs_vk.hpp"
 #include "volk.h"
 
@@ -35,7 +33,6 @@ DynamicRenderPass::DynamicRenderPass(
     createAttachmentInfo();
     createRenderpassInfo();
 }
-
 
 DynamicRenderPass::DynamicRenderPass(DynamicRenderPass &&other) {
     device = other.device;
@@ -74,9 +71,7 @@ DynamicRenderPass &DynamicRenderPass::operator=(DynamicRenderPass &&other) {
     return *this;
 }
 
-DynamicRenderPass::~DynamicRenderPass() {
-   
-}
+DynamicRenderPass::~DynamicRenderPass() {}
 
 void DynamicRenderPass::beginRenderPass(
     CommandBuffer &commandBuffer, unsigned imageIndex, renderPassModeEnum renderPassMode, VkRenderingFlags optionalRenderingFlag) {
@@ -243,17 +238,27 @@ void DynamicRenderPass::setClearColor(glm::vec3 rgb) {
 void DynamicRenderPass::setClearEnable(bool enable) {
     for (int i = 0; i < this->numberOfFrame; i++) {
         for (auto &a : attachments[i].colorAttachments) {
-  
-             
             a.loadOp = enable ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
         }
     }
 }
 
-void DynamicRenderPass::transitionColorAttachment(uint32_t frameIndex, VkImageLayout newLayout, CommandBuffer& commandBuffer) {
+void DynamicRenderPass::setDepthAndStencil(CommandBuffer &cmdBuffer, bool enable) {
+    if(enable){
+        vkCmdSetDepthTestEnable(cmdBuffer, VK_TRUE);
+        vkCmdSetDepthWriteEnable(cmdBuffer, VK_TRUE);
+        
+    }else{
+        vkCmdSetDepthTestEnable(cmdBuffer, VK_FALSE);
+        vkCmdSetDepthWriteEnable(cmdBuffer, VK_FALSE);
+        
+    }
+}
+
+void DynamicRenderPass::transitionColorAttachment(uint32_t frameIndex, VkImageLayout newLayout, CommandBuffer &commandBuffer) {
     for (auto &img : imageAttachement[frameIndex]) {
         img.transitionImageLayout(newLayout, &commandBuffer);
     }
 }
 
-}  // namespace vk_stage
+}  // namespace TTe

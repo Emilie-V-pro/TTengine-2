@@ -12,9 +12,15 @@ struct Material {
     glm::vec4 color;
     float metallic;
     float roughness;
-    int albedo_tex_id;
-    int metallic_roughness_tex_id;
-    int normal_tex_id;
+    int albedo_tex_id = -1;
+    int metallic_roughness_tex_id= -1;
+    int normal_tex_id= -1;
+    
+    void applyTextureOffset(uint offset) {
+        albedo_tex_id += (albedo_tex_id != -1) ? offset : 0;
+        metallic_roughness_tex_id += (metallic_roughness_tex_id != -1) ? offset : 0;
+        normal_tex_id += (normal_tex_id != -1) ? offset : 0;
+    }
 
 };
 
@@ -22,9 +28,9 @@ struct MaterialGPU {
     glm::vec4 color;
     float metallic;
     float roughness;
-    int albedo_tex_id;
-    int metallic_roughness_tex_id;
-    int normal_tex_id;
+    int albedo_tex_id= -1;
+    int metallic_roughness_tex_id= -1;
+    int normal_tex_id= -1;
 };
 
 

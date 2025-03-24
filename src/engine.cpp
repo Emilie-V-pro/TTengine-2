@@ -28,6 +28,10 @@ Engine::~Engine() {
 void Engine::init() {
     Image::createsamplers(&device);
     app->init(&device, &swapChain, &window);
+
+    // device wait idle
+    vkDeviceWaitIdle(device);
+
     for (unsigned int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         waitToPresentSemaphores.emplace_back(&device, VK_SEMAPHORE_TYPE_BINARY);
         renderCommandBuffers[i] = std::move(commandBufferPool->createCommandBuffer(1)[0]);
@@ -148,33 +152,55 @@ void Engine::renderLoop(Engine &engine) {
         start = newTime;
         Semaphore *aquireFrameSemaphore = nullptr;
         Fence *fence = nullptr;
+        
+        
+
+        auto cS = std::chrono::high_resolution_clock::now();
         if (!engine.startFrame(aquireFrameSemaphore, fence)) {
             continue;
         }
+        auto cE = std::chrono::high_resolution_clock::now();
+  
         
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         ImGui::ShowDemoWindow();
-
+   
+      
         engine.renderCommandBuffers[engine.renderIndex].beginCommandBuffer();
-
+      
+ 
         engine.app->renderFrame(deltatTime, engine.renderCommandBuffers[engine.renderIndex], engine.currentSwapchainImage);
+    
+      
         engine.renderPass.beginRenderPass(engine.renderCommandBuffers[engine.renderIndex], engine.currentSwapchainImage);
         ImGui::Render();
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), engine.renderCommandBuffers[engine.renderIndex]);
         engine.renderPass.endRenderPass(engine.renderCommandBuffers[engine.renderIndex]);
-        
+  
+      
+  
         engine.swapChain.getSwapChainImage(engine.currentSwapchainImage)
             .transitionImageLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, &engine.renderCommandBuffers[engine.renderIndex]);
 
-        engine.renderCommandBuffers[engine.renderIndex].endCommandBuffer();
 
+       
+
+        engine.renderCommandBuffers[engine.renderIndex].endCommandBuffer();
+  
+     
+  
         engine.renderCommandBuffers[engine.renderIndex].submitCommandBuffer(
             {aquireFrameSemaphore->getSemaphoreSubmitWaittInfo()},
             {engine.waitToPresentSemaphores[engine.renderIndex].getSemaphoreSubmitSignalInfo()}, fence, false);
-
+     
+   
         engine.endAndPresentFrame(&engine.waitToPresentSemaphores[engine.renderIndex]);
+  
+        float timeEndAndPresentFrame = std::chrono::duration<float, std::chrono::seconds::period>(cE - cS).count();
+
+        // std::cout << "timeStartFrame : " << timeStartFrame << " ImGuiTime : " << ImGuiTime << " timeBeginCommandBuffer : " << timeBeginCommandBuffer << " timeRenderFrame : " << timeRenderFrame << " timeEndRenderPass : " << timeEndRenderPass << " timeTransitionImageLayout : " << timeTransitionImageLayout << " timeEndCommandBuffer : " << timeEndCommandBuffer << " timeSubmitCommandBuffer : " << timeSubmitCommandBuffer << " timeEndAndPresentFrame : " << timeEndAndPresentFrame << "\n";
     }
 }
 

@@ -13,13 +13,15 @@
 #include "structs_vk.hpp"
 #include "utils.hpp"
 
+#define TEXTURE_PATH "../data/textures/"
+
 namespace TTe {
 
 // define static member
 VkSampler Image::linearSampler = VK_NULL_HANDLE;
 VkSampler Image::nearestSampler = VK_NULL_HANDLE;
 
-Image::Image(Device *device, ImageCreateInfo &imageCreateInfo, CommandBuffer *cmdBuffer)
+Image::Image(Device *device, ImageCreateInfo &imageCreateInfo, CommandBuffer *extcmdBuffer)
     : imageCreateInfo(imageCreateInfo),
       width(imageCreateInfo.width),
       height(imageCreateInfo.height),
@@ -27,7 +29,11 @@ Image::Image(Device *device, ImageCreateInfo &imageCreateInfo, CommandBuffer *cm
       imageFormat(imageCreateInfo.format),
       imageLayout(imageCreateInfo.imageLayout),
       device(device) {
-    CommandBuffer *cmd = nullptr;
+    CommandBuffer *cmd = extcmdBuffer;
+    if (cmd == nullptr) {
+        cmd  = new CommandBuffer(std::move(CommandPoolHandler::getCommandPool(device, device->getRenderQueue())->createCommandBuffer(1)[0]));
+        cmd->beginCommandBuffer();
+    }
     
         refCount.store(std::make_shared<int>(1), std::memory_order_relaxed);
     if (!this->imageCreateInfo.filename.empty()) {
@@ -37,12 +43,18 @@ Image::Image(Device *device, ImageCreateInfo &imageCreateInfo, CommandBuffer *cm
     createImageView();
 
     if (this->imageCreateInfo.datas.size() > 0) {
-        loadImageToGPU(cmdBuffer);
+        loadImageToGPU(cmd);
         if(imageCreateInfo.enableMipMap){
-            generateMipmaps(cmdBuffer);
+            generateMipmaps(cmd);
         }
     }else{
-        transitionImageLayout(imageLayout, cmdBuffer);
+        transitionImageLayout(imageLayout, cmd);
+    }
+    if (extcmdBuffer == nullptr) {
+        cmd->endCommandBuffer();
+        cmd->addRessourceToDestroy(cmd);
+        cmd->submitCommandBuffer({}, {}, nullptr, true);
+   
     }
 }
 
@@ -72,7 +84,8 @@ Image::Image(const Image &other)
       imageView(other.imageView),
       allocation(other.allocation),
       imageMemory(other.imageMemory),
-      isSwapchainImage(other.isSwapchainImage) {
+      isSwapchainImage(other.isSwapchainImage),
+      name(other.name) {
     if (!other.isSwapchainImage) {
         refCount.store(other.refCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
         (*refCount.load())++;
@@ -93,7 +106,8 @@ Image::Image(Image &&other)
       imageView(other.imageView),
       allocation(other.allocation),
       imageMemory(other.imageMemory),
-      isSwapchainImage(other.isSwapchainImage) {
+      isSwapchainImage(other.isSwapchainImage),
+      name(other.name) {
     if (!other.isSwapchainImage) {
         refCount.store(other.refCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
         other.vk_image = VK_NULL_HANDLE;
@@ -133,6 +147,7 @@ Image &Image::operator=(const Image &other) {
         imageLayout = other.imageLayout;
         actualImageLayout = other.actualImageLayout;
         isSwapchainImage = other.isSwapchainImage;
+        name = other.name;
         if (!other.isSwapchainImage) {
             refCount.store(other.refCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
             (*refCount.load())++;
@@ -159,6 +174,7 @@ Image &Image::operator=(Image &&other) {
         imageLayout = other.imageLayout;
         actualImageLayout = other.actualImageLayout;
         isSwapchainImage = other.isSwapchainImage;
+        name = other.name;
         if (!isSwapchainImage) {
             other.vk_image = VK_NULL_HANDLE;
             refCount.store(other.refCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
@@ -263,6 +279,8 @@ void Image::generateMipmaps(CommandBuffer *extCmdBuffer) {
     } else {
         cmd = extCmdBuffer;
     }
+    transitionImageLayout(actualImageLayout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 0, 1, cmd);
+
 
     for (uint32_t i = 1; i < mipLevels; i++) {
         VkImageBlit imageBlit{};
@@ -399,8 +417,11 @@ void Image::loadImageFromFile(std::vector<std::string> &filename) {
     // stbi_set_flip_vertically_on_load(true);
     int nbOfchannel;
     int width, height;
-    test();
-    stbi_info(filename[0].c_str(), &width, &height, &nbOfchannel);
+    std::cout << "Loading image: " << TEXTURE_PATH + filename[0] << std::endl;
+    stbi_info((TEXTURE_PATH + filename[0]).c_str(), &width, &height, &nbOfchannel);
+    if(width == 0 || height == 0){
+        std::cerr << "Erreur: l'image n'a pas pu être chargée" << std::endl;
+    }
     this->width = width;
     this->height = height;
     imageCreateInfo.width = width;
@@ -408,7 +429,8 @@ void Image::loadImageFromFile(std::vector<std::string> &filename) {
     imageCreateInfo.layers = filename.size();
     this->layer = filename.size();
     for (size_t i = 0; i < filename.size(); i++) {
-        imageCreateInfo.datas.push_back(stbi_load((filename[i]).c_str(), &width, &height, &nbOfchannel, 4));
+        imageCreateInfo.datas.push_back(stbi_load((TEXTURE_PATH + filename[i]).c_str(), &width, &height, &nbOfchannel, 4));
+        
     }
 
     if (imageCreateInfo.format == VK_FORMAT_UNDEFINED) {
@@ -424,6 +446,7 @@ void Image::loadImageToGPU(CommandBuffer *extCmdBuffer) {
             new CommandBuffer(std::move(CommandPoolHandler::getCommandPool(device, device->getTransferQueue())->createCommandBuffer(1)[0]));
         cmdBuffer->beginCommandBuffer();
     }
+    
     VkDeviceSize size = width * height * getPixelSizeFromFormat(imageFormat);
     Buffer *b = new Buffer(
         device, getPixelSizeFromFormat(imageFormat), static_cast<u_int32_t>(width * height * layer), 0, Buffer::BufferType::STAGING);
@@ -438,11 +461,12 @@ void Image::loadImageToGPU(CommandBuffer *extCmdBuffer) {
     transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, cmdBuffer);
     b->copyToImage(device, *this, width, height, layer, cmdBuffer);
     transitionImageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, cmdBuffer);
-
+    cmdBuffer->addRessourceToDestroy(b);
+    
     if (extCmdBuffer == nullptr) {
         cmdBuffer->endCommandBuffer();
+        
         cmdBuffer->addRessourceToDestroy(cmdBuffer);
-        cmdBuffer->addRessourceToDestroy(b);
         cmdBuffer->submitCommandBuffer({}, {}, nullptr, true);
     }
 }

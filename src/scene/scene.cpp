@@ -171,12 +171,12 @@ void Scene::createDescriptorSets() {
     backgroundPipeline = GraphicPipeline(device, pipelineCreateInfo);
 
     ImageCreateInfo cubeTextureCreateInfo;
-    cubeTextureCreateInfo.filename.push_back("../data/textures/posx.jpg");
-    cubeTextureCreateInfo.filename.push_back("../data/textures/negx.jpg");
-    cubeTextureCreateInfo.filename.push_back("../data/textures/posy.jpg");
-    cubeTextureCreateInfo.filename.push_back("../data/textures/negy.jpg");
-    cubeTextureCreateInfo.filename.push_back("../data/textures/posz.jpg");
-    cubeTextureCreateInfo.filename.push_back("../data/textures/negz.jpg");
+    cubeTextureCreateInfo.filename.push_back("posx.jpg");
+    cubeTextureCreateInfo.filename.push_back("negx.jpg");
+    cubeTextureCreateInfo.filename.push_back("posy.jpg");
+    cubeTextureCreateInfo.filename.push_back("negy.jpg");
+    cubeTextureCreateInfo.filename.push_back("posz.jpg");
+    cubeTextureCreateInfo.filename.push_back("negz.jpg");
     cubeTextureCreateInfo.usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT;
     cubeTextureCreateInfo.isCubeTexture = true;
     cubeTexture = Image(device, cubeTextureCreateInfo);
