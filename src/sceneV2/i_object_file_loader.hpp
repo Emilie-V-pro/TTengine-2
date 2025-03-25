@@ -4,8 +4,7 @@
 #include <vector>
 #include "GPU_data/image.hpp"
 #include "device.hpp"
-#include "scene/mesh.hpp"
-#include "scene/object.hpp"
+#include "sceneV2/mesh.hpp"
 #include "struct.hpp"
 namespace TTe {
 

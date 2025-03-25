@@ -93,7 +93,7 @@ int ObjLoader::insert_texture(const char *name) {
 
     ImageCreateInfo imageCreateInfo;
     imageCreateInfo.filename.push_back(name);
-    imageCreateInfo.enableMipMap = false;
+    imageCreateInfo.enableMipMap = true;
     imageCreateInfo.usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT ;
     imageCreateInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     textures.push_back(Image(device, imageCreateInfo));

@@ -42,8 +42,6 @@
 // #include "Viewer.h"
 #include "SolveurExpl.h"
 #include "SolveurImpl.h"
-#include "scene/mesh.hpp"
-#include "scene/objects/collision_obj.hpp"
 
 // #include "draw.h"
 
@@ -330,7 +328,7 @@ void ObjetSimuleMSS::updateVertex() {
 /**
  * Simulation de l objet.
  */
-void ObjetSimuleMSS::Simulation(glm::vec3 gravite, float viscosite, int Tps, float dt, float t, std::vector<CollisionObject> &collisionObjects) {
+void ObjetSimuleMSS::Simulation(glm::vec3 gravite, float viscosite, int Tps, float dt, float t, std::vector<std::shared_ptr<ICollider>> &collisionObjects) {
     /* Calcul des forces dues aux ressorts */
     // std::cout << "Force.... " << std::endl;
     CalculForceSpring();

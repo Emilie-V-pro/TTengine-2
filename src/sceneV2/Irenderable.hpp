@@ -2,7 +2,7 @@
 
 
 #include <vector>
-#include "scene/mesh.hpp"
+#include "sceneV2/mesh.hpp"
 #include "shader/pipeline/graphic_pipeline.hpp"
 namespace TTe {
 class IRenderable {

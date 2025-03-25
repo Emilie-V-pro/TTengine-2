@@ -10,6 +10,7 @@
 
 /** Librairies de base **/
 #include <glm/fwd.hpp>
+#include <memory>
 
 
 // #include "mesh.h"
@@ -19,8 +20,10 @@
 #include "SolveurExpl.h"
 #include "SolveurImpl.h"
 #include "device.hpp"
-#include "scene/objects/collision_obj.hpp"
-#include "scene/objects/simulateObj.hpp"
+#include "sceneV2/Icollider.hpp"
+#include "sceneV2/animatic//simulateObj.hpp"
+
+
 
 namespace TTe {
 
@@ -50,13 +53,13 @@ public:
     void CalculForceSpring();
 
     /*! Simulation de l objet */
-    void Simulation(glm::vec3 gravite, float viscosite, int Tps, float dt, float t, std::vector<CollisionObject> &collisionObjects);
+    void Simulation(glm::vec3 gravite, float viscosite, int Tps, float dt, float t, std::vector<std::shared_ptr<ICollider>> &collisionObjects);
 
     void applyForceGravity(float t, glm::vec3 g);
     void solveExplicit(float visco, float deltaT);
     
     /*! Gestion des collisions */
-    void Collision(std::vector<CollisionObject> &collisionObjects);
+    void Collision(std::vector<std::shared_ptr<ICollider>> &collisionObjects);
     
     /*! Mise a jour du Mesh (pour affichage) de l objet en fonction des nouvelles positions calculees */
     void updateVertex();

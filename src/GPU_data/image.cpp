@@ -53,7 +53,7 @@ Image::Image(Device *device, ImageCreateInfo &imageCreateInfo, CommandBuffer *ex
     if (extcmdBuffer == nullptr) {
         cmd->endCommandBuffer();
         cmd->addRessourceToDestroy(cmd);
-        cmd->submitCommandBuffer({}, {}, nullptr, true);
+        cmd->submitCommandBuffer({}, {}, nullptr, false);
    
     }
 }

@@ -1,13 +1,15 @@
 #pragma once
 #include <glm/fwd.hpp>
+#include <memory>
 #include <string>
 
 #include "device.hpp"
-#include "scene/mesh.hpp"
-#include "scene/object.hpp"
-#include "scene/objects/collision_obj.hpp"
+#include "sceneV2/Icollider.hpp"
+#include "sceneV2/Irenderable.hpp"
+#include "sceneV2/mesh.hpp"
+#include "sceneV2/node.hpp"
 namespace TTe {
-class SimulateObj : public Object {
+class SimulateObj {
    public:
     // SimulateObj(){}
     SimulateObj(Device *device, std::string &paramFile) : device(device) {
@@ -29,10 +31,7 @@ class SimulateObj : public Object {
     virtual void initMeshObjet() = 0;
 
     /*! Gestion des collisions */
-    virtual void Collision(std::vector<CollisionObject> &collisionObjects) = 0;
-
-    /*! Simulation de l objet */
-    virtual void Simulation(glm::vec3 gravite, float viscosite, int Tps,  float dt, float t, std::vector<CollisionObject> &collisionObjects) = 0;
+    virtual void Collision(std::vector<std::shared_ptr<ICollider>> &collisionObjects) = 0;
 
     virtual void applyForceGravity(float t, glm::vec3 g) = 0;
     virtual void solveExplicit(float visco, float deltaT) = 0;

@@ -202,7 +202,7 @@ void main() {
     int texId = m.materials[fragmaterial].albedo_tex_id;
     // vec3 H = normalize(sun + view);
     if (texId != -1) {
-        textColor = textureLod(textures[texId], fraguv, 0);
+        textColor = texture(textures[texId], fraguv);
     } else {
         textColor = m.materials[fragmaterial].color;
     }

@@ -8,7 +8,7 @@ namespace TTe {
 
 void CollisionObject::collisionPosPlan(glm::vec3 &pos, glm::vec3 &vitesse) {
     // pos to Object space
-    pos = glm::inverse(this->mat4()) * glm::vec4(pos, 1);
+    pos = glm::inverse(this->wMatrix()) * glm::vec4(pos, 1);
 
     // collision
     if (pos.y < 0) {
@@ -16,14 +16,14 @@ void CollisionObject::collisionPosPlan(glm::vec3 &pos, glm::vec3 &vitesse) {
         pos.y = 0.0001;
     }
 
-    pos = this->mat4() * glm::vec4(pos, 1);
+    pos = this->wMatrix()* glm::vec4(pos, 1);
 }
 
 
 void CollisionObject::collisionPosSphere(glm::vec3 &pos, glm::vec3 &vitesse) {
     // pos to Object space
     // std::cout << "pos : " << pos.x << " " << pos.y << " " << pos.z << "\n";
-    pos = glm::inverse(this->mat4()) * glm::vec4(pos, 1);
+    pos = glm::inverse(this->wMatrix()) * glm::vec4(pos, 1);
     // std::cout << "pos : " << pos.x << " " << pos.y << " " << pos.z <<  "\n";
     // collision
     if (glm::length(pos) < 1.0) {
@@ -35,13 +35,13 @@ void CollisionObject::collisionPosSphere(glm::vec3 &pos, glm::vec3 &vitesse) {
         vitesse = glm::vec3(0);
     }
     // std::cout << "pos : " << pos.x << " " << pos.y << " " << pos.z <<  "\n";
-    pos = this->mat4() * glm::vec4(pos, 1);
+    pos = this->wMatrix() * glm::vec4(pos, 1);
     // std::cout << "pos : " << pos.x << " " << pos.y << " " << pos.z <<  "\n";
 }
 
 void CollisionObject::collisionPosCube(glm::vec3 &pos, glm::vec3 &vitesse){
     
-    pos = glm::inverse(this->mat4()) * glm::vec4(pos, 1);
+    pos = glm::inverse(this->wMatrix()) * glm::vec4(pos, 1);
     glm::vec3 boxPos(0.);
     glm::vec3 boxSize(1.);
 
@@ -53,8 +53,9 @@ void CollisionObject::collisionPosCube(glm::vec3 &pos, glm::vec3 &vitesse){
     
     if( distanceToBoxSurface < 0.0f ) {
         pos = glm::normalize(pos);
+        vitesse = glm::vec3(0);
     }
-    pos = this->mat4() * glm::vec4(pos, 1);
+    pos = this->wMatrix() * glm::vec4(pos, 1);
 
 }
 

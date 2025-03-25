@@ -1,6 +1,6 @@
 #pragma once
 
-#include "scene/mesh.hpp"
+#include "sceneV2/mesh.hpp"
 #include "sceneV2/Irenderable.hpp"
 #include "sceneV2/node.hpp"
 namespace TTe {
