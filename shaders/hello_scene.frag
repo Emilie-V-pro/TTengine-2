@@ -221,9 +221,9 @@ void main() {
         metalRoughness = vec2(m.materials[fragmaterial].metallic, m.materials[fragmaterial].roughness);
     }
 
-    if (textColor.a < 0.3) {
-        discard;
-    }
+    // if (textColor.a < 0.3) {
+    //     discard;
+    // }
 
     // vec3 sunDirection = vec3(0.744015, 0.666869, 0.0415573);
     vec3 color = vec3(0.0);

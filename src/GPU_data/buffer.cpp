@@ -2,6 +2,7 @@
 #include "buffer.hpp"
 #include <vulkan/vulkan_core.h>
 
+#include <fstream>
 #include <iostream>
 
 #include "../commandBuffer/commandPool_handler.hpp"
@@ -32,6 +33,19 @@ Buffer::Buffer(
 
     allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
     VmaAllocationInfo getAllocInfo;
+
+    std::cout << total_size << "\n";
+    //save vmaBuildStatsString to file 
+    std::ofstream file("vmaStats.txt");
+    char * s;
+    vmaBuildStatsString(device->getAllocator(), &s, VK_FALSE);
+    
+    file << s;
+    file.close();
+    vmaFreeStatsString(device->getAllocator(), s);
+   
+    
+
     VkResult res = vmaCreateBuffer(device->getAllocator(), &bufferInfo, &allocInfo, &vk_buffer, &allocation, &getAllocInfo);
     // std::cout << res << std::endl;
    

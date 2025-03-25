@@ -9,7 +9,7 @@ namespace TTe {
 
 struct Material {
     std::string name;
-    glm::vec4 color;
+    glm::vec4 color = glm::vec4(0,0,0,1);
     float metallic;
     float roughness;
     int albedo_tex_id = -1;

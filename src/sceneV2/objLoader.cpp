@@ -49,12 +49,12 @@ bool ObjLoader::read_materials_mtl(const char *filename, std::vector<Material> &
 
         if (material == nullptr) continue;
 
-        // if (line[0] == 'K') {
-        //     float r, g, b;
-        //     if (sscanf(line, "Kd %f %f %f", &r, &g, &b) == 3)
-        //         material->color = glm::vec4(r, g, b, 0);
+        if (line[0] == 'K') {
+            float r, g, b;
+            if (sscanf(line, "Kd %f %f %f", &r, &g, &b) == 3)
+                material->color = glm::vec4(r, g, b, 1);
 
-        // }
+        }
 
         // else if (line[0] == 'N') {
         //     float n;

@@ -30,7 +30,8 @@ namespace TTe {
 void App::init(Device *device, SwapChain *swapchain, Window* window) {
     this->swapchain = swapchain;
     this->device = device;
-
+    ObjLoader objLoader = ObjLoader(device);
+    ObjectFileData data = objLoader.loadObject("../data/mesh/cubes.obj");
     movementController.setCursors(window);
 
    
@@ -62,18 +63,26 @@ void App::init(Device *device, SwapChain *swapchain, Window* window) {
     // scene2.addImage(mr);
     
     
+    
+    scene2.addObjectFileData(data);
 
-    ObjLoader objLoader = ObjLoader(device);
-    ObjectFileData data = objLoader.loadObject("../data/mesh/cubes.obj");
 
     StaticMeshObj obj3 = StaticMeshObj();
     obj3.setMeshId(0);
-
-    scene2.addObjectFileData(data);
+    scene2.addNode(-1, std::make_shared<StaticMeshObj>(obj3));
+    obj3.setMeshId(1);
+    scene2.addNode(-1, std::make_shared<StaticMeshObj>(obj3));
+    obj3.setMeshId(2);
+    scene2.addNode(-1, std::make_shared<StaticMeshObj>(obj3));
+    obj3.setMeshId(3);
+    scene2.addNode(-1, std::make_shared<StaticMeshObj>(obj3));
+    obj3.setMeshId(4);
+    scene2.addNode(-1, std::make_shared<StaticMeshObj>(obj3));
+    obj3.setMeshId(5);
     scene2.addNode(-1, std::make_shared<StaticMeshObj>(obj3));
 
-    scene2.updateDescriptorSets();
     scene2.updateMaterialBuffer();
+    scene2.updateDescriptorSets();
 
 
 }

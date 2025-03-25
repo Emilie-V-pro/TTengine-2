@@ -1,5 +1,6 @@
 
 #include "scene.hpp"
+#include <vulkan/vulkan_core.h>
 
 #include "scene/mesh.hpp"
 #include "sceneV2/Irenderable.hpp"
@@ -123,8 +124,12 @@ void Scene2::updateCameraBuffer() {
 }
 
 void Scene2::updateMaterialBuffer() {
-    if (materialBuffer.getInstancesCount() == 0) {
-        materialBuffer = Buffer(device, sizeof(MaterialGPU), 100, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
+    if (materialBuffer.getInstancesCount() < materials.size() || materials.size() == 0) {
+        if (materials.size() == 0){
+            materials.push_back(Material());
+        }
+        materialBuffer = Buffer(device, sizeof(MaterialGPU), materials.size(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
+        
     }
     std::vector<MaterialGPU> materialsGPU;
 
@@ -133,8 +138,8 @@ void Scene2::updateMaterialBuffer() {
             {material.color, material.metallic, material.roughness, material.albedo_tex_id, material.metallic_roughness_tex_id,
              material.normal_tex_id});
     }
-
-    materialBuffer.writeToBuffer(materialsGPU.data(), sizeof(materialsGPU) * materialsGPU.size(), 0);
+    std::cout << static_cast<VkBuffer>(materialBuffer) << std::endl;
+    materialBuffer.writeToBuffer(materialsGPU.data(), sizeof(MaterialGPU) * materialsGPU.size(), 0);
 }
 
 void Scene2::createDescriptorSets() {
@@ -143,7 +148,10 @@ void Scene2::createDescriptorSets() {
 
 void Scene2::updateDescriptorSets() {
     sceneDescriptorSet.writeBufferDescriptor(0, cameraBuffer);
+    
     sceneDescriptorSet.writeBufferDescriptor(1, materialBuffer);
+    
+    
     if (images.size() == 0) {
         ImageCreateInfo imageCreateInfo;
         imageCreateInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
