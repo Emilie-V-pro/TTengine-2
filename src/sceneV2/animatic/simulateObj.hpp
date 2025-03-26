@@ -4,12 +4,13 @@
 #include <string>
 
 #include "device.hpp"
+#include "sceneV2/Ianimatic.hpp"
 #include "sceneV2/Icollider.hpp"
 #include "sceneV2/Irenderable.hpp"
 #include "sceneV2/mesh.hpp"
 #include "sceneV2/node.hpp"
 namespace TTe {
-class SimulateObj {
+class SimulateObj : public Node, public IRenderable, public IAnimatic {
    public:
     // SimulateObj(){}
     SimulateObj(Device *device, std::string &paramFile) : device(device) {
@@ -68,6 +69,9 @@ class SimulateObj {
 
     /// Declaration du tableau des masses
     std::vector<float> M;
+
+    // virtual void render(CommandBuffer &cmd, GraphicPipeline &pipeline, std::vector<Mesh> &meshes,  std::map<BasicShape, Mesh> basicMeshes) = 0;
+    // virtual void simulation(glm::vec3 gravite, float viscosite, int Tps, float dt, float t, std::vector<std::shared_ptr<ICollider>> &collisionObjects);
     
     Device *device;
 };

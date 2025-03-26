@@ -234,5 +234,5 @@ void main() {
     color += ((res.diffuse + res.specular) * cubeMapColor.rgb);
 
 
-    outColor = vec4(color, 1);
+    outColor = vec4(surfaceNormal, 1);
 }

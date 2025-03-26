@@ -32,9 +32,10 @@
 /** Fichiers de l application **/
 #include "Properties.h"
 // #include "Scene.h"
-#include "scene/objects/simulateObj.hpp"
+
 #include "ObjetSimuleMSS.h"
-#include "scene/scene.hpp"
+#include "sceneV2/scene.hpp"
+
 // #include "ObjetSimuleParticule.h"
 // #include "ObjetSimuleRigidBody.h"
 // #include "ObjetSimuleSPH.h"
@@ -60,7 +61,7 @@ namespace TTe {
 /**
 * Lecture des parametres de l execution relatifs a la scene.
  */
-void Scene::Param(std::string Fichier_Param)
+void Scene2::Param(std::string Fichier_Param)
 {
 	/** Donnees du fichier contenant les parametres de l execution **/
 	/* Proprietes du fichier */

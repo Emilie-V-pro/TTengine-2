@@ -31,11 +31,13 @@ Programme calculant pour chaque particule i d un MSS son etat au pas de temps su
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
 #include <iostream>
+#include <memory>
 
 
 // #include "ObjetSimule.h"
 #include "ObjetSimuleMSS.h"
-#include "scene/objects/simulation/MSS.h"
+#include "MSS.h"
+#include "sceneV2/Icollider.hpp"
 // #include "Viewer.h"
 
 using namespace std;
@@ -75,8 +77,8 @@ void ObjetSimuleMSS::CalculForceSpring()
 void ObjetSimuleMSS::applyForceGravity(float t, glm::vec3 g)
 {
 	// set gravity to object space
-	g = glm::inverse(normalMatrix()) * glm::vec4(g, 0.0);
-	glm::vec3 wind  = glm::inverse(normalMatrix()) * glm::normalize(glm::vec3(1.0, 0.0, 1.0)) * 5.f * glm::sin(t);
+	g = glm::inverse(wNormalMatrix()) * glm::vec4(g, 0.0);
+	glm::vec3 wind  = glm::inverse(wNormalMatrix()) * glm::normalize(glm::vec3(1.0, 0.0, 1.0)) * 5.f * glm::sin(t);
 	for (int i = 0; i < mesh.verticies.size(); ++i) {
         if (M[i] == 0.0) {
             A[i] = glm::vec3(0.0, 0.0, 0.0);
@@ -102,14 +104,14 @@ void ObjetSimuleMSS::solveExplicit(float visco, float deltaT)
 /**
  * Gestion des collisions avec le sol.
  */
-void ObjetSimuleMSS::Collision(std::vector<CollisionObject> &collisionObjects)
+void ObjetSimuleMSS::Collision(std::vector<std::shared_ptr<ICollider>> &collisionObjects)
 {
 
 	for (int i = 0; i < mesh.verticies.size(); ++i) {
 		for (auto &collisionObject : collisionObjects) {
-				mesh.verticies[i].pos = this->mat4() * glm::vec4(mesh.verticies[i].pos, 1);
-				collisionObject.collisionPos(mesh.verticies[i].pos, V[i]);
-				mesh.verticies[i].pos = glm::inverse(this->mat4()) * glm::vec4(mesh.verticies[i].pos, 1);
+				mesh.verticies[i].pos = this->wMatrix() * glm::vec4(mesh.verticies[i].pos, 1);
+				collisionObject->collisionPos(mesh.verticies[i].pos, V[i]);
+				mesh.verticies[i].pos = glm::inverse(this->wMatrix()) * glm::vec4(mesh.verticies[i].pos, 1);
 			
 		}
 	}

@@ -13,7 +13,11 @@
 namespace TTe {
 
 
-Node::Node() {}
+Node::Node() {
+    transform.pos.onChanged = [this]() {setDirty();};
+    transform.rot.onChanged = [this]() {setDirty();};
+    transform.scale.onChanged = [this]() {setDirty();};
+}
 
 Node::Node(int id) : id(id) {}
 
@@ -25,13 +29,13 @@ Node::~Node() {
 
 glm::mat4 Node::wMatrix() {
     if (dirty) {
-        transform.scale += glm::vec3(0.0001);
         glm::mat4 scaleMatrix = glm::scale(transform.scale.value);
         glm::mat4 translationMatrix = glm::translate(transform.pos.value);
         glm::mat4 rotationMatrix = glm::eulerAngleXYZ(transform.rot.value.x, transform.rot.value.y, transform.rot.value.z);
         worldMatrix = translationMatrix * rotationMatrix * scaleMatrix;
         worldMatrix = parent ? parent->wMatrix() * worldMatrix : worldMatrix;
         dirty = false;
+        std::cout << "non " << this->id << "\n";
     }
     
     return worldMatrix;
@@ -41,8 +45,8 @@ glm::mat3 Node::wNormalMatrix() {
     if (normalDirty) {
         worldNormalMatrix = glm::inverseTranspose(glm::mat3(this->wMatrix()));
         normalDirty = false;
+        // worldNormalMatrix = parent ? parent->wNormalMatrix() * worldNormalMatrix : worldNormalMatrix;
     }
-    worldNormalMatrix = parent ? parent->wNormalMatrix() * worldNormalMatrix : worldNormalMatrix;
     return worldNormalMatrix;
 }
 

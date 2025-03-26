@@ -54,7 +54,8 @@ public:
 
     /*! Simulation de l objet */
     void Simulation(glm::vec3 gravite, float viscosite, int Tps, float dt, float t, std::vector<std::shared_ptr<ICollider>> &collisionObjects);
-
+    void render(CommandBuffer &cmd, GraphicPipeline &pipeline, std::vector<Mesh> &meshes,  std::map<BasicShape, Mesh> basicMeshes) = 0;
+    
     void applyForceGravity(float t, glm::vec3 g);
     void solveExplicit(float visco, float deltaT);
     

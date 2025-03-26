@@ -2,21 +2,23 @@
 
 #include <glm/fwd.hpp>
 #include <glm/glm.hpp>
+#include <memory>
 
-#include "scene/object.hpp"
-#include "scene/objects/animatic/BVH.h"
+
+
+#include "sceneV2/Ianimatic.hpp"
+#include "sceneV2/Irenderable.hpp"
+#include "sceneV2/animatic/skeleton/BVH.h"
+#include "sceneV2/node.hpp"
 namespace TTe {
-class AnimaticObj {
+class SkeletonObj : public Node, public IAnimatic, public IRenderable {
    public:
-    struct SkeletonJoint {
-        int m_parentId;   // Le num�ro du p�re dans le tableau de CAJoint de CASkeleton
-        glm::mat4 m_l2w;  // La matrice passant du rep�re de l'articulation vers le monde
-        glm::mat4 normal_m_l2w;
+    class SkeletonNode : public Node {
     };
 
     //! Cr�er un squelette ayant la m�me structure que d�finit dans le BVH c'est � dire
     //! creer le tableau de SkeletonJoint � la bonne taille, avec les parentId initials� pour chaque case
-    void init(const BVH& bvh);
+    void init(BVH bvh);
 
     //! Renvoie la position de l'articulation i en multipliant le m_l2w par le Point(0,0,0)
     glm::vec3 getJointPosition(int i) const;
@@ -34,6 +36,10 @@ class AnimaticObj {
     //! l'articulation du p�re vers le monde.
     void setPose(const BVH& bvh, int frameNumber);
 
+
+    void simulation(glm::vec3 gravite, float viscosite, int Tps, float dt, float t, std::vector<std::shared_ptr<ICollider>> &collisionObjects);
+    void render(CommandBuffer &cmd, GraphicPipeline &pipeline, std::vector<Mesh> &meshes,  std::map<BasicShape, Mesh> basicMeshes);
+    
     //! Positionne ce squelette entre la position frameNbSrc du BVH Src et la position frameNbDst du bvh Dst
     // void setPoseInterpolation(const BVH& bvhSrc, int frameNbSrc, const BVH& bvhDst, int frameNbDst, float t);
 
@@ -47,6 +53,7 @@ class AnimaticObj {
     //! ==> Sera utile lors de la construction du graphe d'animation
     // friend float distance(const CASkeleton& a, const CASkeleton& b);
    private:
-    std::vector<Object> m_joints;
+    std::vector<std::shared_ptr<Node>> m_joints;
+    BVH m_bvh;
 };
 }  // namespace TTe

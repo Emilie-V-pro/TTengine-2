@@ -85,7 +85,7 @@ namespace TTe {
 		std::vector<TTe::BVHJoint> m_joints;
 
 		//! Root Joint
-		//chara::BVHJoint* m_root;
+		//chara::BVHJoint* m_root;BVH bvh;
 		long unsigned int m_rootId;
 
 

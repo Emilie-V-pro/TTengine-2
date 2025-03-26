@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "GPU_data/image.hpp"
-#include "scene/mesh.hpp"
+#include "sceneV2/mesh.hpp"
 
 namespace TTe {
 

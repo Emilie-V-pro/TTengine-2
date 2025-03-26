@@ -2,9 +2,10 @@
 #include "scene.hpp"
 #include <vulkan/vulkan_core.h>
 
-#include "scene/mesh.hpp"
+#include "sceneV2/mesh.hpp"
 #include "sceneV2/Irenderable.hpp"
 #include "sceneV2/cameraV2.hpp"
+#include "struct.hpp"
 
 namespace TTe {
 
@@ -77,6 +78,10 @@ void Scene2::addNode(uint32_t Parent_id, std::shared_ptr<Node> node) {
         }
     }
 
+    if(dynamic_cast<IAnimatic *>(node.get())) {
+        animaticObjs.push_back(std::dynamic_pointer_cast<IAnimatic>(node));
+    }
+
     if (Parent_id == -1) {
         this->addChild(node);
     } else {
@@ -126,7 +131,11 @@ void Scene2::updateCameraBuffer() {
 void Scene2::updateMaterialBuffer() {
     if (materialBuffer.getInstancesCount() < materials.size() || materials.size() == 0) {
         if (materials.size() == 0){
-            materials.push_back(Material());
+            Material mat;
+            mat.color = glm::vec4(1.0f);
+            mat.metallic = 0.2f;
+            mat.roughness = 0.5f;
+            materials.push_back(mat);
         }
         materialBuffer = Buffer(device, sizeof(MaterialGPU), materials.size(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
         
@@ -138,7 +147,6 @@ void Scene2::updateMaterialBuffer() {
             {material.color, material.metallic, material.roughness, material.albedo_tex_id, material.metallic_roughness_tex_id,
              material.normal_tex_id});
     }
-    std::cout << static_cast<VkBuffer>(materialBuffer) << std::endl;
     materialBuffer.writeToBuffer(materialsGPU.data(), sizeof(MaterialGPU) * materialsGPU.size(), 0);
 }
 

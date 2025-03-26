@@ -12,13 +12,13 @@
 #include "GPU_data/image.hpp"
 #include "descriptor/descriptorSet.hpp"
 #include "device.hpp"
-#include "scene/mesh.hpp"
-#include "scene/objects/animaticObj.hpp"
+
+#include "sceneV2/Ianimatic.hpp"
+#include "sceneV2/mesh.hpp"
 #include "sceneV2/Irenderable.hpp"
 #include "sceneV2/cameraV2.hpp"
 #include "sceneV2/i_object_file_loader.hpp"
 #include "sceneV2/node.hpp"
-#include "shader/pipeline.hpp"
 #include "shader/pipeline/graphic_pipeline.hpp"
 
 namespace TTe {
@@ -73,6 +73,8 @@ class Scene2 : public Node {
         return *this;
     };
 
+    void Param(std::string Fichier_Param);
+
     void render(CommandBuffer &cmd);
     void renderSkybox(CommandBuffer &cmd);
 
@@ -115,7 +117,7 @@ class Scene2 : public Node {
 
     std::shared_ptr<CameraV2> mainCamera;
     std::vector<std::shared_ptr<CameraV2>> cameras;
-    std::vector<std::shared_ptr<AnimaticObj>> animaticObjs;
+    std::vector<std::shared_ptr<IAnimatic>> animaticObjs;
     std::vector<std::shared_ptr<IRenderable>> renderables;
 
     std::unordered_map<uint32_t, std::shared_ptr<Node>> objects;
@@ -128,5 +130,6 @@ class Scene2 : public Node {
     GraphicPipeline meshPipeline;
 
     Device *device = nullptr;
+    int _nb_iter;
 };
 }  // namespace TTe

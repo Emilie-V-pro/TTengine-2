@@ -1,8 +1,7 @@
 #pragma once
 
 #include <GLFW/glfw3.h>
-#include "scene/camera.hpp"
-#include "scene/scene.hpp"
+
 #include "sceneV2/cameraV2.hpp"
 #include "window.hpp"
 
@@ -31,7 +30,7 @@ class MovementController {
 
     };
 
-    void moveInPlaneXZ(Window* window, float dt, Camera& cam);
+
     void moveInPlaneXZ(Window* window, float dt, std::shared_ptr<CameraV2> cam);
     KeyMappings keys{};
 
