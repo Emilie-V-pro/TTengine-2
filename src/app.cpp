@@ -43,8 +43,8 @@ void App::init(Device *device, SwapChain *swapchain, Window* window) {
         DynamicRenderPass(device, {1280, 720}, {}, swapchain->getswapChainImages().size(), depthAndStencil::DEPTH, swapchain, nullptr);
 
     BVH bvh = BVH("../data/Robot.bvh");
-    // std::shared_ptr<SkeletonObj> skeleton = std::make_shared<SkeletonObj>();
-    // skeleton->init(bvh);
+    std::shared_ptr<SkeletonObj> skeleton = std::make_shared<SkeletonObj>();
+    skeleton->init(bvh);
 
 
     scene2 = std::make_shared<Scene2>(device);
@@ -74,18 +74,18 @@ void App::init(Device *device, SwapChain *swapchain, Window* window) {
     StaticMeshObj obj3 = StaticMeshObj();
     obj3.setMeshId(0);
     scene2->addNode(-1, std::make_shared<StaticMeshObj>(obj3));
-    // obj3.setMeshId(1);
-    // scene2->addNode(-1, std::make_shared<StaticMeshObj>(obj3));
-    // obj3.setMeshId(2);
-    // scene2->addNode(-1, std::make_shared<StaticMeshObj>(obj3));
-    // obj3.setMeshId(3);
-    // scene2->addNode(-1, std::make_shared<StaticMeshObj>(obj3));
-    // obj3.setMeshId(4);
-    // scene2->addNode(-1, std::make_shared<StaticMeshObj>(obj3));
-    // obj3.setMeshId(5);
-    // scene2->addNode(-1, std::make_shared<StaticMeshObj>(obj3));
+    obj3.setMeshId(1);
+    scene2->addNode(-1, std::make_shared<StaticMeshObj>(obj3));
+    obj3.setMeshId(2);
+    scene2->addNode(-1, std::make_shared<StaticMeshObj>(obj3));
+    obj3.setMeshId(3);
+    scene2->addNode(-1, std::make_shared<StaticMeshObj>(obj3));
+    obj3.setMeshId(4);
+    scene2->addNode(-1, std::make_shared<StaticMeshObj>(obj3));
+    obj3.setMeshId(5);
+    scene2->addNode(-1, std::make_shared<StaticMeshObj>(obj3));
 
-    // scene2->addNode(-1, skeleton);
+    scene2->addNode(-1, skeleton);
 
     scene2->updateMaterialBuffer();
     scene2->updateDescriptorSets();
@@ -107,7 +107,7 @@ void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
     time += deltaTime;
 
 
-    // movementController.moveInPlaneXZ(&windowObj, deltaTime, scene2->getMainCamera());
+    movementController.moveInPlaneXZ(&windowObj, deltaTime, scene2->getMainCamera());
  // scene.updateCameraBuffer();
     scene2->updateCameraBuffer();
     scene2->transform.rot += glm::vec3(0.0f, 0.0001f, 0.0f);
@@ -118,10 +118,10 @@ void App::renderFrame(float deltatTime, CommandBuffer &cmdBuffer, uint32_t curen
     renderPass.beginRenderPass(cmdBuffer, curentFrameIndex);
 
     renderPass.setDepthAndStencil(cmdBuffer, false);
-    // scene2->renderSkybox(cmdBuffer);
+    scene2->renderSkybox(cmdBuffer);
     renderPass.setDepthAndStencil(cmdBuffer, true);
 
-    // scene2->render(cmdBuffer);
+    scene2->render(cmdBuffer);
     
 
     renderPass.endRenderPass(cmdBuffer);

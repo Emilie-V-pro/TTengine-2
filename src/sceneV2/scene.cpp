@@ -132,9 +132,9 @@ void Scene2::updateMaterialBuffer() {
     if (materialBuffer.getInstancesCount() < materials.size() || materials.size() == 0) {
         if (materials.size() == 0){
             Material mat;
-            mat.color = glm::vec4(1.0f);
-            mat.metallic = 0.2f;
-            mat.roughness = 0.5f;
+            mat.color = glm::vec4(0.8,0,0,1);
+            mat.metallic = 0.8f;
+            mat.roughness = 0.9f;
             materials.push_back(mat);
         }
         materialBuffer = Buffer(device, sizeof(MaterialGPU), materials.size(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, Buffer::BufferType::DYNAMIC);

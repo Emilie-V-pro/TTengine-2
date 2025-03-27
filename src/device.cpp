@@ -116,6 +116,7 @@ void setRequiredExtensionsFeatures(vkb::PhysicalDeviceSelector &phys_device_sele
     VkPhysicalDeviceDescriptorBufferFeaturesEXT descriptorBufferFeature{};
     descriptorBufferFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT;
     descriptorBufferFeature.descriptorBuffer = true;
+    descriptorBufferFeature.descriptorBufferCaptureReplay = true;
 
     phys_device_selector.add_required_extension_features(shaderObjFeature);
     phys_device_selector.add_required_extension_features(descriptorBufferFeature);
@@ -146,6 +147,7 @@ void setRequiredFeatures12(vkb::PhysicalDeviceSelector &phys_device_selector) {
     required_features12.descriptorIndexing = true;
     required_features12.scalarBlockLayout = true;
     required_features12.timelineSemaphore = true;
+    
     phys_device_selector.set_required_features_12(required_features12);
 }
 

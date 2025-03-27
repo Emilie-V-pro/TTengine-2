@@ -2,6 +2,7 @@
 #include "node.hpp"
 #include <algorithm>
 #include <memory>
+#include "sceneV2/cameraV2.hpp"
 #include "sceneV2/scene.hpp"
 
 #define GLM_FORCE_RADIANS
@@ -33,9 +34,10 @@ glm::mat4 Node::wMatrix() {
         glm::mat4 translationMatrix = glm::translate(transform.pos.value);
         glm::mat4 rotationMatrix = glm::eulerAngleXYZ(transform.rot.value.x, transform.rot.value.y, transform.rot.value.z);
         worldMatrix = translationMatrix * rotationMatrix * scaleMatrix;
-        worldMatrix = parent ? parent->wMatrix() * worldMatrix : worldMatrix;
+        
+        
+        worldMatrix = (parent) ? parent->wMatrix() * worldMatrix : worldMatrix;
         dirty = false;
-        std::cout << "non " << this->id << "\n";
     }
     
     return worldMatrix;

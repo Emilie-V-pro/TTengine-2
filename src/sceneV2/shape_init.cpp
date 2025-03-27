@@ -145,7 +145,7 @@ Mesh init_sphere(Device *d, uint res) {
     // Normalize all the positions to create the sphere
 
     for (auto &vert : vertices) {
-        vert.pos = normalize(vert.pos);
+        vert.pos = -normalize(vert.pos);
         vert.normal = vert.pos;
     }
 
