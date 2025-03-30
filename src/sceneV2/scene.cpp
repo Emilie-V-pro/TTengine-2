@@ -22,6 +22,7 @@ Scene2::Scene2(Device *device) : device(device) {
     skyboxImageCreateInfo.filename.push_back("negz.jpg");
     skyboxImageCreateInfo.usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT;
     skyboxImageCreateInfo.isCubeTexture = true;
+    skyboxImageCreateInfo.enableMipMap = true;
     skyboxImage = Image(device, skyboxImageCreateInfo);
 
     addNode(-1, std::make_shared<CameraV2>());
@@ -116,6 +117,12 @@ void Scene2::addObjectFileData(ObjectFileData &data) {
 }
 
 void Scene2::addImage(Image image) { images.push_back(image); }
+
+void Scene2::updateSim(float dt, float t) {
+    for (auto &animaticObj : animaticObjs) {
+        animaticObj->simulation(glm::vec3(0, -9.81, 0), 0.995, 1, dt, t, collisionObjects);
+    }
+}
 
 void Scene2::updateCameraBuffer() {
     if (cameraBuffer.getInstancesCount() == 0) {

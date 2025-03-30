@@ -34,9 +34,77 @@ namespace TTe {
 class ObjetSimuleMSS: public SimulateObj
 {
 public:
+
+    ObjetSimuleMSS() {};
     
     /*! Constructeur */
     ObjetSimuleMSS(Device *device, std::string fich_param);
+
+
+    // copy constructor
+    ObjetSimuleMSS(const ObjetSimuleMSS &other) : SimulateObj(other) {
+        this->_Fich_Masses = other._Fich_Masses;
+        this->_Fich_Points = other._Fich_Points;
+        this->_Fich_Texture = other._Fich_Texture;
+        this->_Fich_FaceSet = other._Fich_FaceSet;
+   
+      
+        this->_Size = other._Size;
+        this->_SystemeMasseRessort = other._SystemeMasseRessort;
+        this->_Integration = other._Integration;
+        this->_SolveurExpl = other._SolveurExpl;
+        this->_SolveurImpl = other._SolveurImpl;
+    }
+
+    // copy assignment
+
+    ObjetSimuleMSS &operator=(const ObjetSimuleMSS &other) {
+        if (this != &other) {
+
+            SimulateObj::operator=(other);
+            this->_Fich_Masses = other._Fich_Masses;
+            this->_Fich_Points = other._Fich_Points;
+            this->_Fich_Texture = other._Fich_Texture;
+            this->_Fich_FaceSet = other._Fich_FaceSet;
+            this->_Size = other._Size;
+            this->_SystemeMasseRessort = other._SystemeMasseRessort;
+            this->_Integration = other._Integration;
+            this->_SolveurExpl = other._SolveurExpl;
+            this->_SolveurImpl = other._SolveurImpl;
+        }
+        return *this;
+    }
+
+    // move constructor
+    ObjetSimuleMSS(ObjetSimuleMSS &&other) : SimulateObj(other) {
+        this->_Fich_Masses = other._Fich_Masses;
+        this->_Fich_Points = other._Fich_Points;
+        this->_Fich_Texture = other._Fich_Texture;
+        this->_Fich_FaceSet = other._Fich_FaceSet;
+        this->_Size = other._Size;
+        this->_SystemeMasseRessort = other._SystemeMasseRessort;
+        this->_Integration = other._Integration;
+        this->_SolveurExpl = other._SolveurExpl;
+        this->_SolveurImpl = other._SolveurImpl;
+    }
+
+    // move assignment
+    ObjetSimuleMSS &operator=(ObjetSimuleMSS &&other) {
+        if (this != &other) {
+            SimulateObj::operator=(other);
+            this->_Fich_Masses = other._Fich_Masses;
+            this->_Fich_Points = other._Fich_Points;
+            this->_Fich_Texture = other._Fich_Texture;
+            this->_Fich_FaceSet = other._Fich_FaceSet;
+            this->_Size = other._Size;
+            this->_SystemeMasseRessort = other._SystemeMasseRessort;
+            this->_Integration = other._Integration;
+            this->_SolveurExpl = other._SolveurExpl;
+            this->_SolveurImpl = other._SolveurImpl;
+        }
+        return *this;
+    }
+
     
     /*! Lecture des parametres lies au systeme masses-ressorts */
     void Param_mss(std::string fich_param);
@@ -53,8 +121,8 @@ public:
     void CalculForceSpring();
 
     /*! Simulation de l objet */
-    void Simulation(glm::vec3 gravite, float viscosite, int Tps, float dt, float t, std::vector<std::shared_ptr<ICollider>> &collisionObjects);
-    void render(CommandBuffer &cmd, GraphicPipeline &pipeline, std::vector<Mesh> &meshes,  std::map<BasicShape, Mesh> basicMeshes) = 0;
+    void simulation(glm::vec3 gravite, float viscosite, int Tps, float dt, float t, std::vector<std::shared_ptr<ICollider>> &collisionObjects);
+    void render(CommandBuffer &cmd, GraphicPipeline &pipeline, std::vector<Mesh> &meshes,  std::map<BasicShape, Mesh> basicMeshes);
     
     void applyForceGravity(float t, glm::vec3 g);
     void solveExplicit(float visco, float deltaT);

@@ -34,7 +34,7 @@ Buffer::Buffer(
     allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
     VmaAllocationInfo getAllocInfo;
 
-    std::cout << total_size << "\n";
+    
     //save vmaBuildStatsString to file 
     std::ofstream file("vmaStats.txt");
     char * s;

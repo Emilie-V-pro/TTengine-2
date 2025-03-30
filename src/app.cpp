@@ -15,6 +15,7 @@
 #include "GPU_data/image.hpp"
 #include "device.hpp"
 #include "dynamic_renderpass.hpp"
+#include "sceneV2/animatic/simulation/ObjetSimuleMSS.h"
 #include "sceneV2/animatic/skeleton/BVH.h"
 #include "sceneV2/animatic/skeletonObj.hpp"
 #include "sceneV2/mesh.hpp"
@@ -69,7 +70,8 @@ void App::init(Device *device, SwapChain *swapchain, Window* window) {
     
     
     scene2->addObjectFileData(data);
-
+    scene2->Param("../data/simu/Fichier_Param.simu");
+    // ObjetSimuleMSS objMss = ObjetSimuleMSS(device, "../data/simu/Fichier_Param.objet1");
 
     StaticMeshObj obj3 = StaticMeshObj();
     obj3.setMeshId(0);
@@ -84,6 +86,8 @@ void App::init(Device *device, SwapChain *swapchain, Window* window) {
     scene2->addNode(-1, std::make_shared<StaticMeshObj>(obj3));
     obj3.setMeshId(5);
     scene2->addNode(-1, std::make_shared<StaticMeshObj>(obj3));
+
+    scene2->addNode(-1, std::make_shared<ObjetSimuleMSS>(device, "../data/simu/Fichier_Param.objet1"));
 
     scene2->addNode(-1, skeleton);
 
@@ -100,18 +104,22 @@ void App::resize(int width, int height) {
 void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
     float maxDT = 1.0f / 144.0f;
     //if dt < 1/120, we wait
-    if (deltaTime < maxDT) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>((maxDT - deltaTime) * 1000)));
-        deltaTime = maxDT;
-    }
+    // if (deltaTime < maxDT) {
+    //     std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>((maxDT - deltaTime) * 1000)));
+    //     deltaTime = maxDT;
+    // }
     time += deltaTime;
 
 
     movementController.moveInPlaneXZ(&windowObj, deltaTime, scene2->getMainCamera());
  // scene.updateCameraBuffer();
+    // calcul time
+    auto start = std::chrono::high_resolution_clock::now();
+    scene2->updateSim(deltaTime, time);
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+    std::cout << "updateSim time: " << elapsed.count() << std::endl;
     scene2->updateCameraBuffer();
-    scene2->transform.rot += glm::vec3(0.0f, 0.0001f, 0.0f);
-    auto r = scene2->getChild(1)->wMatrix();
 }
 void App::renderFrame(float deltatTime, CommandBuffer &cmdBuffer, uint32_t curentFrameIndex) {
 

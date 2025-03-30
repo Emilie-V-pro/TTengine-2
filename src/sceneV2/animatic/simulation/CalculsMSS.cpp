@@ -94,7 +94,7 @@ void ObjetSimuleMSS::solveExplicit(float visco, float deltaT)
     // deltaT = max(deltaT, 0.00005f);
 
     // #pragma omp parallel for schedule(dynamic, 1)
-	deltaT = 0.001;
+	
     for (int i = 0; i < mesh.verticies.size(); ++i) {
         V[i] = (V[i] + deltaT * A[i]) * visco;
         mesh.verticies[i].pos = mesh.verticies[i].pos + deltaT * V[i];

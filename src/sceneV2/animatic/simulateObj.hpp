@@ -12,11 +12,82 @@
 namespace TTe {
 class SimulateObj : public Node, public IRenderable, public IAnimatic {
    public:
-    // SimulateObj(){}
+
+
+
+    SimulateObj(){}
     SimulateObj(Device *device, std::string &paramFile) : device(device) {
         Param_mesh(paramFile);
         mesh = Mesh(device);
     }
+
+    // copy move
+    SimulateObj(const SimulateObj &other) : Node(other), IRenderable(other), IAnimatic(other) {
+        this->_Fich_Masses = other._Fich_Masses;
+        this->_Fich_Points = other._Fich_Points;
+        this->_Interaction = other._Interaction;
+        this->_Friction = other._Friction;
+        this->V = other.V;
+        this->A = other.A;
+        this->Force = other.Force;
+        this->M = other.M;
+        this->mesh = other.mesh;
+        this->device = other.device;
+    }
+
+    SimulateObj &operator=(const SimulateObj &other) {
+        if (this != &other) {
+            Node::operator=(other);
+            IRenderable::operator=(other);
+            IAnimatic::operator=(other);
+            this->_Fich_Masses = other._Fich_Masses;
+            this->_Fich_Points = other._Fich_Points;
+            this->_Interaction = other._Interaction;
+            this->_Friction = other._Friction;
+            this->V = other.V;
+            this->A = other.A;
+            this->Force = other.Force;
+            this->M = other.M;
+            this->mesh = other.mesh;
+            this->device = other.device;
+        }
+        return *this;
+    }
+
+    SimulateObj &operator=(SimulateObj &&other) {
+        if (this != &other) {
+            Node::operator=(other);
+            IRenderable::operator=(other);
+            IAnimatic::operator=(other);
+            this->_Fich_Masses = other._Fich_Masses;
+            this->_Fich_Points = other._Fich_Points;
+            this->_Interaction = other._Interaction;
+            this->_Friction = other._Friction;
+            this->V = other.V;
+            this->A = other.A;
+            this->Force = other.Force;
+            this->M = other.M;
+            this->mesh = other.mesh;
+            this->device = other.device;
+        }
+        return *this;
+    }
+
+    SimulateObj(SimulateObj &&other) : Node(other), IRenderable(other), IAnimatic(other) {
+        this->_Fich_Masses = other._Fich_Masses;
+        this->_Fich_Points = other._Fich_Points;
+        this->_Interaction = other._Interaction;
+        this->_Friction = other._Friction;
+        this->V = other.V;
+        this->A = other.A;
+        this->Force = other.Force;
+        this->M = other.M;
+        this->mesh = other.mesh;
+        this->device = other.device;
+    }
+
+
+
     // ~SimulateObj();
 
     /*! Lecture des parametres lies au maillage */

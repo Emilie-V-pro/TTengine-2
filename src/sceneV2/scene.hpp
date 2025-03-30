@@ -14,6 +14,7 @@
 #include "device.hpp"
 
 #include "sceneV2/Ianimatic.hpp"
+#include "sceneV2/Icollider.hpp"
 #include "sceneV2/mesh.hpp"
 #include "sceneV2/Irenderable.hpp"
 #include "sceneV2/cameraV2.hpp"
@@ -78,6 +79,8 @@ class Scene2 : public Node {
     void render(CommandBuffer &cmd);
     void renderSkybox(CommandBuffer &cmd);
 
+    void updateSim(float dt, float t);
+
     void addNode(uint32_t Parent_id, std::shared_ptr<Node> node);
     void removeNode(uint32_t id);
 
@@ -119,7 +122,7 @@ class Scene2 : public Node {
     std::vector<std::shared_ptr<CameraV2>> cameras;
     std::vector<std::shared_ptr<IAnimatic>> animaticObjs;
     std::vector<std::shared_ptr<IRenderable>> renderables;
-
+    std::vector<std::shared_ptr<ICollider>> collisionObjects;
     std::unordered_map<uint32_t, std::shared_ptr<Node>> objects;
 
     std::vector<uint32_t> freeIDs;

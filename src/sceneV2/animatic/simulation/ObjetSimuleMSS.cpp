@@ -59,6 +59,9 @@ ObjetSimuleMSS::ObjetSimuleMSS(Device *device, std::string fich_param) : Simulat
 
     /* Calcul du facteur d amortissement des ressorts */
     _SystemeMasseRessort->_RessOS.SetFactAmorti();
+
+    initObjetSimule();
+    initMeshObjet();
 }
 
 /**
@@ -89,9 +92,9 @@ void ObjetSimuleMSS::initObjetSimule() {
         // Arret du programme
         exit(1);
     }
-    uint32_t   _Nb_Sommets;
+    uint32_t _Nb_Sommets;
     _FichIn_Points >> _Nb_Sommets;
-    std::cout << "Nombre de sommets " << _Nb_Sommets <<std::endl;
+    std::cout << "Nombre de sommets " << _Nb_Sommets << std::endl;
 
     /// Lecture du nombre de sommets
     std::vector<glm::vec3> pos;
@@ -130,14 +133,10 @@ void ObjetSimuleMSS::initObjetSimule() {
     /* Fichier de donnees des textures */
     std::ifstream _FichIn_Texture(_Fich_Texture.c_str());
 
-    
-    
-
     /* Lecture des textures */
     std::vector<glm::vec2> uv;
     /// Lecture des coordonnees de texture
     while (!_FichIn_Texture.eof()) {
-
         _FichIn_Texture >> tmp_uv.r;
         _FichIn_Texture >> tmp_uv.g;
 
@@ -163,12 +162,11 @@ void ObjetSimuleMSS::initObjetSimule() {
 
     /*** Initialisation des tableaux pour chacun des sommets ***/
     for (int i = 0; i < pos.size(); ++i) {
-
         mesh.verticies[i].pos = pos[i];
         mesh.verticies[i].uv = uv[i];
         /** Vecteur nulle pour initialiser les vitesses,
          accel, forces, des normales des sommets **/
-        
+
         V.push_back(glm::vec3(0.0, 0.0, 0.0));
         A.push_back(glm::vec3(0.0, 0.0, 0.0));
         Force.push_back(glm::vec3(0.0, 0.0, 0.0));
@@ -216,7 +214,7 @@ void ObjetSimuleMSS::initObjetSimule() {
         _FichIn_FaceSet >> vertexIds[0];
         _FichIn_FaceSet >> vertexIds[1];
         _FichIn_FaceSet >> vertexIds[2];
-        
+
         // _FichIn_FaceSet >> facet.fi;
         // _FichIn_FaceSet >> facet.fj;
         // _FichIn_FaceSet >> facet.fk;
@@ -227,7 +225,7 @@ void ObjetSimuleMSS::initObjetSimule() {
         _SystemeMasseRessort->MakeFace(
             _SystemeMasseRessort->GetParticule(vertexIds[2]), _SystemeMasseRessort->GetParticule(vertexIds[1]),
             _SystemeMasseRessort->GetParticule(vertexIds[0]), &_SystemeMasseRessort->_RessOS);
-        if(vertexIds[0] >= pos.size() || vertexIds[1] >= pos.size() || vertexIds[2] >= pos.size()){
+        if (vertexIds[0] >= pos.size() || vertexIds[1] >= pos.size() || vertexIds[2] >= pos.size()) {
             std::cout << "Erreur dans les indices des sommets" << std::endl;
             exit(1);
         }
@@ -237,7 +235,6 @@ void ObjetSimuleMSS::initObjetSimule() {
         mesh.indicies.push_back(vertexIds[0]);
         nb_facet++;
     }
-
 
     /** Fermeture des fichiers de donnees **/
     _FichIn_FaceSet.close();
@@ -256,7 +253,6 @@ void ObjetSimuleMSS::initObjetSimule() {
     if (_Integration == "implicite") _SolveurImpl->Allocation_Structure(mesh.verticies.size());
 }
 
-
 /**
  * Modification du tableau des normales (lissage des normales).
  */
@@ -270,10 +266,8 @@ void ObjetSimuleMSS::setNormals() {
     // Indices des sommets d une face
     int a, b, c;
 
-  
-
     /* Parcours des faces du maillage */
-    for (unsigned int i = 0; i < mesh.indicies.size()/3; ++i) {
+    for (unsigned int i = 0; i < mesh.indicies.size() / 3; ++i) {
         // Sommets a, b, c de la face
         a = mesh.indicies[3 * i];
         b = mesh.indicies[(3 * i) + 1];
@@ -281,8 +275,6 @@ void ObjetSimuleMSS::setNormals() {
 
         struct Triangle tri = {mesh.verticies[a], mesh.verticies[b], mesh.verticies[c]};
         normale = tri.getNormal();
-
-        
 
         // Modification des normales des sommets de la face
         // Normale du sommet a
@@ -299,7 +291,7 @@ void ObjetSimuleMSS::setNormals() {
     /* Parcours des normales des sommets */
     float norme;
 
-    for(auto & vertex : mesh.verticies){
+    for (auto &vertex : mesh.verticies) {
         vertex.normal = glm::normalize(vertex.normal);
     }
 }
@@ -323,12 +315,11 @@ void ObjetSimuleMSS::updateVertex() {
     mesh.uploadToGPU();
 }
 
-
-
 /**
  * Simulation de l objet.
  */
-void ObjetSimuleMSS::Simulation(glm::vec3 gravite, float viscosite, int Tps, float dt, float t, std::vector<std::shared_ptr<ICollider>> &collisionObjects) {
+void ObjetSimuleMSS::simulation(
+    glm::vec3 gravite, float viscosite, int Tps, float dt, float t, std::vector<std::shared_ptr<ICollider>> &collisionObjects) {
     /* Calcul des forces dues aux ressorts */
     // std::cout << "Force.... " << std::endl;
     CalculForceSpring();
@@ -358,6 +349,22 @@ void ObjetSimuleMSS::Simulation(glm::vec3 gravite, float viscosite, int Tps, flo
     /** Modification des normales **/
     setNormals();
     updateVertex();
+}
+
+void ObjetSimuleMSS::render(
+    CommandBuffer &cmd, GraphicPipeline &pipeline, std::vector<Mesh> &meshes, std::map<BasicShape, Mesh> basicMeshes) {
+    mesh.bindMesh(cmd);
+
+    // push constant
+
+    glm::mat4 wMatrix = this->wMatrix();
+    glm::mat4 wNormalMatrix = this->wNormalMatrix();
+
+    // push constant
+    vkCmdPushConstants(cmd, pipeline.getPipelineLayout(), pipeline.getPushConstantStage(), 0, sizeof(glm::mat4), &wMatrix);
+    vkCmdPushConstants(
+        cmd, pipeline.getPipelineLayout(), pipeline.getPushConstantStage(), sizeof(glm::mat4), sizeof(glm::mat4), &wNormalMatrix);
+    vkCmdDrawIndexed(cmd, mesh.nbIndicies(), 1, 0, 0, 0);
 }
 
 }  // namespace TTe
