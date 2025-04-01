@@ -11,6 +11,7 @@
 
 
 /** Librairies de base **/
+#include <cstdint>
 #include <glm/fwd.hpp>
 #include <vector>
 
@@ -44,7 +45,7 @@ public:
     /*! Calcul des vitesses et positions */
     void Solve(float visco,
                int nb_som,
-               int Tps,
+               uint32_t tick,
                std::vector<glm::vec3> &Force,
                std::vector<glm::vec3> &A,
                std::vector<glm::vec3> &V,

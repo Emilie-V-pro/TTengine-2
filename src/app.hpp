@@ -36,5 +36,6 @@ class App : public IApp {
     std::shared_ptr<Scene2> scene2;
 
     float time = 0.0f;
+    uint32_t tick = 0; 
 };
 }  // namespace TTe

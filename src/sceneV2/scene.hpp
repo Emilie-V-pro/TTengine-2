@@ -79,20 +79,22 @@ class Scene2 : public Node {
     void render(CommandBuffer &cmd);
     void renderSkybox(CommandBuffer &cmd);
 
-    void updateSim(float dt, float t);
+    void updateSim(float dt, float t,  uint32_t tick);
 
-    void addNode(uint32_t Parent_id, std::shared_ptr<Node> node);
+    uint32_t addNode(uint32_t Parent_id, std::shared_ptr<Node> node);
     void removeNode(uint32_t id);
 
-    void addMaterial(Material material);
+    uint32_t addMaterial(Material material);
 
     void addMesh(Mesh mesh);
 
-    void addImage(Image image);
+    uint32_t addImage(Image image);
 
     void addObjectFileData(ObjectFileData &data);
 
     std::shared_ptr<CameraV2> getMainCamera() { return mainCamera; }
+
+    std::shared_ptr<Node> getNode(uint32_t id) { return objects[id]; }
 
     void updateCameraBuffer();
     void updateMaterialBuffer();

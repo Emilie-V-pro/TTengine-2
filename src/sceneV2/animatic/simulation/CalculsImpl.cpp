@@ -27,6 +27,7 @@
  */
 
 #include <math.h>
+#include <cstdint>
 #include <glm/fwd.hpp>
 #include <iostream>
 #include <vector>
@@ -65,7 +66,7 @@ void SolveurImpl::CalculAccel_ForceGravite(glm::vec3 g,
 /*! Calcul des vitesses et positions */
 void SolveurImpl::Solve(float visco,
                         int nb_som,
-                        int Tps,
+                        uint32_t tick,
                         std::vector<glm::vec3> &Force,
                         std::vector<glm::vec3> &A,
                         std::vector<glm::vec3> &V,
@@ -88,7 +89,7 @@ void SolveurImpl::Solve(float visco,
     Resolution(nb_som, M, _SystemeMasseRessort);
     
     /* Calcul des vitesses */
-    CalculVitesse(visco, nb_som, Tps, V, X);
+    CalculVitesse(visco, nb_som, tick, V, X);
     
     /* Calcul de la position */
     CalculPosition(nb_som, V, P);

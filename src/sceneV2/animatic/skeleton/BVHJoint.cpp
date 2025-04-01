@@ -15,6 +15,21 @@ BVHJoint::BVHJoint(const std::string& name, int parent, BVH& bvh, int id)
 {
 	setOffset(0, 0, 0);
 }
+
+BVHJoint & BVHJoint::operator=(const BVHJoint & joint)
+{
+	m_name = joint.m_name;
+	m_parentId = joint.m_parentId;
+	m_bvh = joint.m_bvh;
+	m_id = joint.m_id;
+	m_offset[0] = joint.m_offset[0];
+	m_offset[1] = joint.m_offset[1];
+	m_offset[2] = joint.m_offset[2];
+	m_channels = joint.m_channels;
+	m_childs = joint.m_childs;
+	return *this;
+}
+
 //-----------------------------------------------------------------------------
 void BVHJoint::removeChannel(const BVHChannel& channel)
 {

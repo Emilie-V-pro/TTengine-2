@@ -319,7 +319,7 @@ void ObjetSimuleMSS::updateVertex() {
  * Simulation de l objet.
  */
 void ObjetSimuleMSS::simulation(
-    glm::vec3 gravite, float viscosite, int Tps, float dt, float t, std::vector<std::shared_ptr<ICollider>> &collisionObjects) {
+    glm::vec3 gravite, float viscosite, uint32_t tick, float dt, float t, std::vector<std::shared_ptr<ICollider>> &collisionObjects) {
     /* Calcul des forces dues aux ressorts */
     // std::cout << "Force.... " << std::endl;
     CalculForceSpring();
@@ -336,7 +336,7 @@ void ObjetSimuleMSS::simulation(
     if (_Integration == "explicite")
         solveExplicit(viscosite, dt);
     else if (_Integration == "implicite")
-        _SolveurImpl->Solve(viscosite, mesh.verticies.size(), Tps, Force, A, V, mesh.verticies, M, gravite, _SystemeMasseRessort);
+        _SolveurImpl->Solve(viscosite, mesh.verticies.size(), tick, Force, A, V, mesh.verticies, M, gravite, _SystemeMasseRessort);
 
     /* ! Gestion des collisions  */
     // Reponse : reste a la position du sol - arret des vitesses
@@ -367,4 +367,14 @@ void ObjetSimuleMSS::render(
     vkCmdDrawIndexed(cmd, mesh.nbIndicies(), 1, 0, 0, 0);
 }
 
+void ObjetSimuleMSS::attachToNode(uint32_t i, std::shared_ptr<Node> node) {
+    // std::cout << "Attach to node " << i << std::endl;
+    attachedNodes[i] = node;
+}
+
+void ObjetSimuleMSS::setMaterial(uint32_t id) {
+    // std::cout << "Set material " << id << std::endl;
+    mesh.setMaterial(id);
+
 }  // namespace TTe
+}

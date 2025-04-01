@@ -34,6 +34,20 @@ public:
 	//! Destructor (recursive)
 	~BVHJoint() {}
 
+	// copy constructor and operator
+	BVHJoint(const BVHJoint& joint) : m_bvh(joint.m_bvh){
+		m_name = joint.m_name;
+		m_parentId = joint.m_parentId;
+		m_id = joint.m_id;
+		m_offset[0] = joint.m_offset[0];
+		m_offset[1] = joint.m_offset[1];
+		m_offset[2] = joint.m_offset[2];
+		m_channels = joint.m_channels;
+		m_childs = joint.m_childs;
+	}
+
+	BVHJoint & operator=(const BVHJoint & joint);
+
 	//! Return the name of the Joint
 	std::string getName(void) const { return m_name;  }
 	//! Modify the name of the Joint

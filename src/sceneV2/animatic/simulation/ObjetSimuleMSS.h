@@ -9,6 +9,7 @@
 
 
 /** Librairies de base **/
+#include <cstdint>
 #include <glm/fwd.hpp>
 #include <memory>
 
@@ -121,7 +122,7 @@ public:
     void CalculForceSpring();
 
     /*! Simulation de l objet */
-    void simulation(glm::vec3 gravite, float viscosite, int Tps, float dt, float t, std::vector<std::shared_ptr<ICollider>> &collisionObjects);
+    void simulation(glm::vec3 gravite, float viscosite, uint32_t tick, float dt, float t, std::vector<std::shared_ptr<ICollider>> &collisionObjects);
     void render(CommandBuffer &cmd, GraphicPipeline &pipeline, std::vector<Mesh> &meshes,  std::map<BasicShape, Mesh> basicMeshes);
     
     void applyForceGravity(float t, glm::vec3 g);
@@ -141,6 +142,10 @@ public:
     
     /*! Acces a la taille du tissu */
     inline glm::vec3 GetTissuSize() {return _Size;}
+
+    void attachToNode(uint32_t id, std::shared_ptr<Node> node);
+
+    void setMaterial(uint32_t id);
     
    
     /// Fichier de donnees contenant les textures
@@ -164,6 +169,8 @@ public:
     
     /// SolveurImpl : schema d integration implicite 
     SolveurImpl *_SolveurImpl;
+
+    std::map<uint32_t, std::shared_ptr<Node>> attachedNodes;
     
 };
 

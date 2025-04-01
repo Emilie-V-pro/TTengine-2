@@ -33,6 +33,23 @@ namespace TTe {
 		BVH(const std::string& filename, bool enableEndSite=false)  { init(filename,enableEndSite); }
 		~BVH() {}
 
+		// copy constructor and operator
+
+		BVH(const BVH& bvh){
+			m_numFrames = bvh.m_numFrames;
+			m_frameTime = bvh.m_frameTime;
+			m_joints = bvh.m_joints;
+			m_rootId = bvh.m_rootId;
+		}
+
+		BVH & operator=(const BVH & bvh){
+			m_numFrames = bvh.m_numFrames;
+			m_frameTime = bvh.m_frameTime;
+			m_joints = bvh.m_joints;
+			m_rootId = bvh.m_rootId;
+			return *this;
+		}
+
 		//! init
 		void init(const std::string& filename, bool enableEndSite=true);
 

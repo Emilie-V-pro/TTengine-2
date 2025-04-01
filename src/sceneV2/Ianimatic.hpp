@@ -9,7 +9,7 @@
 namespace TTe {
 class IAnimatic {
    public:
-    virtual void simulation(glm::vec3 gravite, float viscosite, int Tps, float dt, float t, std::vector<std::shared_ptr<ICollider>> &collisionObjects) = 0;
+    virtual void simulation(glm::vec3 gravite, float viscosite, uint32_t tick, float dt, float t, std::vector<std::shared_ptr<ICollider>> &collisionObjects) = 0;
    private:
    protected:
 };

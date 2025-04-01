@@ -61,7 +61,7 @@ void ObjetSimuleMSS::CalculForceSpring()
 		glm::vec3 direction = mesh.verticies[particule2->GetId()].pos - mesh.verticies[particule1->GetId()].pos;
 		
 		glm::vec3 direction_norm = glm::normalize(direction);
-		glm::vec3 Fe = ressort->GetRaideur() * (glm::length(direction) - (ressort->GetLrepos())) * direction_norm;
+		glm::vec3 Fe = ressort->GetRaideur() * (glm::length(direction) - (ressort->GetLrepos()/2.0f)) * direction_norm;
 		glm::vec3 Fv = ressort->GetAmortissement() * glm::dot((V[particule1->GetId()]  -V[particule2->GetId()] ), direction_norm) * direction_norm;
 		this->Force[particule1->GetId()] += Fe + Fv;
 		this->Force[particule2->GetId()] -= Fe + Fv;
@@ -80,12 +80,18 @@ void ObjetSimuleMSS::applyForceGravity(float t, glm::vec3 g)
 	g = glm::inverse(wNormalMatrix()) * glm::vec4(g, 0.0);
 	glm::vec3 wind  = glm::inverse(wNormalMatrix()) * glm::normalize(glm::vec3(1.0, 0.0, 1.0)) * 5.f * glm::sin(t);
 	for (int i = 0; i < mesh.verticies.size(); ++i) {
+		if(attachedNodes.find(i) != attachedNodes.end()){
+			glm::vec3 pos = attachedNodes[i]->wMatrix()[3];
+			mesh.verticies[i].pos = pos;
+		}
         if (M[i] == 0.0) {
             A[i] = glm::vec3(0.0, 0.0, 0.0);
+
             continue;
         }
         A[i] = Force[i] / M[i] + g + wind;
         Force[i] = glm::vec3(0.0, 0.0, 0.0);
+		
     }
 }
 

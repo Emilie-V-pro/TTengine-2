@@ -1,6 +1,7 @@
 
 #include "scene.hpp"
 #include <vulkan/vulkan_core.h>
+#include <cstdint>
 
 #include "sceneV2/mesh.hpp"
 #include "sceneV2/Irenderable.hpp"
@@ -68,7 +69,7 @@ uint32_t Scene2::getNewID() {
     Device *device = nullptr;
 };
 
-void Scene2::addNode(uint32_t Parent_id, std::shared_ptr<Node> node) {
+uint32_t Scene2::addNode(uint32_t Parent_id, std::shared_ptr<Node> node) {
     if (dynamic_cast<IRenderable *>(node.get())) {
         renderables.push_back(std::dynamic_pointer_cast<IRenderable>(node));
     }
@@ -90,11 +91,14 @@ void Scene2::addNode(uint32_t Parent_id, std::shared_ptr<Node> node) {
     }
     node->setId(getNewID());
     objects[node->getId()] = node;
+    return node->getId();
 }
 
 void Scene2::removeNode(uint32_t id) {}
 
-void Scene2::addMaterial(Material material) { materials.push_back(material); }
+uint32_t Scene2::addMaterial(Material material) { materials.push_back(material);
+    return materials.size() - 1;
+}
 
 void Scene2::addMesh(Mesh mesh) { meshes.push_back(mesh); }
 
@@ -116,11 +120,14 @@ void Scene2::addObjectFileData(ObjectFileData &data) {
     }
 }
 
-void Scene2::addImage(Image image) { images.push_back(image); }
+uint32_t Scene2::addImage(Image image) { 
+    images.push_back(image); 
+    return images.size() - 1;
+}
 
-void Scene2::updateSim(float dt, float t) {
+void Scene2::updateSim(float dt, float t, uint32_t tick) {
     for (auto &animaticObj : animaticObjs) {
-        animaticObj->simulation(glm::vec3(0, -9.81, 0), 0.995, 1, dt, t, collisionObjects);
+        animaticObj->simulation(glm::vec3(0, -9.81, 0), 0.995, tick, dt, t, collisionObjects);
     }
 }
 

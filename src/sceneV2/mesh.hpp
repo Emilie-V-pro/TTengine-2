@@ -94,7 +94,7 @@ class Mesh {
     // Triangle operator[](const int i) const;
 
     void setMaterial(uint i) {
-        for (auto v : verticies) {
+        for (auto &v : verticies) {
             v.material_id = i;
         }
 
