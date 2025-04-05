@@ -3,6 +3,7 @@
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
 
+#include "sceneV2/Icollider.hpp"
 #include "sceneV2/mesh.hpp"
 #include "sceneV2/Irenderable.hpp"
 #include "sceneV2/cameraV2.hpp"
@@ -82,6 +83,10 @@ uint32_t Scene2::addNode(uint32_t Parent_id, std::shared_ptr<Node> node) {
 
     if(dynamic_cast<IAnimatic *>(node.get())) {
         animaticObjs.push_back(std::dynamic_pointer_cast<IAnimatic>(node));
+    }
+
+    if(dynamic_cast<ICollider *>(node.get())) {
+        collisionObjects.push_back(std::dynamic_pointer_cast<ICollider>(node));
     }
 
     if (Parent_id == -1) {

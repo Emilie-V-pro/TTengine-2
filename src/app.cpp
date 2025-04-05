@@ -74,7 +74,7 @@ void App::init(Device *device, SwapChain *swapchain, Window* window) {
     ImageCreateInfo imageCreateInfo;
     imageCreateInfo.enableMipMap  = true;
     imageCreateInfo.usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT ;
-    imageCreateInfo.filename.push_back("albedo.jpg");
+    imageCreateInfo.filename.push_back("trd.jpg");
     
     Image image = Image(device, imageCreateInfo);
 
@@ -130,6 +130,10 @@ void App::init(Device *device, SwapChain *swapchain, Window* window) {
 
     capeSim->attachToNode(0, skeleton->getChild(0)->getChild(1)->getChild(0)->getChild(2)->getChild(0));
     capeSim->attachToNode(69, skeleton->getChild(0)->getChild(1)->getChild(0)->getChild(1)->getChild(0));
+
+    capeSim->attachToNode(19, skeleton->getChild(0)->getChild(1)->getChild(0)->getChild(2));
+    capeSim->attachToNode(49, skeleton->getChild(0)->getChild(1)->getChild(0)->getChild(1));
+
 
 
     capeSim->setMaterial(mat_id);

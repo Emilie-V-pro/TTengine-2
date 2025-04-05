@@ -97,7 +97,7 @@ void ObjetSimuleMSS::applyForceGravity(float t, glm::vec3 g)
 
 void ObjetSimuleMSS::solveExplicit(float visco, float deltaT)
 {
-    // deltaT = max(deltaT, 0.00005f);
+    deltaT = min(deltaT, 0.001f);
 
     // #pragma omp parallel for schedule(dynamic, 1)
 	
@@ -114,11 +114,11 @@ void ObjetSimuleMSS::Collision(std::vector<std::shared_ptr<ICollider>> &collisio
 {
 
 	for (int i = 0; i < mesh.verticies.size(); ++i) {
+		if(M[i] == 0) continue;
 		for (auto &collisionObject : collisionObjects) {
 				mesh.verticies[i].pos = this->wMatrix() * glm::vec4(mesh.verticies[i].pos, 1);
 				collisionObject->collisionPos(mesh.verticies[i].pos, V[i]);
 				mesh.verticies[i].pos = glm::inverse(this->wMatrix()) * glm::vec4(mesh.verticies[i].pos, 1);
-			
 		}
 	}
     /// Arret de la vitesse quand touche le plan

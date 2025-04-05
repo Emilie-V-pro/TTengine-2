@@ -53,5 +53,6 @@ class Node {
 
     Node *parent = nullptr;
     std::vector<std::shared_ptr<Node>> children;
+    friend class SkeletonObj;
 };
 }  // namespace TTe

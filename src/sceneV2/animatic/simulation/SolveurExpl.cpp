@@ -76,7 +76,7 @@ void SolveurExpl::CalculAccel_ForceGravite(
  */
 void SolveurExpl::Solve(
     float visco, int nb_som, float deltaT, std::vector<glm::vec3> &A, std::vector<glm::vec3> &V, std::vector<Vertex> &P) {
-    // deltaT = min(deltaT, 0.0005f);
+    deltaT = 0.0000005f;
 
     // #pragma omp parallel for schedule(dynamic, 1)
     for (int i = 0; i < nb_som; ++i) {

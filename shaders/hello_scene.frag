@@ -227,9 +227,11 @@ void main() {
 
     // vec3 sunDirection = vec3(0.744015, 0.666869, 0.0415573);
     vec3 color = vec3(0.0);
+
+    // metalRoughness.g = 0.001;
     
-    vec3 lightDir = surfaceNormal;
-    vec4 cubeMapColor = texture(samplerCubeMap, lightDir); 
+    vec3 lightDir =  surfaceNormal;
+    vec4 cubeMapColor = textureLod(samplerCubeMap, lightDir, pow(textureQueryLevels(samplerCubeMap), metalRoughness.g)); 
     BRDFResults res = DisneyBRDF(textColor.rgb, metalRoughness.r, metalRoughness.g, surfaceNormal, view, lightDir);
     color += ((res.diffuse + res.specular) * cubeMapColor.rgb);
 
