@@ -4,7 +4,9 @@
 #include <cstdio>
 #include <glm/ext/quaternion_common.hpp>
 #include <glm/ext/quaternion_trigonometric.hpp>
+#include <glm/ext/scalar_common.hpp>
 #include <glm/geometric.hpp>
+#include <glm/trigonometric.hpp>
 
 #include "sceneV2/animatic/skeleton/BVHAxis.h"
 #include "sceneV2/animatic/skeleton/BVHChannel.h"
@@ -55,8 +57,9 @@ void SkeletonObj::init(BVH bvh) {
         m_joints_2.push_back(joint2);
         m_joints_final.push_back(joint3);
     }
+    coliders.resize(m_joints_1.size() - 1);
     this->transform.scale = glm::vec3(0.05f);
-    this->transform.pos = glm::vec3(0, 0, 15);
+    this->transform.pos = glm::vec3(4, -10, 3);
 }
 
 glm::vec3 SkeletonObj::getJointPosition(int i) const {
@@ -71,165 +74,129 @@ int SkeletonObj::getParentId(const int i) const {
 
 void SkeletonObj::setPose(const BVH &bvh, int frameNumber) {}
 
-glm::vec3 quatToEulerZXY(const glm::quat &q) {
-    // Convertir le quaternion en matrice 4x4
-    glm::mat4 mat = glm::mat4_cast(q);
+glm::quat eulerZXYtoQuat(glm::vec3 euler) {
+    // Convertir les angles d'Euler en quaternion
+    float c1 = cos(euler.x / 2);
+    float c2 = cos(euler.y / 2);
+    float c3 = cos(euler.z / 2);
 
-    // Extraction des angles selon l'ordre ZXY
-    float x, y, z;
+    float s1 = sin(euler.x / 2);
+    float s2 = sin(euler.y / 2);
+    float s3 = sin(euler.z / 2);
 
-    // Éviter la singularité (Gimbal Lock)
-    if (std::abs(mat[1][2]) < 0.9999f) {
-        x = std::asin(-mat[1][2]);             // Rotation autour de X
-        y = std::atan2(mat[0][2], mat[2][2]);  // Rotation autour de Y
-        z = std::atan2(mat[1][0], mat[1][1]);  // Rotation autour de Z
-    } else {
-        // Cas proche du Gimbal Lock
-        x = (mat[1][2] > 0) ? -glm::half_pi<float>() : glm::half_pi<float>();
-        y = std::atan2(-mat[0][1], mat[0][0]);
-        z = 0.0f;
-    }
+    glm::quat q = {c1 * c2 * c3 - s1 * s2 * s3, s1 * c2 * c3 - c1 * s2 * s3, c1 * s2 * c3 + s1 * c2 * s3, c1 * c2 * s3 + s1 * s2 * c3};
 
-    return glm::vec3(x, y, z);
+    return q;  // Ordre de multiplication ZXY
+}
+
+glm::vec3 threeaxisrot(double r11, double r12, double r21, double r31, double r32) {
+    return glm::vec3(asin(r21), atan2(r31, r32), atan2(r11, r12));
+}
+
+glm::vec3 quatToEulerZXY(glm::quat q) {
+    return threeaxisrot(
+        -2 * (q.x * q.y - q.w * q.z), q.w * q.w - q.x * q.x + q.y * q.y - q.z * q.z, 2 * (q.y * q.z + q.w * q.x),
+        -2 * (q.x * q.z - q.w * q.y), q.w * q.w - q.x * q.x - q.y * q.y + q.z * q.z);
 }
 
 void SkeletonObj::simulation(
     glm::vec3 gravite, float viscosite, uint32_t tick, float dt, float t, std::vector<std::shared_ptr<ICollider>> &collisionObjects) {
-    coliders.clear();
+    float time = t / 0.0333333 / 2.0;
+
+    interpol = 
+        fmod(time, double(m_bvh.getNumberOfFrame())) - fmod(floor(time), double(m_bvh.getNumberOfFrame()));
+    // std::cout << "interpol: " << interpol << "\n";
+    int frameNB = (int(floor(time)) % m_bvh.getNumberOfFrame());
+    int frameNB2 = (int(ceil(time)) % m_bvh.getNumberOfFrame());
+
     for (int i = 0; i < m_bvh.getNumberOfJoint(); i++) {
         auto jointMat = m_bvh.getJoint(i);
+        if (lastFrame != frameNB) {
+            if (i == m_bvh.getNumberOfJoint()) lastFrame = frameNB;
+            glm::vec3 pos;
+            jointMat.getOffset(pos.x, pos.y, pos.z);
 
-        glm::vec3 pos;
-        jointMat.getOffset(pos.x, pos.y, pos.z);
+            glm::vec3 rot1 = glm::vec3(0.0f);
+            glm::vec3 trans1 = glm::vec3(0.0f);
+            glm::vec3 rot2 = glm::vec3(0.0f);
+            glm::vec3 trans2 = glm::vec3(0.0f);
 
-        glm::vec3 rot1 = glm::vec3(0.0f);
-        glm::vec3 trans1 = glm::vec3(0.0f);
-        glm::vec3 rot2 = glm::vec3(0.0f);
-        glm::vec3 trans2 = glm::vec3(0.0f);
+            for (int j = 0; j < jointMat.getNumberOfChannel(); ++j) {
+                auto channel = jointMat.getChannel(j);
 
-        interpol = fmod((t / 0.0333333 /2.0), double(m_bvh.getNumberOfFrame())) - fmod(round(t / 0.0333333/2.0), double(m_bvh.getNumberOfFrame()));
-        int frameNB = (int(round(t / 0.0333333/2.0)) % m_bvh.getNumberOfFrame());
-        int frameNB2 = (int(floor(t / 0.0333333/2.0)) % m_bvh.getNumberOfFrame());
+                float data1 = channel.getData(frameNB);
+                float data2 = channel.getData(frameNB2);
 
-        for (int j = 0; j < jointMat.getNumberOfChannel(); ++j) {
-            auto channel = jointMat.getChannel(j);
-
-            float data1 = channel.getData(frameNB);
-            float data2 = channel.getData(frameNB2);
-
-            if (channel.getType() == BVHChannel::TYPE_TRANSLATION) {
-                switch (channel.getAxis()) {
-                    case AXIS_X:
-                        trans1.x = data1;
-                        trans2.x = data2;
-                        break;
-                    case AXIS_Y:
-                        trans1.y = data1;
-                        trans2.y = data2;
-                        break;
-                    case AXIS_Z:
-                        trans1.z = data1;
-                        trans2.z = data2;
-                        break;
-                    case AXIS_W:;
-                        break;
+                if (channel.getType() == BVHChannel::TYPE_TRANSLATION) {
+                    switch (channel.getAxis()) {
+                        case AXIS_X:
+                            trans1.x = data1;
+                            trans2.x = data2;
+                            break;
+                        case AXIS_Y:
+                            trans1.y = data1;
+                            trans2.y = data2;
+                            break;
+                        case AXIS_Z:
+                            trans1.z = data1;
+                            trans2.z = data2;
+                            break;
+                        case AXIS_W:;
+                            break;
+                    }
+                }
+                if (channel.getType() == BVHChannel::TYPE_ROTATION) {
+                    switch (channel.getAxis()) {
+                        case AXIS_X:
+                            rot1.x = glm::radians(data1);
+                            rot2.x = glm::radians(data2);
+                            break;
+                        case AXIS_Y:
+                            rot1.y = glm::radians(data1);
+                            rot2.y = glm::radians(data2);
+                            break;
+                        case AXIS_Z:
+                            rot1.z = glm::radians(data1);
+                            rot2.z = glm::radians(data2);
+                            break;
+                        case AXIS_W:;
+                            break;
+                    }
                 }
             }
-            if (channel.getType() == BVHChannel::TYPE_ROTATION) {
-                switch (channel.getAxis()) {
-                    case AXIS_X:
-                        rot1.x = glm::radians(data1);
-                        rot2.x = glm::radians(data2);
-                        break;
-                    case AXIS_Y:
-                        rot1.y = glm::radians(data1);
-                        rot2.y = glm::radians(data2);
-                        break;
-                    case AXIS_Z:
-                        rot1.z = glm::radians(data1);
-                        rot2.z = glm::radians(data2);
-                        break;
-                    case AXIS_W:;
-                        break;
-                }
-            }
+
+            // CollisionObject c(CollisionObject::Type::sphere);
+
+            m_joints_1[i]->transform.pos = pos + trans1;
+            m_joints_1[i]->transform.rot = rot1;
+
+            m_joints_2[i]->transform.pos = pos + trans2;
+            m_joints_2[i]->transform.rot = rot2;
         }
 
-        CollisionObject c(CollisionObject::Type::sphere);
+        m_joints_final[i]->transform.pos = glm::mix(m_joints_1[i]->transform.pos.value, m_joints_2[i]->transform.pos.value, interpol);
+        glm::quat q1 = eulerZXYtoQuat(m_joints_1[i]->transform.rot.value);
+        glm::quat q2 = eulerZXYtoQuat(m_joints_2[i]->transform.rot.value);
 
-        m_joints_1[i]->transform.pos = pos + trans1;
-        m_joints_1[i]->transform.rot = rot1;
+        glm::quat q = glm::slerp(q1, q2, interpol);
+        m_joints_final[i]->transform.rot = quatToEulerZXY(q);
 
-        m_joints_2[i]->transform.pos = pos + trans2;
-        m_joints_2[i]->transform.rot = rot2;
-
-        c.transform.pos = m_joints_1[i]->transform.pos;
-        c.transform.rot = m_joints_1[i]->transform.rot;
-        c.transform.scale = glm::vec3(0.205f);
-
-        // coliders.push_back(c);
-
-        // m_joints_final[i]->transform.pos = glm::mix(m_joints_1[i]->transform.pos.value, m_joints_2[i]->transform.pos.value, interpol);
-
-        // auto mat1 = glm::eulerAngleZXY(
-        //     m_joints_1[i]->transform.rot.value.z, m_joints_1[i]->transform.rot.value.x, m_joints_1[i]->transform.rot.value.y);
-        // auto mat2 = glm::eulerAngleZXY(
-        //     m_joints_2[i]->transform.rot.value.z, m_joints_2[i]->transform.rot.value.x, m_joints_2[i]->transform.rot.value.y);
-
-        // glm::quat q1 = glm::quat_cast(mat1);
-        // glm::quat q2 = glm::quat_cast(mat2);
-
-        // q1 = glm::slerp(q1, q2, interpol);
-
-        // auto res = quatToEulerZXY(q1);
-        // m_joints_final[i]->transform.rot = glm::vec3(res.x, res.y, res.z);
+        if (m_joints_final[i]->id != 0) {
+            glm::vec3 jpos = m_joints_final[i]->wMatrix()[3];
+            glm::vec3 ppos = m_joints_final[i]->parent->wMatrix()[3];
+            coliders[i - 1].first = jpos;
+            coliders[i - 1].second = ppos;
+        }
     }
-    // for (auto &joint : m_joints_1) {
-    //     // draw cube as line between joints
-    //     glm::mat4 wPoint = joint->wMatrix();
-
-    //     for (auto &child : joint->getChildren()) {
-    //         glm::mat4 wPointChild = child->wMatrix();
-
-    //         glm::vec3 pos = wPoint[3];
-    //         glm::vec3 childPos = wPointChild[3];
-
-    //         glm::vec3 position = (pos + childPos) * 0.5f;
-
-    //         glm::vec3 dir = glm::normalize(childPos - pos);
-
-    //         float length = glm::length(childPos - pos);
-    //         glm::vec3 baseDir = glm::vec3(0.0f, 0.0f, 1.0f);
-    //         // Direction de base du cube
-    //         if (glm::length(glm::cross(baseDir, dir)) < 0.0001f) {
-    //             // Si dir est parallèle à baseDir, éviter NaN (cas particulier)
-    //             baseDir = glm::vec3(0.0f, 1.0f, 0.0f);
-    //         }
-
-    //         glm::vec3 axis = glm::normalize(glm::cross(baseDir, dir));
-    //         float angle = acos(glm::dot(baseDir, dir));
-
-    //         glm::quat rotation = glm::angleAxis(angle, axis);
-
-    //         // Calculer la matrice de transformation
-    //         glm::mat4 wMatrix = glm::translate(glm::mat4(1.0f), position) * glm::toMat4(rotation) *
-    //                             glm::scale(glm::mat4(1.0f), glm::vec3(0.1f, 0.1f, length / 2));
-
-    //         CollisionObject c(CollisionObject::Type::cube);
-    //         c.dirty = false;
-    //         c.worldMatrix = wMatrix;
-    //         coliders.push_back(c);
-    //     }
-    // }
 }
 
 void SkeletonObj::render(CommandBuffer &cmd, GraphicPipeline &pipeline, std::vector<Mesh> &meshes, std::map<BasicShape, Mesh> basicMeshes) {
     // bind sphere
     basicMeshes[Sphere].bindMesh(cmd);
 
-    for (int i = 0; i < m_joints_1.size(); i++) {
-        glm::mat4 wMatrix = m_joints_1[i]->wMatrix() * glm::scale(glm::vec3(4.f));
-        glm::mat4 wNormalMatrix = m_joints_1[i]->wNormalMatrix();
+    for (int i = 0; i < m_joints_final.size(); i++) {
+        glm::mat4 wMatrix = m_joints_final[i]->wMatrix() * glm::scale(glm::vec3(4.f));
+        glm::mat4 wNormalMatrix = m_joints_final[i]->wNormalMatrix();
 
         // glm::quat quat1 = glm::toQuat(wMatrix);
         // glm::quat quat2 = glm::toQuat(wMatrix2);
@@ -251,7 +218,7 @@ void SkeletonObj::render(CommandBuffer &cmd, GraphicPipeline &pipeline, std::vec
     }
 
     basicMeshes[Cube].bindMesh(cmd);
-    for (auto &joint : m_joints_1) {
+    for (auto &joint : m_joints_final) {
         // draw cube as line between joints
         glm::mat4 wPoint = joint->wMatrix();
 
@@ -292,9 +259,28 @@ void SkeletonObj::render(CommandBuffer &cmd, GraphicPipeline &pipeline, std::vec
     }
 }
 
+float sdCapsule(glm::vec3 &p, glm::vec3 &a, glm::vec3 &b) {
+    glm::vec3 pa = p - a, ba = b - a;
+    float h = glm::clamp(glm::dot(pa, ba) / glm::dot(ba, ba), 0.0f, 1.0f);
+    return length(pa - ba * h) - 0.2;
+}
+
+glm::vec3 closestPointToCapsule(glm::vec3 p, glm::vec3 a, glm::vec3 b, float r) {
+    glm::vec3 pa = p - a, ba = b - a;
+    float h = glm::clamp(dot(pa, ba) / dot(ba, ba), 0.0f, 1.0f);
+    glm::vec3 q = a + ba * h;
+    return q + r * normalize(p - q);
+}
+
 void SkeletonObj::collisionPos(glm::vec3 &pos, glm::vec3 &vitesse) {
     for (auto &colider : coliders) {
-        colider.collisionPos(pos, vitesse);
+        float dist = sdCapsule(pos, colider.first, colider.second);
+            
+        if (dist < 0) {
+            pos = closestPointToCapsule(pos, colider.first, colider.second, 0.2f);
+
+            vitesse = glm::vec3(0);
+        }
     }
 }
 

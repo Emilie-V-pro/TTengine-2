@@ -19,6 +19,7 @@
 #include "sceneV2/animatic/simulation/ObjetSimuleMSS.h"
 #include "sceneV2/animatic/skeleton/BVH.h"
 #include "sceneV2/animatic/skeletonObj.hpp"
+#include "sceneV2/collision/collision_obj.hpp"
 #include "sceneV2/mesh.hpp"
 
 
@@ -26,6 +27,7 @@
 // #include "scene/objects/simulation/ObjetSimuleMSS.h"
 #include "sceneV2/node.hpp"
 #include "sceneV2/objLoader.hpp"
+#include "sceneV2/renderable/basicMeshObj.hpp"
 #include "sceneV2/scene.hpp"
 #include "sceneV2/renderable/staticMeshObj.hpp"
 #include "struct.hpp"
@@ -57,24 +59,12 @@ void App::init(Device *device, SwapChain *swapchain, Window* window) {
     StaticMeshObj obj2 = StaticMeshObj();
     obj2.setMeshId(0);
 
-    // scene2->addNode(-1, std::make_shared<StaticMeshObj>(obj2));
-    // scene2->addMaterial(mat);
-    // scene2->addMaterial(mat);
-    // scene2->addMaterial(mat);
-    // scene2->addMaterial(mat);
-    // scene2->addMaterial(mat);
 
-
-    // scene2->addImage(image);
-    // scene2->addImage(normal);
-    // scene2->addImage(mr);
-    
-    // load sponza sheet texture
 
     ImageCreateInfo imageCreateInfo;
     imageCreateInfo.enableMipMap  = true;
     imageCreateInfo.usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT ;
-    imageCreateInfo.filename.push_back("trd.jpg");
+    imageCreateInfo.filename.push_back("dt.jpg");
     
     Image image = Image(device, imageCreateInfo);
 
@@ -127,14 +117,22 @@ void App::init(Device *device, SwapChain *swapchain, Window* window) {
     std::shared_ptr<Node> cape = scene2->getNode(cape_id);
     // cast to ObjetSimuleMSS
     std::shared_ptr<ObjetSimuleMSS> capeSim = std::dynamic_pointer_cast<ObjetSimuleMSS>(cape);
-
+    // capeSim->transform.rot->x = (M_PI/2.0);
     capeSim->attachToNode(0, skeleton->getChild(0)->getChild(1)->getChild(0)->getChild(2)->getChild(0));
     capeSim->attachToNode(69, skeleton->getChild(0)->getChild(1)->getChild(0)->getChild(1)->getChild(0));
 
     capeSim->attachToNode(19, skeleton->getChild(0)->getChild(1)->getChild(0)->getChild(2));
     capeSim->attachToNode(49, skeleton->getChild(0)->getChild(1)->getChild(0)->getChild(1));
+    capeSim->attachToNode(34, skeleton->getChild(0)->getChild(1)->getChild(0));
 
-
+    // std::shared_ptr<BasicMeshObj> b = std::make_shared<BasicMeshObj>();
+    // std::shared_ptr<CollisionObject> c = std::make_shared<CollisionObject>(CollisionObject::cube);
+    // b->setShape(Cube);
+    
+    // b->transform.pos = glm::vec3(3.5,-2,-1.5);
+    // c->transform.scale = glm::vec3(1.08);
+    // auto iddd = scene2->addNode(-1, b);
+    // scene2->addNode(iddd, c);
 
     capeSim->setMaterial(mat_id);
 }

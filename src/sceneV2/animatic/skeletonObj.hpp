@@ -3,6 +3,7 @@
 #include <glm/fwd.hpp>
 #include <glm/glm.hpp>
 #include <memory>
+#include <utility>
 #include <vector>
 
 
@@ -57,8 +58,8 @@ class SkeletonObj : public Node, public IAnimatic, public IRenderable, public IC
     // friend float distance(const CASkeleton& a, const CASkeleton& b);
    private:
 
-
-    std::vector<CollisionObject> coliders;
+    int lastFrame = 0;
+    std::vector<std::pair<glm::vec3, glm::vec3>> coliders;
     std::vector<std::shared_ptr<Node>> m_joints_1;
     std::vector<std::shared_ptr<Node>> m_joints_2;
     std::vector<std::shared_ptr<Node>> m_joints_final;

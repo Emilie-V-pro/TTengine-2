@@ -21,69 +21,64 @@
  */
 
 /** \file CalculsMSS.cpp
-Programme calculant pour chaque particule i d un MSS son etat au pas de temps suivant 
+Programme calculant pour chaque particule i d un MSS son etat au pas de temps suivant
  (methode d 'Euler semi-implicite) : principales fonctions de calculs.
 \brief Fonctions de calculs de la methode semi-implicite sur un systeme masses-ressorts.
-*/ 
+*/
 
 #include <math.h>
+
+#include <chrono>
 #include <glm/ext/quaternion_common.hpp>
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
 #include <iostream>
 #include <memory>
 
-
 // #include "ObjetSimule.h"
-#include "ObjetSimuleMSS.h"
 #include "MSS.h"
+#include "ObjetSimuleMSS.h"
 #include "sceneV2/Icollider.hpp"
 // #include "Viewer.h"
 
 using namespace std;
 
-
-
-
 namespace TTe {
 
-
 /**
-* Calcul des forces appliquees sur les particules du systeme masses-ressorts.
+ * Calcul des forces appliquees sur les particules du systeme masses-ressorts.
  */
-void ObjetSimuleMSS::CalculForceSpring()
-{	
-	// #pragma omp parallel for schedule(dynamic, 1)
-	for(auto& ressort : _SystemeMasseRessort->GetRessortList()){
-		Particule *particule1 = ressort->GetParticuleA();
-		Particule *particule2 = ressort->GetParticuleB();
+void ObjetSimuleMSS::CalculForceSpring() {
+    // #pragma omp parallel for schedule(dynamic, 1)
+    for (auto &ressort : _SystemeMasseRessort->GetRessortList()) {
+        Particule *particule1 = ressort->GetParticuleA();
+        Particule *particule2 = ressort->GetParticuleB();
 
-		glm::vec3 direction = mesh.verticies[particule2->GetId()].pos - mesh.verticies[particule1->GetId()].pos;
-		
-		glm::vec3 direction_norm = glm::normalize(direction);
-		glm::vec3 Fe = ressort->GetRaideur() * (glm::length(direction) - (ressort->GetLrepos()/2.0f)) * direction_norm;
-		glm::vec3 Fv = ressort->GetAmortissement() * glm::dot((V[particule1->GetId()]  -V[particule2->GetId()] ), direction_norm) * direction_norm;
-		this->Force[particule1->GetId()] += Fe + Fv;
-		this->Force[particule2->GetId()] -= Fe + Fv;
-	}
-	
-	/// f = somme_i (ki * (l(i,j)-l_0(i,j)) * uij ) + (nuij * (vi - vj) * uij) + (m*g) + force_ext
-	
-	/// Rq : Les forces dues a la gravite et au vent sont ajoutees lors du calcul de l acceleration
-    
-		
-}//void
+        glm::vec3 direction = mesh.verticies[particule2->GetId()].pos - mesh.verticies[particule1->GetId()].pos;
 
-void ObjetSimuleMSS::applyForceGravity(float t, glm::vec3 g)
-{
-	// set gravity to object space
-	g = glm::inverse(wNormalMatrix()) * glm::vec4(g, 0.0);
-	glm::vec3 wind  = glm::inverse(wNormalMatrix()) * glm::normalize(glm::vec3(1.0, 0.0, 1.0)) * 5.f * glm::sin(t);
-	for (int i = 0; i < mesh.verticies.size(); ++i) {
-		if(attachedNodes.find(i) != attachedNodes.end()){
-			glm::vec3 pos = attachedNodes[i]->wMatrix()[3];
-			mesh.verticies[i].pos = pos;
-		}
+        glm::vec3 direction_norm = glm::normalize(direction);
+        glm::vec3 Fe = ressort->GetRaideur() * (glm::length(direction) - (ressort->GetLrepos() * 0.5f)) * direction_norm;
+        glm::vec3 Fv =
+            ressort->GetAmortissement() * glm::dot((V[particule1->GetId()] - V[particule2->GetId()]), direction_norm) * direction_norm;
+        this->Force[particule1->GetId()] += Fe + Fv;
+        this->Force[particule2->GetId()] -= Fe + Fv;
+    }
+
+    /// f = somme_i (ki * (l(i,j)-l_0(i,j)) * uij ) + (nuij * (vi - vj) * uij) + (m*g) + force_ext
+
+    /// Rq : Les forces dues a la gravite et au vent sont ajoutees lors du calcul de l acceleration
+
+}  // void
+
+void ObjetSimuleMSS::applyForceGravity(float t, glm::vec3 g) {
+    // set gravity to object space
+    g = glm::inverse(wNormalMatrix()) * glm::vec4(g, 0.0);
+    glm::vec3 wind = glm::inverse(wNormalMatrix()) * glm::normalize(glm::vec3(1.0, 0.0, 1.0)) * 5.f * glm::sin(t);
+    for (int i = 0; i < mesh.verticies.size(); ++i) {
+        if (attachedNodes.find(i) != attachedNodes.end()) {
+            glm::vec3 pos = attachedNodes[i]->wMatrix()[3];
+            mesh.verticies[i].pos = pos;
+        }
         if (M[i] == 0.0) {
             A[i] = glm::vec3(0.0, 0.0, 0.0);
 
@@ -91,16 +86,14 @@ void ObjetSimuleMSS::applyForceGravity(float t, glm::vec3 g)
         }
         A[i] = Force[i] / M[i] + g + wind;
         Force[i] = glm::vec3(0.0, 0.0, 0.0);
-		
     }
 }
 
-void ObjetSimuleMSS::solveExplicit(float visco, float deltaT)
-{
+void ObjetSimuleMSS::solveExplicit(float visco, float deltaT) {
     deltaT = min(deltaT, 0.001f);
 
     // #pragma omp parallel for schedule(dynamic, 1)
-	
+
     for (int i = 0; i < mesh.verticies.size(); ++i) {
         V[i] = (V[i] + deltaT * A[i]) * visco;
         mesh.verticies[i].pos = mesh.verticies[i].pos + deltaT * V[i];
@@ -110,23 +103,30 @@ void ObjetSimuleMSS::solveExplicit(float visco, float deltaT)
 /**
  * Gestion des collisions avec le sol.
  */
-void ObjetSimuleMSS::Collision(std::vector<std::shared_ptr<ICollider>> &collisionObjects)
-{
+void ObjetSimuleMSS::Collision(std::vector<std::shared_ptr<ICollider>> &collisionObjects) {
+    glm::mat4 wMatrix = this->wMatrix();
+    glm::mat4 wInvMatrix = this->wNormalMatrix();
 
-	for (int i = 0; i < mesh.verticies.size(); ++i) {
-		if(M[i] == 0) continue;
-		for (auto &collisionObject : collisionObjects) {
-				mesh.verticies[i].pos = this->wMatrix() * glm::vec4(mesh.verticies[i].pos, 1);
-				collisionObject->collisionPos(mesh.verticies[i].pos, V[i]);
-				mesh.verticies[i].pos = glm::inverse(this->wMatrix()) * glm::vec4(mesh.verticies[i].pos, 1);
-		}
-	}
+	// time the execution
+	// auto start = std::chrono::high_resolution_clock::now();
+
+	
+
+#pragma omp parallel for
+    for (int i = 0; i < mesh.verticies.size(); ++i) {
+        if (M[i] == 0 || i % 2 == 0) continue;
+
+        for (auto &collisionObject : collisionObjects) {
+            // mesh.verticies[i].pos = wMatrix * glm::vec4(mesh.verticies[i].pos, 1);
+            collisionObject->collisionPos(mesh.verticies[i].pos, V[i]);
+            // mesh.verticies[i].pos = wInvMatrix * glm::vec4(mesh.verticies[i].pos, 1);
+        }
+    }
+	auto end = std::chrono::high_resolution_clock::now();
+	// auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+	// std::cout << "Collision time: " << duration.count() << "\n";
     /// Arret de la vitesse quand touche le plan
-   
-    
-}// void
 
+}  // void
 
-
-
-}
+}  // namespace TTe

@@ -414,7 +414,7 @@ int test() {
 }
 
 void Image::loadImageFromFile(std::vector<std::string> &filename) {
-    // stbi_set_flip_vertically_on_load(true);
+    stbi_set_flip_vertically_on_load(true);
     int nbOfchannel;
     int width, height;
     std::cout << "Loading image: " << TEXTURE_PATH + filename[0] << std::endl;

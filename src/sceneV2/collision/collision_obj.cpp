@@ -3,6 +3,7 @@
 #include <glm/common.hpp>
 #include <glm/fwd.hpp>
 #include <iostream>
+#include <limits>
 
 namespace TTe {
 
@@ -42,19 +43,31 @@ void CollisionObject::collisionPosSphere(glm::vec3 &pos, glm::vec3 &vitesse) {
 void CollisionObject::collisionPosCube(glm::vec3 &pos, glm::vec3 &vitesse){
     
     pos = glm::inverse(this->wMatrix()) * glm::vec4(pos, 1);
-    glm::vec3 boxPos(0.);
-    glm::vec3 boxSize(1.);
+    glm::vec3 boxMin = glm::vec3(-0.5f); // cube centré à l'origine, taille 2x2x2
+    glm::vec3 boxMax = glm::vec3(0.5f);
 
-    glm::vec3 adjustedRayPosition = pos - boxPos;
-    
-    glm::vec3 distanceVec = abs( adjustedRayPosition ) - boxSize;
-    float maxDistance = glm::max( distanceVec.x , glm::max( distanceVec.y , distanceVec.z ) ); 
-    float distanceToBoxSurface = glm::min( maxDistance , 0.0f ) + glm::length( glm::max( distanceVec , 0.0f ) );
-    
-    if( distanceToBoxSurface < 0.0f ) {
-        pos = glm::normalize(pos);
+    if (pos.x > boxMin.x && pos.x < boxMax.x &&
+        pos.y > boxMin.y && pos.y < boxMax.y &&
+        pos.z > boxMin.z && pos.z < boxMax.z) {
+        
+        // Trouver l'axe avec la plus petite distance à une face
+        float dx = std::min(pos.x - boxMin.x, boxMax.x - pos.x);
+        float dy = std::min(pos.y - boxMin.y, boxMax.y - pos.y);
+        float dz = std::min(pos.z - boxMin.z, boxMax.z - pos.z);
+
+        // Repousser selon l'axe le plus proche
+        if (dx <= dy && dx <= dz) {
+            pos.x = (pos.x > 0) ? boxMax.x : boxMin.x;
+        } else if (dy <= dx && dy <= dz) {
+            pos.y = (pos.y > 0) ? boxMax.y : boxMin.y;
+        } else {
+            pos.z = (pos.z > 0) ? boxMax.z : boxMin.z;
+        }
+
+        // Vitesse annulée (collision "parfaite")
         vitesse = glm::vec3(0);
     }
+
     pos = this->wMatrix() * glm::vec4(pos, 1);
 
 }
