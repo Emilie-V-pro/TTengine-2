@@ -7,12 +7,14 @@
 #include <glm/ext/scalar_common.hpp>
 #include <glm/geometric.hpp>
 #include <glm/trigonometric.hpp>
+#include <string>
 
 #include "sceneV2/animatic/skeleton/BVHAxis.h"
 #include "sceneV2/animatic/skeleton/BVHChannel.h"
 #include "sceneV2/collision/collision_obj.hpp"
 
 #define GLM_ENABLE_EXPERIMENTAL
+#include <filesystem>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/fwd.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
@@ -26,7 +28,8 @@
 namespace TTe {
 
 void SkeletonObj::init(BVH bvh) {
-    m_bvh = bvh;
+    m_bvh[0] = bvh;
+    state = 0;
     for (int i = 0; i < bvh.getNumberOfJoint(); i++) {
         std::shared_ptr<SkeletonNode> joint1 = std::make_shared<SkeletonNode>();
         std::shared_ptr<SkeletonNode> joint2 = std::make_shared<SkeletonNode>();
@@ -62,6 +65,47 @@ void SkeletonObj::init(BVH bvh) {
     this->transform.pos = glm::vec3(4, -10, 3);
 }
 
+void SkeletonObj::init(std::string bvh_folder) {
+
+    for (const auto &entry : std::filesystem::directory_iterator(bvh_folder)) m_bvh[m_bvh.size()] = BVH(entry.path());
+
+    
+    state = 2;
+    for (int i = 0; i < m_bvh[0].getNumberOfJoint(); i++) {
+        std::shared_ptr<SkeletonNode> joint1 = std::make_shared<SkeletonNode>();
+        std::shared_ptr<SkeletonNode> joint2 = std::make_shared<SkeletonNode>();
+        std::shared_ptr<SkeletonNode> joint3 = std::make_shared<SkeletonNode>();
+        auto jointMat = m_bvh[0].getJoint(i);
+        int parent_id = jointMat.getParentId();
+
+        joint1->setId(i);
+        joint2->setId(i);
+        joint3->setId(i);
+        if (parent_id == -1) {
+            this->addChild(joint1);
+            this->addChild(joint2);
+            this->addChild(joint3);
+        } else {
+            m_joints_1[parent_id]->addChild(joint1);
+            m_joints_2[parent_id]->addChild(joint2);
+            m_joints_final[parent_id]->addChild(joint3);
+        }
+
+        glm::vec3 pos;
+        jointMat.getOffset(pos.x, pos.y, pos.z);
+        joint1->transform.pos = pos;
+        joint2->transform.pos = pos;
+        joint3->transform.pos = pos;
+
+        m_joints_1.push_back(joint1);
+        m_joints_2.push_back(joint2);
+        m_joints_final.push_back(joint3);
+    }
+    coliders.resize(m_joints_1.size() - 1);
+    this->transform.scale = glm::vec3(0.25f);
+    this->transform.pos = glm::vec3(4, -10, 3);
+}
+
 glm::vec3 SkeletonObj::getJointPosition(int i) const {
     glm::vec3 returnValue;
     return returnValue;
@@ -89,8 +133,28 @@ glm::quat eulerZXYtoQuat(glm::vec3 euler) {
     return q;  // Ordre de multiplication ZXY
 }
 
+glm::quat eulerZYXtoQuat(glm::vec3 euler) {
+    // Convertir les angles d'Euler en quaternion
+    float c1 = cos(euler.x / 2);
+    float c2 = cos(euler.y / 2);
+    float c3 = cos(euler.z / 2);
+
+    float s1 = sin(euler.x / 2);
+    float s2 = sin(euler.y / 2);
+    float s3 = sin(euler.z / 2);
+
+    glm::quat q = {c1 * c2 * c3 + s1 * s2 * s3, s1 * c2 * c3 - c1 * s2 * s3, c1 * s2 * c3 + s1 * c2 * s3, c1 * c2 * s3 - s1 * s2 * c3 };
+
+    return q;  // Ordre de multiplication ZXY
+}
+
+
 glm::vec3 threeaxisrot(double r11, double r12, double r21, double r31, double r32) {
     return glm::vec3(asin(r21), atan2(r31, r32), atan2(r11, r12));
+}
+
+glm::vec3 threeaxisrot2(double r11, double r12, double r21, double r31, double r32) {
+    return glm::vec3(atan2(r31, r32), asin(r21), atan2(r11, r12));
 }
 
 glm::vec3 quatToEulerZXY(glm::quat q) {
@@ -99,20 +163,25 @@ glm::vec3 quatToEulerZXY(glm::quat q) {
         -2 * (q.x * q.z - q.w * q.y), q.w * q.w - q.x * q.x - q.y * q.y + q.z * q.z);
 }
 
+glm::vec3 quatToEulerZYX(glm::quat q) {
+    return threeaxisrot2(
+        2*(q.x*q.y + q.w*q.z), q.w*q.w + q.x*q.x - q.y*q.y - q.z*q.z, -2*(q.x*q.z - q.w*q.y),
+        2*(q.y*q.z + q.w*q.x), q.w*q.w - q.x*q.x - q.y*q.y + q.z*q.z);
+}
+
 void SkeletonObj::simulation(
     glm::vec3 gravite, float viscosite, uint32_t tick, float dt, float t, std::vector<std::shared_ptr<ICollider>> &collisionObjects) {
-    float time = t / 0.0333333 / 2.0;
+    float time = t / 0.0083333;
 
-    interpol = 
-        fmod(time, double(m_bvh.getNumberOfFrame())) - fmod(floor(time), double(m_bvh.getNumberOfFrame()));
+    interpol = fmod(time, double(m_bvh[state].getNumberOfFrame())) - fmod(floor(time), double(m_bvh[state].getNumberOfFrame()));
     // std::cout << "interpol: " << interpol << "\n";
-    int frameNB = (int(floor(time)) % m_bvh.getNumberOfFrame());
-    int frameNB2 = (int(ceil(time)) % m_bvh.getNumberOfFrame());
+    int frameNB = (int(floor(time)) % m_bvh[state].getNumberOfFrame());
+    int frameNB2 = (int(ceil(time)) % m_bvh[state].getNumberOfFrame());
 
-    for (int i = 0; i < m_bvh.getNumberOfJoint(); i++) {
-        auto jointMat = m_bvh.getJoint(i);
+    for (int i = 0; i < m_bvh[state].getNumberOfJoint(); i++) {
+        auto jointMat = m_bvh[state].getJoint(i);
         if (lastFrame != frameNB) {
-            if (i == m_bvh.getNumberOfJoint()) lastFrame = frameNB;
+            if (i == m_bvh[state].getNumberOfJoint()) lastFrame = frameNB;
             glm::vec3 pos;
             jointMat.getOffset(pos.x, pos.y, pos.z);
 
@@ -175,11 +244,11 @@ void SkeletonObj::simulation(
         }
 
         m_joints_final[i]->transform.pos = glm::mix(m_joints_1[i]->transform.pos.value, m_joints_2[i]->transform.pos.value, interpol);
-        glm::quat q1 = eulerZXYtoQuat(m_joints_1[i]->transform.rot.value);
-        glm::quat q2 = eulerZXYtoQuat(m_joints_2[i]->transform.rot.value);
+        glm::quat q1 = eulerZYXtoQuat(m_joints_1[i]->transform.rot.value);
+        // glm::quat q2 = eulerZYXtoQuat(m_joints_2[i]->transform.rot.value);
 
-        glm::quat q = glm::slerp(q1, q2, interpol);
-        m_joints_final[i]->transform.rot = quatToEulerZXY(q);
+        // glm::quat q = glm::slerp(q1, q2, interpol);
+        m_joints_final[i]->transform.rot = quatToEulerZYX(q1);
 
         if (m_joints_final[i]->id != 0) {
             glm::vec3 jpos = m_joints_final[i]->wMatrix()[3];
@@ -195,7 +264,7 @@ void SkeletonObj::render(CommandBuffer &cmd, GraphicPipeline &pipeline, std::vec
     basicMeshes[Sphere].bindMesh(cmd);
 
     for (int i = 0; i < m_joints_final.size(); i++) {
-        glm::mat4 wMatrix = m_joints_final[i]->wMatrix() * glm::scale(glm::vec3(4.f));
+        glm::mat4 wMatrix = m_joints_final[i]->wMatrix() * glm::scale(glm::vec3(1.f));
         glm::mat4 wNormalMatrix = m_joints_final[i]->wNormalMatrix();
 
         // glm::quat quat1 = glm::toQuat(wMatrix);
@@ -262,7 +331,7 @@ void SkeletonObj::render(CommandBuffer &cmd, GraphicPipeline &pipeline, std::vec
 float sdCapsule(glm::vec3 &p, glm::vec3 &a, glm::vec3 &b) {
     glm::vec3 pa = p - a, ba = b - a;
     float h = glm::clamp(glm::dot(pa, ba) / glm::dot(ba, ba), 0.0f, 1.0f);
-    return length(pa - ba * h) - 0.2;
+    return length(pa - ba * h) - 0.25;
 }
 
 glm::vec3 closestPointToCapsule(glm::vec3 p, glm::vec3 a, glm::vec3 b, float r) {
@@ -275,9 +344,9 @@ glm::vec3 closestPointToCapsule(glm::vec3 p, glm::vec3 a, glm::vec3 b, float r) 
 void SkeletonObj::collisionPos(glm::vec3 &pos, glm::vec3 &vitesse) {
     for (auto &colider : coliders) {
         float dist = sdCapsule(pos, colider.first, colider.second);
-            
+
         if (dist < 0) {
-            pos = closestPointToCapsule(pos, colider.first, colider.second, 0.2f);
+            pos = closestPointToCapsule(pos, colider.first, colider.second, 0.25f);
 
             vitesse = glm::vec3(0);
         }

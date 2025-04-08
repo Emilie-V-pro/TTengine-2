@@ -348,7 +348,8 @@ void ObjetSimuleMSS::simulation(
 
     /** Modification des normales **/
     setNormals();
-    updateVertex();
+    if(tick %10 == 0)
+        updateVertex();
 }
 
 void ObjetSimuleMSS::render(

@@ -50,6 +50,9 @@ target_include_directories(TTengine PUBLIC
     ${PROJECT_SOURCE_DIR}/imgui/backends
 )
 
+
+target_compile_definitions(imgui PRIVATE IMGUI_IMPL_VULKAN_USE_VOLK)
+
 target_link_libraries(imgui PUBLIC
     glfw
     Vulkan::Vulkan

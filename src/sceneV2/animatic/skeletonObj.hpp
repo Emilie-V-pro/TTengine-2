@@ -23,6 +23,7 @@ class SkeletonObj : public Node, public IAnimatic, public IRenderable, public IC
     //! Cr�er un squelette ayant la m�me structure que d�finit dans le BVH c'est � dire
     //! creer le tableau de SkeletonJoint � la bonne taille, avec les parentId initials� pour chaque case
     void init(BVH bvh);
+    void init(std::string bvh_folder);
 
     //! Renvoie la position de l'articulation i en multipliant le m_l2w par le Point(0,0,0)
     glm::vec3 getJointPosition(int i) const;
@@ -63,7 +64,15 @@ class SkeletonObj : public Node, public IAnimatic, public IRenderable, public IC
     std::vector<std::shared_ptr<Node>> m_joints_1;
     std::vector<std::shared_ptr<Node>> m_joints_2;
     std::vector<std::shared_ptr<Node>> m_joints_final;
-    BVH m_bvh;
+    std::map<int, BVH> m_bvh;
+
+    int state;
+
+    float speed_max;
+
+    float accel;
+
+    float speed;
 
     float interpol;
 

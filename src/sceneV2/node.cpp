@@ -32,7 +32,7 @@ glm::mat4 Node::wMatrix() {
     if (dirty) {
         glm::mat4 scaleMatrix = glm::scale(transform.scale.value);
         glm::mat4 translationMatrix = glm::translate(transform.pos.value);
-        glm::mat4 rotationMatrix = glm::eulerAngleZXY(transform.rot.value.z, transform.rot.value.x, transform.rot.value.y);
+        glm::mat4 rotationMatrix = glm::eulerAngleZYX(transform.rot.value.z, transform.rot.value.y, transform.rot.value.x);
         worldMatrix = translationMatrix * rotationMatrix * scaleMatrix;
         
         
