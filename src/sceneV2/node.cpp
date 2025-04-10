@@ -29,15 +29,16 @@ Node::~Node() {
 }
 
 glm::mat4 Node::wMatrix() {
-    if (dirty) {
+    if (dirty && mtx.try_lock()) {
         glm::mat4 scaleMatrix = glm::scale(transform.scale.value);
         glm::mat4 translationMatrix = glm::translate(transform.pos.value);
-        glm::mat4 rotationMatrix = glm::eulerAngleZYX(transform.rot.value.z, transform.rot.value.y, transform.rot.value.x);
+        glm::mat4 rotationMatrix = glm::eulerAngleZXY(transform.rot.value.z, transform.rot.value.x, transform.rot.value.y);
         worldMatrix = translationMatrix * rotationMatrix * scaleMatrix;
         
         
         worldMatrix = (parent) ? parent->wMatrix() * worldMatrix : worldMatrix;
         dirty = false;
+        mtx.unlock();
     }
     
     return worldMatrix;

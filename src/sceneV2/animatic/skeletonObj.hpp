@@ -13,9 +13,13 @@
 #include "sceneV2/Irenderable.hpp"
 #include "sceneV2/animatic/skeleton/BVH.h"
 #include "sceneV2/collision/collision_obj.hpp"
+#include "IinputController.hpp"
 #include "sceneV2/node.hpp"
+
+
+
 namespace TTe {
-class SkeletonObj : public Node, public IAnimatic, public IRenderable, public ICollider {
+class SkeletonObj : public Node, public IAnimatic, public IRenderable, public ICollider, public IInputController {
    public:
     class SkeletonNode : public Node {
     };
@@ -45,6 +49,7 @@ class SkeletonObj : public Node, public IAnimatic, public IRenderable, public IC
     void simulation(glm::vec3 gravite, float viscosite, uint32_t tick, float dt, float t, std::vector<std::shared_ptr<ICollider>> &collisionObjects);
     void render(CommandBuffer &cmd, GraphicPipeline &pipeline, std::vector<Mesh> &meshes,  std::map<BasicShape, Mesh> basicMeshes);
     void collisionPos(glm::vec3 &pos, glm::vec3 &vitesse);
+    void updateFromInput(Window* window, float dt);
     //! Positionne ce squelette entre la position frameNbSrc du BVH Src et la position frameNbDst du bvh Dst
     // void setPoseInterpolation(const BVH& bvhSrc, int frameNbSrc, const BVH& bvhDst, int frameNbDst, float t);
 
@@ -65,6 +70,8 @@ class SkeletonObj : public Node, public IAnimatic, public IRenderable, public IC
     std::vector<std::shared_ptr<Node>> m_joints_2;
     std::vector<std::shared_ptr<Node>> m_joints_final;
     std::map<int, BVH> m_bvh;
+
+    bool keyPressed = false;
 
     int state;
 

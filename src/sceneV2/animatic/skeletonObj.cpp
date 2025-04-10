@@ -66,11 +66,9 @@ void SkeletonObj::init(BVH bvh) {
 }
 
 void SkeletonObj::init(std::string bvh_folder) {
-
     for (const auto &entry : std::filesystem::directory_iterator(bvh_folder)) m_bvh[m_bvh.size()] = BVH(entry.path());
 
-    
-    state = 2;
+    state = 0;
     for (int i = 0; i < m_bvh[0].getNumberOfJoint(); i++) {
         std::shared_ptr<SkeletonNode> joint1 = std::make_shared<SkeletonNode>();
         std::shared_ptr<SkeletonNode> joint2 = std::make_shared<SkeletonNode>();
@@ -102,7 +100,7 @@ void SkeletonObj::init(std::string bvh_folder) {
         m_joints_final.push_back(joint3);
     }
     coliders.resize(m_joints_1.size() - 1);
-    this->transform.scale = glm::vec3(0.25f);
+    this->transform.scale = glm::vec3(0.20f);
     this->transform.pos = glm::vec3(4, -10, 3);
 }
 
@@ -143,11 +141,10 @@ glm::quat eulerZYXtoQuat(glm::vec3 euler) {
     float s2 = sin(euler.y / 2);
     float s3 = sin(euler.z / 2);
 
-    glm::quat q = {c1 * c2 * c3 + s1 * s2 * s3, s1 * c2 * c3 - c1 * s2 * s3, c1 * s2 * c3 + s1 * c2 * s3, c1 * c2 * s3 - s1 * s2 * c3 };
+    glm::quat q = {c1 * c2 * c3 + s1 * s2 * s3, s1 * c2 * c3 - c1 * s2 * s3, c1 * s2 * c3 + s1 * c2 * s3, c1 * c2 * s3 - s1 * s2 * c3};
 
     return q;  // Ordre de multiplication ZXY
 }
-
 
 glm::vec3 threeaxisrot(double r11, double r12, double r21, double r31, double r32) {
     return glm::vec3(asin(r21), atan2(r31, r32), atan2(r11, r12));
@@ -165,15 +162,15 @@ glm::vec3 quatToEulerZXY(glm::quat q) {
 
 glm::vec3 quatToEulerZYX(glm::quat q) {
     return threeaxisrot2(
-        2*(q.x*q.y + q.w*q.z), q.w*q.w + q.x*q.x - q.y*q.y - q.z*q.z, -2*(q.x*q.z - q.w*q.y),
-        2*(q.y*q.z + q.w*q.x), q.w*q.w - q.x*q.x - q.y*q.y + q.z*q.z);
+        2 * (q.x * q.y + q.w * q.z), q.w * q.w + q.x * q.x - q.y * q.y - q.z * q.z, -2 * (q.x * q.z - q.w * q.y),
+        2 * (q.y * q.z + q.w * q.x), q.w * q.w - q.x * q.x - q.y * q.y + q.z * q.z);
 }
 
 void SkeletonObj::simulation(
     glm::vec3 gravite, float viscosite, uint32_t tick, float dt, float t, std::vector<std::shared_ptr<ICollider>> &collisionObjects) {
-    float time = t / 0.0083333;
+    float time = t / 0.083333;
 
-    interpol = fmod(time, double(m_bvh[state].getNumberOfFrame())) - fmod(floor(time), double(m_bvh[state].getNumberOfFrame()));
+    interpol = time - floor(time);
     // std::cout << "interpol: " << interpol << "\n";
     int frameNB = (int(floor(time)) % m_bvh[state].getNumberOfFrame());
     int frameNB2 = (int(ceil(time)) % m_bvh[state].getNumberOfFrame());
@@ -181,7 +178,7 @@ void SkeletonObj::simulation(
     for (int i = 0; i < m_bvh[state].getNumberOfJoint(); i++) {
         auto jointMat = m_bvh[state].getJoint(i);
         if (lastFrame != frameNB) {
-            if (i == m_bvh[state].getNumberOfJoint()) lastFrame = frameNB;
+            if (i == m_bvh[state].getNumberOfJoint() - 1) lastFrame = frameNB;
             glm::vec3 pos;
             jointMat.getOffset(pos.x, pos.y, pos.z);
 
@@ -244,11 +241,11 @@ void SkeletonObj::simulation(
         }
 
         m_joints_final[i]->transform.pos = glm::mix(m_joints_1[i]->transform.pos.value, m_joints_2[i]->transform.pos.value, interpol);
-        glm::quat q1 = eulerZYXtoQuat(m_joints_1[i]->transform.rot.value);
-        // glm::quat q2 = eulerZYXtoQuat(m_joints_2[i]->transform.rot.value);
+        glm::quat q1 = eulerZXYtoQuat(m_joints_1[i]->transform.rot.value);
+        glm::quat q2 = eulerZXYtoQuat(m_joints_2[i]->transform.rot.value);
 
-        // glm::quat q = glm::slerp(q1, q2, interpol);
-        m_joints_final[i]->transform.rot = quatToEulerZYX(q1);
+        glm::quat q = glm::slerp(q1, q2, interpol);
+        m_joints_final[i]->transform.rot = quatToEulerZXY(q);
 
         if (m_joints_final[i]->id != 0) {
             glm::vec3 jpos = m_joints_final[i]->wMatrix()[3];
@@ -353,4 +350,15 @@ void SkeletonObj::collisionPos(glm::vec3 &pos, glm::vec3 &vitesse) {
     }
 }
 
+void SkeletonObj::updateFromInput(Window *window, float dt) {
+    if (glfwGetKey(*window, keys.space) == GLFW_PRESS) {
+        if (!keyPressed) {
+            state = (state + 1) % m_bvh.size();
+            lastFrame = 0;
+            keyPressed = true;
+        }
+    } else {
+        keyPressed = false;
+    }
+}
 }  // namespace TTe

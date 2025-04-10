@@ -49,7 +49,7 @@ void App::init(Device *device, SwapChain *swapchain, Window* window) {
 
     BVH bvh = BVH("../data/danse.bvh");
     std::shared_ptr<SkeletonObj> skeleton = std::make_shared<SkeletonObj>();
-    skeleton->init("../data/01");
+    skeleton->init("../data/motionFSM");
 
 
     scene2 = std::make_shared<Scene2>(device);
@@ -155,6 +155,7 @@ void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
     movementController.moveInPlaneXZ(&windowObj, deltaTime, scene2->getMainCamera());
  // scene.updateCameraBuffer();
     // calcul time
+    scene2->updateFromInput(&windowObj, deltaTime);
     scene2->updateSim(deltaTime, time, tick);
 
     scene2->updateCameraBuffer();

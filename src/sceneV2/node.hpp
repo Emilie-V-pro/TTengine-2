@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <memory>
+#include <mutex>
 
 #include "struct.hpp"
 
@@ -14,6 +15,33 @@ class Node {
     Node(int id);
 
     virtual ~Node() = 0;
+
+    // copy constructor
+    Node(const Node &other){
+        id = other.id;
+        transform = other.transform;
+        worldMatrix = other.worldMatrix;
+        worldNormalMatrix = other.worldNormalMatrix;
+        dirty = other.dirty;
+        normalDirty = other.normalDirty;
+        parent = other.parent;
+        children = other.children;
+    };
+
+    // copy assignment operator
+    Node &operator=(const Node &other) {
+        if (this != &other) {
+            id = other.id;
+            transform = other.transform;
+            worldMatrix = other.worldMatrix;
+            worldNormalMatrix = other.worldNormalMatrix;
+            dirty = other.dirty;
+            normalDirty = other.normalDirty;
+            parent = other.parent;
+            children = other.children;
+        }
+        return *this;
+    }
 
     TransformComponent transform;
 
@@ -37,12 +65,13 @@ class Node {
 
     void setDirty() {
 
-        if (dirty != true) {
+        if (dirty != true && mtx.try_lock()) {
             dirty = true;
             normalDirty = true;
             for (auto &child : children) {
                 child->setDirty();
             }
+            mtx.unlock();
         }
     }
 
@@ -50,7 +79,7 @@ class Node {
     int id;
     glm::mat4 worldMatrix;
     glm::mat3 worldNormalMatrix;
-
+    std::mutex mtx;
     Node *parent = nullptr;
     std::vector<std::shared_ptr<Node>> children;
     friend class SkeletonObj;

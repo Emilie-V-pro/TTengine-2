@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "sceneV2/Icollider.hpp"
+#include "sceneV2/animatic/skeletonObj.hpp"
 #include "sceneV2/mesh.hpp"
 #include "sceneV2/Irenderable.hpp"
 #include "sceneV2/cameraV2.hpp"
@@ -89,6 +90,10 @@ uint32_t Scene2::addNode(uint32_t Parent_id, std::shared_ptr<Node> node) {
         collisionObjects.push_back(std::dynamic_pointer_cast<ICollider>(node));
     }
 
+    if(dynamic_cast<IInputController *>(node.get())) {
+        controlledObjects.push_back(std::dynamic_pointer_cast<IInputController>(node));
+    }
+
     if (Parent_id == -1) {
         this->addChild(node);
     } else {
@@ -133,6 +138,12 @@ uint32_t Scene2::addImage(Image image) {
 void Scene2::updateSim(float dt, float t, uint32_t tick) {
     for (auto &animaticObj : animaticObjs) {
         animaticObj->simulation(glm::vec3(0, -9.81, 0), 0.995, tick, dt, t, collisionObjects);
+    }
+}
+
+void Scene2::updateFromInput(Window *window, float dt) {
+    for (auto &controlledObject : controlledObjects) {
+        controlledObject->updateFromInput(window, dt);
     }
 }
 
