@@ -63,6 +63,14 @@ public:
         return *this;
     }
 
+    Watchedvec3(const glm::vec3&& v) : value(v) {}
+
+    Watchedvec3& operator=(const glm::vec3&& v) {
+        value = v;
+        if (onChanged) onChanged();
+        return *this;
+    }
+
 
 
     // access to value with .
@@ -72,6 +80,8 @@ public:
 
     operator glm::vec3&() { return value; }
     operator const glm::vec3&() const { return value; }
+
+    
 
     Watchedvec3& operator+=(const glm::vec3& v) {
         value += v;
@@ -121,51 +131,51 @@ public:
         return *this;
     }
 
-    friend Watchedvec3 operator+(Watchedvec3 lhs, const glm::vec3& rhs) {
+    friend glm::vec3 operator+(Watchedvec3 lhs, const glm::vec3& rhs) {
         return lhs.value + rhs;
     }
 
-    friend Watchedvec3 operator-(Watchedvec3 lhs, const glm::vec3& rhs) {
+    friend glm::vec3 operator-(Watchedvec3 lhs, const glm::vec3& rhs) {
         return lhs.value - rhs;
     }
 
-    friend Watchedvec3 operator*(Watchedvec3 lhs, const glm::vec3& rhs) {
+    friend glm::vec3 operator*(Watchedvec3 lhs, const glm::vec3& rhs) {
         return lhs.value * rhs;
     }
 
-    friend Watchedvec3 operator/(Watchedvec3 lhs, const glm::vec3& rhs) {
+    friend glm::vec3 operator/(Watchedvec3 lhs, const glm::vec3& rhs) {
         return lhs.value / rhs;
     }
 
-    friend Watchedvec3 operator+(Watchedvec3 lhs, float rhs) {
+    friend glm::vec3 operator+(Watchedvec3 lhs, float rhs) {
         return lhs.value + rhs;
     }
 
-    friend Watchedvec3 operator-(Watchedvec3 lhs, float rhs) {
+    friend glm::vec3 operator-(Watchedvec3 lhs, float rhs) {
         return lhs.value - rhs;
     }
 
-    friend Watchedvec3 operator*(Watchedvec3 lhs, float rhs) {
+    friend glm::vec3 operator*(Watchedvec3 lhs, float rhs) {
         return lhs.value * rhs;
     }
 
-    friend Watchedvec3 operator/(Watchedvec3 lhs, float rhs) {
+    friend glm::vec3 operator/(Watchedvec3 lhs, float rhs) {
         return lhs.value / rhs;
     }
 
-    friend Watchedvec3 operator+(float lhs, Watchedvec3 rhs) {
+    friend glm::vec3 operator+(float lhs, Watchedvec3 rhs) {
         return lhs + rhs.value;
     }
 
-    friend Watchedvec3 operator-(float lhs, Watchedvec3 rhs) {
+    friend glm::vec3 operator-(float lhs, Watchedvec3 rhs) {
         return lhs - rhs.value;
     }
 
-    friend Watchedvec3 operator*(float lhs, Watchedvec3 rhs) {
+    friend glm::vec3 operator*(float lhs, Watchedvec3 rhs) {
         return lhs * rhs.value;
     }
 
-    friend Watchedvec3 operator/(float lhs, Watchedvec3 rhs) {
+    friend glm::vec3 operator/(float lhs, Watchedvec3 rhs) {
         return lhs / rhs.value;
     }
 

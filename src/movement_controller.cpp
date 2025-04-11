@@ -20,10 +20,10 @@ namespace TTe {
 void MovementController::moveInPlaneXZ(Window* window, float dt, std::shared_ptr<CameraV2> cam) {
     glm::vec3 rotate{0};
 
-    if (glfwGetKey(*window, keys.lookRight) == GLFW_PRESS) rotate.y -= 1.f;
-    if (glfwGetKey(*window, keys.lookLeft) == GLFW_PRESS) rotate.y += 1.f;
-    if (glfwGetKey(*window, keys.lookUp) == GLFW_PRESS) rotate.x += 1.f;
-    if (glfwGetKey(*window, keys.lookDown) == GLFW_PRESS) rotate.x -= 1.f;
+    // if (glfwGetKey(*window, keys.lookRight) == GLFW_PRESS) rotate.y -= 1.f;
+    // if (glfwGetKey(*window, keys.lookLeft) == GLFW_PRESS) rotate.y += 1.f;
+    // if (glfwGetKey(*window, keys.lookUp) == GLFW_PRESS) rotate.x += 1.f;
+    // if (glfwGetKey(*window, keys.lookDown) == GLFW_PRESS) rotate.x -= 1.f;
 
     if (glm::dot(rotate, rotate) > std::numeric_limits<float>::epsilon()) {
         cam->transform.rot += lookSpeed * dt * glm::normalize(rotate);

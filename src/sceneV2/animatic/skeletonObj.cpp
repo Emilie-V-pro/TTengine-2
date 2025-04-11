@@ -1,6 +1,7 @@
 
 #include "skeletonObj.hpp"
 
+#include <algorithm>
 #include <cstdio>
 #include <glm/ext/quaternion_common.hpp>
 #include <glm/ext/quaternion_trigonometric.hpp>
@@ -66,7 +67,10 @@ void SkeletonObj::init(BVH bvh) {
 }
 
 void SkeletonObj::init(std::string bvh_folder) {
-    for (const auto &entry : std::filesystem::directory_iterator(bvh_folder)) m_bvh[m_bvh.size()] = BVH(entry.path());
+    for (const auto &entry : std::filesystem::directory_iterator(bvh_folder)) {
+        m_bvh[m_bvh.size()] = BVH(entry.path());
+        std::cout << entry.path() << std::endl;
+    }
 
     state = 0;
     for (int i = 0; i < m_bvh[0].getNumberOfJoint(); i++) {
@@ -360,5 +364,21 @@ void SkeletonObj::updateFromInput(Window *window, float dt) {
     } else {
         keyPressed = false;
     }
+
+    if (glfwGetKey(*window, keys.lookUp) == GLFW_PRESS) {
+        speed = std::min(speed + accel * dt * 10, speed_max);
+        const float yaw = transform.rot->y;
+        // transform.rot.
+        const float pitch = transform.rot->x;
+
+        orientation = {std::sin(yaw) * std::cos(pitch), std::sin(pitch), std::cos(yaw) * std::cos(pitch)};
+        std::cout << orientation.x << " " << orientation.y << " " << orientation.z << "\n";
+        transform.pos = transform.pos + orientation * speed * dt;
+        std::cout << transform.pos->x << " " << transform.pos->y << " " << transform.pos->z << "\n";
+    } else {
+        speed = 0;
+    }
+
+    // Position cible en fonction de la direction
 }
 }  // namespace TTe

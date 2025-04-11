@@ -71,13 +71,16 @@ class SkeletonObj : public Node, public IAnimatic, public IRenderable, public IC
     std::vector<std::shared_ptr<Node>> m_joints_final;
     std::map<int, BVH> m_bvh;
 
+    // glm::vec3 forward;
+    glm::vec3 orientation = {0.f, 0.f, 0.f};
+
     bool keyPressed = false;
 
     int state;
 
-    float speed_max;
+    float speed_max = 10.f;
 
-    float accel;
+    float accel = 0.5f;
 
     float speed;
 
