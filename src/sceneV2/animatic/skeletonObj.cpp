@@ -1,5 +1,6 @@
 
 #include "skeletonObj.hpp"
+#include <GLFW/glfw3.h>
 
 #include <algorithm>
 #include <cstdio>
@@ -29,8 +30,8 @@
 namespace TTe {
 
 void SkeletonObj::init(BVH bvh) {
-    m_bvh[0] = bvh;
-    state = 0;
+    m_bvh[State::IDLE] = bvh;
+    state = State::IDLE;
     for (int i = 0; i < bvh.getNumberOfJoint(); i++) {
         std::shared_ptr<SkeletonNode> joint1 = std::make_shared<SkeletonNode>();
         std::shared_ptr<SkeletonNode> joint2 = std::make_shared<SkeletonNode>();
@@ -68,16 +69,29 @@ void SkeletonObj::init(BVH bvh) {
 
 void SkeletonObj::init(std::string bvh_folder) {
     for (const auto &entry : std::filesystem::directory_iterator(bvh_folder)) {
-        m_bvh[m_bvh.size()] = BVH(entry.path());
+        if(entry.path().filename().string().find("idle") != std::string::npos) {
+            m_bvh[State::IDLE] = BVH(entry.path(), true);
+        }
+        if(entry.path().filename().string().find("walk") != std::string::npos) {
+            m_bvh[State::WALK] = BVH(entry.path(), true);
+        }
+        if(entry.path().filename().string().find("run") != std::string::npos) {
+            m_bvh[State::RUN] = BVH(entry.path(), true);
+        }
+        if(entry.path().filename().string().find("kick") != std::string::npos) {
+            m_bvh[State::KICK] = BVH(entry.path(), true);
+        }
+        
         std::cout << entry.path() << std::endl;
     }
 
-    state = 0;
-    for (int i = 0; i < m_bvh[0].getNumberOfJoint(); i++) {
+    state = State::IDLE;
+    for (int i = 0; i < m_bvh[State::IDLE].getNumberOfJoint(); i++) {
         std::shared_ptr<SkeletonNode> joint1 = std::make_shared<SkeletonNode>();
         std::shared_ptr<SkeletonNode> joint2 = std::make_shared<SkeletonNode>();
         std::shared_ptr<SkeletonNode> joint3 = std::make_shared<SkeletonNode>();
-        auto jointMat = m_bvh[0].getJoint(i);
+        auto jointMat = m_bvh[State::IDLE].getJoint(i);
+        
         int parent_id = jointMat.getParentId();
 
         joint1->setId(i);
@@ -104,7 +118,7 @@ void SkeletonObj::init(std::string bvh_folder) {
         m_joints_final.push_back(joint3);
     }
     coliders.resize(m_joints_1.size() - 1);
-    this->transform.scale = glm::vec3(0.20f);
+    this->transform.scale = glm::vec3(0.15);
     this->transform.pos = glm::vec3(4, -10, 3);
 }
 
@@ -172,7 +186,7 @@ glm::vec3 quatToEulerZYX(glm::quat q) {
 
 void SkeletonObj::simulation(
     glm::vec3 gravite, float viscosite, uint32_t tick, float dt, float t, std::vector<std::shared_ptr<ICollider>> &collisionObjects) {
-    float time = t / 0.083333;
+    float time = t / 0.081667;
 
     interpol = time - floor(time);
     // std::cout << "interpol: " << interpol << "\n";
@@ -265,7 +279,7 @@ void SkeletonObj::render(CommandBuffer &cmd, GraphicPipeline &pipeline, std::vec
     basicMeshes[Sphere].bindMesh(cmd);
 
     for (int i = 0; i < m_joints_final.size(); i++) {
-        glm::mat4 wMatrix = m_joints_final[i]->wMatrix() * glm::scale(glm::vec3(1.f));
+        glm::mat4 wMatrix = m_joints_final[i]->wMatrix() * glm::scale(glm::vec3(0.5f));
         glm::mat4 wNormalMatrix = m_joints_final[i]->wNormalMatrix();
 
         // glm::quat quat1 = glm::toQuat(wMatrix);
@@ -317,7 +331,7 @@ void SkeletonObj::render(CommandBuffer &cmd, GraphicPipeline &pipeline, std::vec
 
             // Calculer la matrice de transformation
             glm::mat4 wMatrix = glm::translate(glm::mat4(1.0f), position) * glm::toMat4(rotation) *
-                                glm::scale(glm::mat4(1.0f), glm::vec3(0.2f, 0.2f, length));
+                                glm::scale(glm::mat4(1.0f), glm::vec3(0.1f, 0.1f, length));
             glm::mat4 wNormalMatrix = glm::inverseTranspose(glm::mat3(wMatrix));
 
             // push constant
@@ -347,9 +361,9 @@ void SkeletonObj::collisionPos(glm::vec3 &pos, glm::vec3 &vitesse) {
         float dist = sdCapsule(pos, colider.first, colider.second);
 
         if (dist < 0) {
-            pos = closestPointToCapsule(pos, colider.first, colider.second, 0.25f);
+            // pos = closestPointToCapsule(pos, colider.first, colider.second, 0.25f);
 
-            vitesse = glm::vec3(0);
+            vitesse = (  closestPointToCapsule(pos, colider.first, colider.second, 0.25f)- pos) * 1000.f;
         }
     }
 }
@@ -357,7 +371,7 @@ void SkeletonObj::collisionPos(glm::vec3 &pos, glm::vec3 &vitesse) {
 void SkeletonObj::updateFromInput(Window *window, float dt) {
     if (glfwGetKey(*window, keys.space) == GLFW_PRESS) {
         if (!keyPressed) {
-            state = (state + 1) % m_bvh.size();
+            // state = (state + 1) % m_bvh.size();
             lastFrame = 0;
             keyPressed = true;
         }
@@ -366,18 +380,36 @@ void SkeletonObj::updateFromInput(Window *window, float dt) {
     }
 
     if (glfwGetKey(*window, keys.lookUp) == GLFW_PRESS) {
-        speed = std::min(speed + accel * dt * 10, speed_max);
-        const float yaw = transform.rot->y;
-        // transform.rot.
-        const float pitch = transform.rot->x;
+        speed = std::min(speed + accel * dt, speed_max);
+        if(speed > 5.5){
+            state = State::RUN;
+        } else if(speed >0.1) {
+            state = State::WALK;
 
-        orientation = {std::sin(yaw) * std::cos(pitch), std::sin(pitch), std::cos(yaw) * std::cos(pitch)};
-        std::cout << orientation.x << " " << orientation.y << " " << orientation.z << "\n";
-        transform.pos = transform.pos + orientation * speed * dt;
-        std::cout << transform.pos->x << " " << transform.pos->y << " " << transform.pos->z << "\n";
+        }
+
     } else {
-        speed = 0;
+        speed = std::max(speed / 2, 0.f);
+        if(speed < 0.1){
+            state = State::IDLE;
+        }
     }
+
+
+    if(glfwGetKey(*window, keys.lookLeft) == GLFW_PRESS) {
+        transform.rot->y += dt * 4;
+    }
+    if(glfwGetKey(*window, keys.lookRight) == GLFW_PRESS) {
+        transform.rot->y -= dt * 4;
+    }
+
+    const float yaw = transform.rot->y;
+    // transform.rot.
+    const float pitch = transform.rot->x;
+
+    orientation = {std::sin(yaw) * std::cos(pitch), std::sin(pitch), std::cos(yaw) * std::cos(pitch)};
+   
+    transform.pos = transform.pos + orientation * speed * dt;
 
     // Position cible en fonction de la direction
 }

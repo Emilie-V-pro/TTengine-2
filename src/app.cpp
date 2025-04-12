@@ -118,11 +118,11 @@ void App::init(Device *device, SwapChain *swapchain, Window* window) {
     // cast to ObjetSimuleMSS
     std::shared_ptr<ObjetSimuleMSS> capeSim = std::dynamic_pointer_cast<ObjetSimuleMSS>(cape);
     // capeSim->transform.rot->x = (M_PI/2.0);
-    // capeSim->attachToNode(0, skeleton->getChild(0)->getChild(1)->getChild(0)->getChild(2)->getChild(0));
-    // capeSim->attachToNode(69, skeleton->getChild(0)->getChild(1)->getChild(0)->getChild(1)->getChild(0));
+    capeSim->attachToNode(0, skeleton->getChild(0)->getChild(0)->getChild(0)->getChild(2)->getChild(0));
+    capeSim->attachToNode(69, skeleton->getChild(0)->getChild(0)->getChild(0)->getChild(1)->getChild(0));
 
-    // capeSim->attachToNode(19, skeleton->getChild(0)->getChild(1)->getChild(0)->getChild(2));
-    // capeSim->attachToNode(49, skeleton->getChild(0)->getChild(1)->getChild(0)->getChild(1));
+    capeSim->attachToNode(19, skeleton->getChild(0)->getChild(0)->getChild(0)->getChild(2));
+    capeSim->attachToNode(49, skeleton->getChild(0)->getChild(0)->getChild(0)->getChild(1));
     // capeSim->attachToNode(34, skeleton->getChild(0)->getChild(1)->getChild(0));
 
     // std::shared_ptr<BasicMeshObj> b = std::make_shared<BasicMeshObj>();

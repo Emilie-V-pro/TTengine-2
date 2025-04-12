@@ -62,6 +62,29 @@ class SkeletonObj : public Node, public IAnimatic, public IRenderable, public IC
     //! m�me nombre d'articulations (m�me structure d'arbre)
     //! ==> Sera utile lors de la construction du graphe d'animation
     // friend float distance(const CASkeleton& a, const CASkeleton& b);
+
+    enum State {
+        IDLE = 1,
+        WALK = 2,
+        RUN = 3,
+        KICK = 4,
+    };
+
+    struct Pose {
+        State state;
+        int frame;
+
+        bool operator==(const Pose& other) const noexcept {
+            return state==other.state && frame==other.frame;
+        }
+
+        struct Hasher {
+            size_t operator()(const Pose &p) const noexcept {
+                return std::hash<State>{}(p.state) ^ (std::hash<int>{}(p.frame) << 4);
+            }
+        };
+    };
+
    private:
 
     int lastFrame = 0;
@@ -69,18 +92,23 @@ class SkeletonObj : public Node, public IAnimatic, public IRenderable, public IC
     std::vector<std::shared_ptr<Node>> m_joints_1;
     std::vector<std::shared_ptr<Node>> m_joints_2;
     std::vector<std::shared_ptr<Node>> m_joints_final;
-    std::map<int, BVH> m_bvh;
+    std::map<State, BVH> m_bvh;
+
+    std::map<Pose, std::vector<Pose>, Pose::Hasher> m_graph;
 
     // glm::vec3 forward;
     glm::vec3 orientation = {0.f, 0.f, 0.f};
 
     bool keyPressed = false;
 
-    int state;
+    State state;
+    int frameOffset = 0;
+    State nextState;
+    int nextStateFrameOffset = 0;
 
     float speed_max = 10.f;
 
-    float accel = 0.5f;
+    float accel = 10.f;
 
     float speed;
 
