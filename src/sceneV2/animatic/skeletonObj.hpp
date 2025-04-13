@@ -63,11 +63,11 @@ class SkeletonObj : public Node, public IAnimatic, public IRenderable, public IC
     //! ==> Sera utile lors de la construction du graphe d'animation
     // friend float distance(const CASkeleton& a, const CASkeleton& b);
 
-    enum State {
-        IDLE = 1,
-        WALK = 2,
-        RUN = 3,
-        KICK = 4,
+    enum class State {
+        IDLE ,
+        WALK,
+        RUN,
+        KICK,
     };
 
     struct Pose {
@@ -87,6 +87,8 @@ class SkeletonObj : public Node, public IAnimatic, public IRenderable, public IC
 
    private:
 
+    float computePoseDistance(int frame_1, int frame_2, BVH &bvh_1, BVH &bvh_2);
+
     int lastFrame = 0;
     std::vector<std::pair<glm::vec3, glm::vec3>> coliders;
     std::vector<std::shared_ptr<Node>> m_joints_1;
@@ -94,7 +96,13 @@ class SkeletonObj : public Node, public IAnimatic, public IRenderable, public IC
     std::vector<std::shared_ptr<Node>> m_joints_final;
     std::map<State, BVH> m_bvh;
 
-    std::map<Pose, std::vector<Pose>, Pose::Hasher> m_graph;
+    
+    // transition between states
+    std::unordered_map<Pose, std::vector<Pose>, Pose::Hasher> m_graph;
+    int startTransitionFrame = 0;
+    int nextStateFrameOffset = 0;
+    bool transition = false;
+
 
     // glm::vec3 forward;
     glm::vec3 orientation = {0.f, 0.f, 0.f};
@@ -104,7 +112,12 @@ class SkeletonObj : public Node, public IAnimatic, public IRenderable, public IC
     State state;
     int frameOffset = 0;
     State nextState;
-    int nextStateFrameOffset = 0;
+
+    
+   
+
+
+
 
     float speed_max = 10.f;
 

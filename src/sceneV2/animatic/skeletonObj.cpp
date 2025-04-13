@@ -1,5 +1,6 @@
 
 #include "skeletonObj.hpp"
+
 #include <GLFW/glfw3.h>
 
 #include <algorithm>
@@ -69,29 +70,30 @@ void SkeletonObj::init(BVH bvh) {
 
 void SkeletonObj::init(std::string bvh_folder) {
     for (const auto &entry : std::filesystem::directory_iterator(bvh_folder)) {
-        if(entry.path().filename().string().find("idle") != std::string::npos) {
+        if (entry.path().filename().string().find("idle") != std::string::npos) {
             m_bvh[State::IDLE] = BVH(entry.path(), true);
         }
-        if(entry.path().filename().string().find("walk") != std::string::npos) {
+        if (entry.path().filename().string().find("walk") != std::string::npos) {
             m_bvh[State::WALK] = BVH(entry.path(), true);
         }
-        if(entry.path().filename().string().find("run") != std::string::npos) {
+        if (entry.path().filename().string().find("run") != std::string::npos) {
             m_bvh[State::RUN] = BVH(entry.path(), true);
         }
-        if(entry.path().filename().string().find("kick") != std::string::npos) {
+        if (entry.path().filename().string().find("kick") != std::string::npos) {
             m_bvh[State::KICK] = BVH(entry.path(), true);
         }
-        
+
         std::cout << entry.path() << std::endl;
     }
 
     state = State::IDLE;
+    nextState = State::IDLE;
     for (int i = 0; i < m_bvh[State::IDLE].getNumberOfJoint(); i++) {
         std::shared_ptr<SkeletonNode> joint1 = std::make_shared<SkeletonNode>();
         std::shared_ptr<SkeletonNode> joint2 = std::make_shared<SkeletonNode>();
         std::shared_ptr<SkeletonNode> joint3 = std::make_shared<SkeletonNode>();
         auto jointMat = m_bvh[State::IDLE].getJoint(i);
-        
+
         int parent_id = jointMat.getParentId();
 
         joint1->setId(i);
@@ -120,6 +122,131 @@ void SkeletonObj::init(std::string bvh_folder) {
     coliders.resize(m_joints_1.size() - 1);
     this->transform.scale = glm::vec3(0.15);
     this->transform.pos = glm::vec3(4, -10, 3);
+
+    // create graph
+
+    for (auto &bvh : m_bvh) {
+        for (int i = 0; i < bvh.second.getNumberOfFrame(); i++) {
+            for (auto &other_bvh : m_bvh) {
+                if (bvh.first != other_bvh.first) {
+                    for (int j = 0; j < other_bvh.second.getNumberOfFrame(); j++) {
+                        if (computePoseDistance(i, j, bvh.second, other_bvh.second) < 20.f) {
+                            Pose p1 = {bvh.first, i};
+                            Pose p2 = {other_bvh.first, j};
+                            m_graph[p1].push_back(p2);
+                        }
+                    }
+                }
+            }
+        }
+        std::cout << "test\n";
+    }
+
+
+    int test = 0;
+}
+
+float SkeletonObj::computePoseDistance(int frame_1, int frame_2, BVH &bvh_1, BVH &bvh_2) {
+    float returnValue = 0;
+    for (int i = 0; i < m_bvh[state].getNumberOfJoint(); i++) {
+        auto jointMat1 = bvh_1.getJoint(i);
+        auto jointMat2 = bvh_2.getJoint(i);
+
+        glm::vec3 pos;
+        jointMat1.getOffset(pos.x, pos.y, pos.z);
+
+        glm::vec3 rot1 = glm::vec3(0.0f);
+        glm::vec3 trans1 = glm::vec3(0.0f);
+        glm::vec3 rot2 = glm::vec3(0.0f);
+        glm::vec3 trans2 = glm::vec3(0.0f);
+
+        for (int j = 0; j < jointMat1.getNumberOfChannel(); ++j) {
+            auto channel_1 = jointMat1.getChannel(j);
+
+            float data1 = channel_1.getData(frame_1);
+
+            if (channel_1.getType() == BVHChannel::TYPE_TRANSLATION) {
+                switch (channel_1.getAxis()) {
+                    case AXIS_X:
+                        trans1.x = data1;
+                        break;
+                    case AXIS_Y:
+                        trans1.y = data1;
+                        break;
+                    case AXIS_Z:
+                        trans1.z = data1;
+                        break;
+                    case AXIS_W:;
+                        break;
+                }
+            }
+            if (channel_1.getType() == BVHChannel::TYPE_ROTATION) {
+                switch (channel_1.getAxis()) {
+                    case AXIS_X:
+                        rot1.x = glm::radians(data1);
+                        break;
+                    case AXIS_Y:
+                        rot1.y = glm::radians(data1);
+                        break;
+                    case AXIS_Z:
+                        rot1.z = glm::radians(data1);
+                        break;
+                    case AXIS_W:;
+                        break;
+                }
+            }
+        }
+
+        for (int j = 0; j < jointMat1.getNumberOfChannel(); ++j) {
+            auto channel_2 = jointMat2.getChannel(j);
+
+            float data2 = channel_2.getData(frame_2);
+
+            if (channel_2.getType() == BVHChannel::TYPE_TRANSLATION) {
+                switch (channel_2.getAxis()) {
+                    case AXIS_X:
+                        trans2.x = data2;
+                        break;
+                    case AXIS_Y:
+                        trans2.y = data2;
+                        break;
+                    case AXIS_Z:
+                        trans2.z = data2;
+                        break;
+                    case AXIS_W:;
+                        break;
+                }
+            }
+            if (channel_2.getType() == BVHChannel::TYPE_ROTATION) {
+                switch (channel_2.getAxis()) {
+                    case AXIS_X:
+                        rot2.x = glm::radians(data2);
+                        break;
+                    case AXIS_Y:
+                        rot2.y = glm::radians(data2);
+                        break;
+                    case AXIS_Z:
+                        rot2.z = glm::radians(data2);
+                        break;
+                    case AXIS_W:;
+                        break;
+                }
+            }
+        }
+
+        // CollisionObject c(CollisionObject::Type::sphere);
+
+        m_joints_1[i]->transform.pos = pos + trans1;
+        m_joints_1[i]->transform.rot = rot1;
+
+        m_joints_2[i]->transform.pos = pos + trans2;
+        m_joints_2[i]->transform.rot = rot2;
+
+        glm::vec3 pos_1 = m_joints_1[i]->wMatrix()[3];
+        glm::vec3 pos_2 = m_joints_2[i]->wMatrix()[3];
+        returnValue += glm::length(pos_1 - pos_2);
+    }
+    return returnValue;
 }
 
 glm::vec3 SkeletonObj::getJointPosition(int i) const {
@@ -190,57 +317,109 @@ void SkeletonObj::simulation(
 
     interpol = time - floor(time);
     // std::cout << "interpol: " << interpol << "\n";
-    int frameNB = (int(floor(time)) % m_bvh[state].getNumberOfFrame());
-    int frameNB2 = (int(ceil(time)) % m_bvh[state].getNumberOfFrame());
+    int frameNB = (int(floor(time) + frameOffset) % m_bvh[state].getNumberOfFrame());
+    int frameNB2;
+    State secon_State;
+    if (transition && frameNB == startTransitionFrame + 1) {
+        transition = false;
+        state = nextState;
+        frameOffset = nextStateFrameOffset;
+        startTransitionFrame = -1;
+    }
+
+    if (frameNB == startTransitionFrame) {
+        transition = true;
+    }
+
+    if (transition) {
+        frameNB2 = (int(ceil(time) + nextStateFrameOffset) % m_bvh[nextState].getNumberOfFrame());
+        secon_State = nextState;
+    } else {
+        frameNB2 = (int(ceil(time) + frameOffset) % m_bvh[state].getNumberOfFrame());
+        secon_State = state;
+    }
 
     for (int i = 0; i < m_bvh[state].getNumberOfJoint(); i++) {
-        auto jointMat = m_bvh[state].getJoint(i);
         if (lastFrame != frameNB) {
             if (i == m_bvh[state].getNumberOfJoint() - 1) lastFrame = frameNB;
+
+            auto jointMat1 = m_bvh[state].getJoint(i);
+            auto jointMat2 = m_bvh[secon_State].getJoint(i);
+
             glm::vec3 pos;
-            jointMat.getOffset(pos.x, pos.y, pos.z);
+            jointMat1.getOffset(pos.x, pos.y, pos.z);
 
             glm::vec3 rot1 = glm::vec3(0.0f);
             glm::vec3 trans1 = glm::vec3(0.0f);
             glm::vec3 rot2 = glm::vec3(0.0f);
             glm::vec3 trans2 = glm::vec3(0.0f);
 
-            for (int j = 0; j < jointMat.getNumberOfChannel(); ++j) {
-                auto channel = jointMat.getChannel(j);
+            for (int j = 0; j < jointMat1.getNumberOfChannel(); ++j) {
+                auto channel_1 = jointMat1.getChannel(j);
 
-                float data1 = channel.getData(frameNB);
-                float data2 = channel.getData(frameNB2);
+                float data1 = channel_1.getData(frameNB);
 
-                if (channel.getType() == BVHChannel::TYPE_TRANSLATION) {
-                    switch (channel.getAxis()) {
+                if (channel_1.getType() == BVHChannel::TYPE_TRANSLATION) {
+                    switch (channel_1.getAxis()) {
                         case AXIS_X:
                             trans1.x = data1;
-                            trans2.x = data2;
                             break;
                         case AXIS_Y:
                             trans1.y = data1;
-                            trans2.y = data2;
                             break;
                         case AXIS_Z:
                             trans1.z = data1;
+                            break;
+                        case AXIS_W:;
+                            break;
+                    }
+                }
+                if (channel_1.getType() == BVHChannel::TYPE_ROTATION) {
+                    switch (channel_1.getAxis()) {
+                        case AXIS_X:
+                            rot1.x = glm::radians(data1);
+                            break;
+                        case AXIS_Y:
+                            rot1.y = glm::radians(data1);
+                            break;
+                        case AXIS_Z:
+                            rot1.z = glm::radians(data1);
+                            break;
+                        case AXIS_W:;
+                            break;
+                    }
+                }
+            }
+
+            for (int j = 0; j < jointMat1.getNumberOfChannel(); ++j) {
+                auto channel_2 = jointMat2.getChannel(j);
+
+                float data2 = channel_2.getData(frameNB2);
+
+                if (channel_2.getType() == BVHChannel::TYPE_TRANSLATION) {
+                    switch (channel_2.getAxis()) {
+                        case AXIS_X:
+                            trans2.x = data2;
+                            break;
+                        case AXIS_Y:
+                            trans2.y = data2;
+                            break;
+                        case AXIS_Z:
                             trans2.z = data2;
                             break;
                         case AXIS_W:;
                             break;
                     }
                 }
-                if (channel.getType() == BVHChannel::TYPE_ROTATION) {
-                    switch (channel.getAxis()) {
+                if (channel_2.getType() == BVHChannel::TYPE_ROTATION) {
+                    switch (channel_2.getAxis()) {
                         case AXIS_X:
-                            rot1.x = glm::radians(data1);
                             rot2.x = glm::radians(data2);
                             break;
                         case AXIS_Y:
-                            rot1.y = glm::radians(data1);
                             rot2.y = glm::radians(data2);
                             break;
                         case AXIS_Z:
-                            rot1.z = glm::radians(data1);
                             rot2.z = glm::radians(data2);
                             break;
                         case AXIS_W:;
@@ -363,7 +542,7 @@ void SkeletonObj::collisionPos(glm::vec3 &pos, glm::vec3 &vitesse) {
         if (dist < 0) {
             // pos = closestPointToCapsule(pos, colider.first, colider.second, 0.25f);
 
-            vitesse = (  closestPointToCapsule(pos, colider.first, colider.second, 0.25f)- pos) * 1000.f;
+            vitesse = (closestPointToCapsule(pos, colider.first, colider.second, 0.25f) - pos) * 1000.f;
         }
     }
 }
@@ -381,25 +560,23 @@ void SkeletonObj::updateFromInput(Window *window, float dt) {
 
     if (glfwGetKey(*window, keys.lookUp) == GLFW_PRESS) {
         speed = std::min(speed + accel * dt, speed_max);
-        if(speed > 5.5){
+        if (speed > 5.5) {
             state = State::RUN;
-        } else if(speed >0.1) {
+        } else if (speed > 0.1) {
             state = State::WALK;
-
         }
 
     } else {
         speed = std::max(speed / 2, 0.f);
-        if(speed < 0.1){
+        if (speed < 0.1) {
             state = State::IDLE;
         }
     }
 
-
-    if(glfwGetKey(*window, keys.lookLeft) == GLFW_PRESS) {
+    if (glfwGetKey(*window, keys.lookLeft) == GLFW_PRESS) {
         transform.rot->y += dt * 4;
     }
-    if(glfwGetKey(*window, keys.lookRight) == GLFW_PRESS) {
+    if (glfwGetKey(*window, keys.lookRight) == GLFW_PRESS) {
         transform.rot->y -= dt * 4;
     }
 
@@ -408,7 +585,7 @@ void SkeletonObj::updateFromInput(Window *window, float dt) {
     const float pitch = transform.rot->x;
 
     orientation = {std::sin(yaw) * std::cos(pitch), std::sin(pitch), std::cos(yaw) * std::cos(pitch)};
-   
+
     transform.pos = transform.pos + orientation * speed * dt;
 
     // Position cible en fonction de la direction
