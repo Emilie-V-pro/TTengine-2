@@ -17,7 +17,7 @@ class Node {
     virtual ~Node() = 0;
 
     // copy constructor
-    Node(const Node &other){
+    Node(const Node &other) {
         id = other.id;
         transform = other.transform;
         worldMatrix = other.worldMatrix;
@@ -62,18 +62,7 @@ class Node {
     void addChild(std::shared_ptr<Node> child);
     void removeChild(std::shared_ptr<Node> child);
 
-
-    void setDirty() {
-
-        if (dirty != true && mtx.try_lock()) {
-            dirty = true;
-            normalDirty = true;
-            for (auto &child : children) {
-                child->setDirty();
-            }
-            mtx.unlock();
-        }
-    }
+    void setDirty();
 
    protected:
     int id;

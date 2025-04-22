@@ -1,7 +1,9 @@
 
 #include "node.hpp"
+
 #include <algorithm>
 #include <memory>
+
 #include "sceneV2/cameraV2.hpp"
 #include "sceneV2/scene.hpp"
 
@@ -13,11 +15,10 @@
 
 namespace TTe {
 
-
 Node::Node() {
-    transform.pos.onChanged = [this]() {setDirty();};
-    transform.rot.onChanged = [this]() {setDirty();};
-    transform.scale.onChanged = [this]() {setDirty();};
+    transform.pos.onChanged = [this]() { setDirty(); };
+    transform.rot.onChanged = [this]() { setDirty(); };
+    transform.scale.onChanged = [this]() { setDirty(); };
 }
 
 Node::Node(int id) : id(id) {}
@@ -29,18 +30,18 @@ Node::~Node() {
 }
 
 glm::mat4 Node::wMatrix() {
-    if (dirty && mtx.try_lock()) {
+    mtx.lock();
+    if (dirty) {
         glm::mat4 scaleMatrix = glm::scale(transform.scale.value);
         glm::mat4 translationMatrix = glm::translate(transform.pos.value);
         glm::mat4 rotationMatrix = glm::eulerAngleZXY(transform.rot.value.z, transform.rot.value.x, transform.rot.value.y);
         worldMatrix = translationMatrix * rotationMatrix * scaleMatrix;
-        
-        
+
         worldMatrix = (parent) ? parent->wMatrix() * worldMatrix : worldMatrix;
         dirty = false;
-        mtx.unlock();
+        // mtx.unlock();
     }
-    
+    mtx.unlock();
     return worldMatrix;
 }
 
@@ -53,9 +54,20 @@ glm::mat3 Node::wNormalMatrix() {
     return worldNormalMatrix;
 }
 
-Node * Node::getParent() const { return parent; }
+void Node::setDirty() {
+    if (mtx.try_lock()) {
+        dirty = true;
+        normalDirty = true;
+        for (auto &child : children) {
+            child->setDirty();
+        }
+        mtx.unlock();
+    }
+}
 
-void Node::setParent(Node* parent) { this->parent = parent; }
+Node *Node::getParent() const { return parent; }
+
+void Node::setParent(Node *parent) { this->parent = parent; }
 
 int Node::getId() const { return id; }
 

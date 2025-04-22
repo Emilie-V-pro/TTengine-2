@@ -3,6 +3,7 @@
 #include <glm/fwd.hpp>
 #include <glm/glm.hpp>
 #include <memory>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -85,6 +86,28 @@ class SkeletonObj : public Node, public IAnimatic, public IRenderable, public IC
         };
     };
 
+
+    struct StateTransition {
+        State state_1;
+        State state_2;
+
+        bool operator==(const StateTransition& other) const noexcept {
+            return state_1==other.state_1 && state_2==other.state_2;
+        }
+
+        struct Hasher {
+            size_t operator()(const StateTransition &p) const noexcept {
+                return std::hash<State>{}(p.state_1) ^ (std::hash<State>{}(p.state_2) << 4);
+            }
+        };
+    };
+
+
+    struct FrameTransition {
+        int frame_1;
+        int frame_2;
+    };
+
    private:
 
     float computePoseDistance(int frame_1, int frame_2, BVH &bvh_1, BVH &bvh_2);
@@ -99,9 +122,12 @@ class SkeletonObj : public Node, public IAnimatic, public IRenderable, public IC
     
     // transition between states
     std::unordered_map<Pose, std::vector<Pose>, Pose::Hasher> m_graph;
+    std::unordered_map<StateTransition, std::vector<FrameTransition>, StateTransition::Hasher> transitions_graph;
     int startTransitionFrame = 0;
     int nextStateFrameOffset = 0;
     bool transition = false;
+    bool wantTransition = false;
+    bool kickend = true;
 
 
     // glm::vec3 forward;
@@ -120,6 +146,7 @@ class SkeletonObj : public Node, public IAnimatic, public IRenderable, public IC
 
 
     float speed_max = 10.f;
+    float speed_max_run = 20.f;
 
     float accel = 10.f;
 

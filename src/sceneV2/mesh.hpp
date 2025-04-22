@@ -29,11 +29,11 @@ struct Triangle {
 class Mesh {
    public:
     Mesh() {};
-    Mesh(Device *device) : device(device) {};
-    Mesh(Device *device, const std::vector<unsigned int> &indicies, const std::vector<Vertex> &verticies);
-    Mesh(Device *device, std::string path);
+    Mesh(Device *device, Buffer::BufferType type = Buffer::BufferType::DYNAMIC) : device(device), type(type) {};
+    Mesh(Device *device, const std::vector<unsigned int> &indicies, const std::vector<Vertex> &verticies, Buffer::BufferType type = Buffer::BufferType::DYNAMIC);
+    Mesh(Device *device, std::string path, Buffer::BufferType type = Buffer::BufferType::DYNAMIC);
 
-    Mesh(Device *device, const BasicShape &b, uint resolution);
+    Mesh(Device *device, const BasicShape &b, uint resolution, Buffer::BufferType type = Buffer::BufferType::DYNAMIC);
 
     // copy constructor
     Mesh(const Mesh &other) {
@@ -122,6 +122,8 @@ class Mesh {
 
     Buffer vertexBuffer;
     Buffer indexBuffer;
+
+    Buffer::BufferType type;
 
     Device *device;
 };

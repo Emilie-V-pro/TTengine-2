@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "IRessource.hpp"
 #include "device.hpp"
 #include "mesh.hpp"
 #include "utils.hpp"
@@ -59,7 +60,7 @@ static const int IcoIndex[] = {2, 6,  4,  // Top
                                0, 1,  3,  // Bottom
                                3, 5,  7, 7,  9,  11, 11, 13, 15, 15, 17, 19};
 
-Mesh init_sphere(Device *d, uint res) {
+Mesh init_sphere(Device *d, uint res, Buffer::BufferType type) {
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
 
@@ -152,7 +153,7 @@ Mesh init_sphere(Device *d, uint res) {
     return Mesh(d, indices, vertices);
 }
 
-Mesh init_cone(Device *d, uint res) {
+Mesh init_cone(Device *d, uint res, Buffer::BufferType type) {
     const int div = 25;
     float step = 2.0 * M_PI / div;
     std::vector<Vertex> vertices;
@@ -188,7 +189,7 @@ Mesh init_cone(Device *d, uint res) {
     return Mesh(d, indices, vertices);
 }
 
-Mesh init_cylinder(Device *d, uint res) {
+Mesh init_cylinder(Device *d, uint res, Buffer::BufferType type) {
     const int div = 25;
     float step = 2.0 * M_PI / div;
     std::vector<Vertex> vertices;
@@ -224,7 +225,7 @@ Mesh init_cylinder(Device *d, uint res) {
     return Mesh(d, indices, vertices);
 }
 
-Mesh init_cube(Device *d, uint res) {
+Mesh init_cube(Device *d, uint res, Buffer::BufferType type) {
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
 
@@ -311,13 +312,13 @@ Mesh init_cube(Device *d, uint res) {
     return Mesh(d, indices, vertices);
 }
 
-Mesh::Mesh(Device *d, const BasicShape &b, uint res) {
+Mesh::Mesh(Device *d, const BasicShape &b, uint res, Buffer::BufferType type) : device(d), type(type) {
     switch (b) {
         case BasicShape::Sphere:
-            *this = init_sphere(d, res);
+            *this = init_sphere(d, res, type);
             break;
         case BasicShape::Cube:
-            *this = init_cube(d, res);
+            *this = init_cube(d, res, type);
             break;
         default:
             assert("Invalid shape");

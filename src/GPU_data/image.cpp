@@ -1,6 +1,7 @@
 
 #include "GPU_data/image.hpp"
 
+#include <cstdint>
 #include <iostream>
 #include "commandBuffer/command_buffer.hpp"
 #define STB_IMAGE_IMPLEMENTATION
@@ -328,7 +329,7 @@ void Image::generateMipmaps(CommandBuffer *extCmdBuffer) {
 void Image::createImage() {
     if (imageCreateInfo.enableMipMap) {
         imageCreateInfo.usageFlags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-        mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(imageCreateInfo.width, imageCreateInfo.width)))) + 1;
+        mipLevels = std::min (static_cast<uint32_t>(std::floor(std::log2(std::max(imageCreateInfo.width, imageCreateInfo.width)))) + 1, uint32_t(16));
     }
     auto imageInfo = make<VkImageCreateInfo>();
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -416,7 +417,7 @@ int test() {
 void Image::loadImageFromFile(std::vector<std::string> &filename) {
     stbi_set_flip_vertically_on_load(true);
     int nbOfchannel;
-    int width, height;
+    int width = 0, height = 0;
     std::cout << "Loading image: " << TEXTURE_PATH + filename[0] << std::endl;
     stbi_info((TEXTURE_PATH + filename[0]).c_str(), &width, &height, &nbOfchannel);
     if(width == 0 || height == 0){

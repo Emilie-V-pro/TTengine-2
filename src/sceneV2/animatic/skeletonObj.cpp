@@ -63,7 +63,7 @@ void SkeletonObj::init(BVH bvh) {
         m_joints_2.push_back(joint2);
         m_joints_final.push_back(joint3);
     }
-    coliders.resize(m_joints_1.size() - 1);
+    coliders.resize(m_joints_1.size() - 6);
     this->transform.scale = glm::vec3(0.05f);
     this->transform.pos = glm::vec3(4, -10, 3);
 }
@@ -119,8 +119,8 @@ void SkeletonObj::init(std::string bvh_folder) {
         m_joints_2.push_back(joint2);
         m_joints_final.push_back(joint3);
     }
-    coliders.resize(m_joints_1.size() - 1);
-    this->transform.scale = glm::vec3(0.15);
+    coliders.resize(m_joints_1.size() - 6);
+    this->transform.scale = glm::vec3(0.10);
     this->transform.pos = glm::vec3(4, -10, 3);
 
     // create graph
@@ -129,11 +129,25 @@ void SkeletonObj::init(std::string bvh_folder) {
         for (int i = 0; i < bvh.second.getNumberOfFrame(); i++) {
             for (auto &other_bvh : m_bvh) {
                 if (bvh.first != other_bvh.first) {
+                    FrameTransition frameTransition = {-1, -1};
+                    float minDistance = 25.f;
                     for (int j = 0; j < other_bvh.second.getNumberOfFrame(); j++) {
-                        if (computePoseDistance(i, j, bvh.second, other_bvh.second) < 20.f) {
-                            Pose p1 = {bvh.first, i};
-                            Pose p2 = {other_bvh.first, j};
-                            m_graph[p1].push_back(p2);
+                        float dist = computePoseDistance(i, j, bvh.second, other_bvh.second);
+                        if (dist < minDistance) {
+                            minDistance = dist;
+                            frameTransition.frame_1 = i;
+                            frameTransition.frame_2 = j;
+                        }
+                    }
+                    if (frameTransition.frame_1 != -1) {
+                        if(bvh.first == State::KICK){
+                            if (i == bvh.second.getNumberOfFrame() - 1) {
+                                frameTransition.frame_1 = 0;
+                                transitions_graph[{bvh.first, other_bvh.first}].push_back(frameTransition);
+                            }
+                        }else {
+
+                            transitions_graph[{bvh.first, other_bvh.first}].push_back(frameTransition);
                         }
                     }
                 }
@@ -141,7 +155,6 @@ void SkeletonObj::init(std::string bvh_folder) {
         }
         std::cout << "test\n";
     }
-
 
     int test = 0;
 }
@@ -321,14 +334,22 @@ void SkeletonObj::simulation(
     int frameNB2;
     State secon_State;
     if (transition && frameNB == startTransitionFrame + 1) {
+        if(state == State::KICK) {
+            kickend = true;
+        }
         transition = false;
+        wantTransition = false;
         state = nextState;
         frameOffset = nextStateFrameOffset;
         startTransitionFrame = -1;
+       
     }
 
     if (frameNB == startTransitionFrame) {
         transition = true;
+        if(nextState == State::KICK) {
+            kickend = false;
+        }
     }
 
     if (transition) {
@@ -338,6 +359,8 @@ void SkeletonObj::simulation(
         frameNB2 = (int(ceil(time) + frameOffset) % m_bvh[state].getNumberOfFrame());
         secon_State = state;
     }
+
+    int collider_iter = 0;
 
     for (int i = 0; i < m_bvh[state].getNumberOfJoint(); i++) {
         if (lastFrame != frameNB) {
@@ -443,12 +466,18 @@ void SkeletonObj::simulation(
 
         glm::quat q = glm::slerp(q1, q2, interpol);
         m_joints_final[i]->transform.rot = quatToEulerZXY(q);
+        // m_joints_final[i]->transform.rot = m_joints_1[i]->transform.rot;
+        // m_joints_final[i]->transform.pos = m_joints_1[i]->transform.pos;
 
         if (m_joints_final[i]->id != 0) {
+            if(m_joints_final[i]->children.size() == 0) {
+                continue;
+            }
             glm::vec3 jpos = m_joints_final[i]->wMatrix()[3];
             glm::vec3 ppos = m_joints_final[i]->parent->wMatrix()[3];
-            coliders[i - 1].first = jpos;
-            coliders[i - 1].second = ppos;
+            coliders[collider_iter].first = jpos;
+            coliders[collider_iter].second = ppos;
+            collider_iter++;
         }
     }
 }
@@ -510,7 +539,7 @@ void SkeletonObj::render(CommandBuffer &cmd, GraphicPipeline &pipeline, std::vec
 
             // Calculer la matrice de transformation
             glm::mat4 wMatrix = glm::translate(glm::mat4(1.0f), position) * glm::toMat4(rotation) *
-                                glm::scale(glm::mat4(1.0f), glm::vec3(0.1f, 0.1f, length));
+                                glm::scale(glm::mat4(1.0f), glm::vec3(0.07f, 0.07f, length));
             glm::mat4 wNormalMatrix = glm::inverseTranspose(glm::mat3(wMatrix));
 
             // push constant
@@ -525,7 +554,7 @@ void SkeletonObj::render(CommandBuffer &cmd, GraphicPipeline &pipeline, std::vec
 float sdCapsule(glm::vec3 &p, glm::vec3 &a, glm::vec3 &b) {
     glm::vec3 pa = p - a, ba = b - a;
     float h = glm::clamp(glm::dot(pa, ba) / glm::dot(ba, ba), 0.0f, 1.0f);
-    return length(pa - ba * h) - 0.25;
+    return length(pa - ba * h) - 0.12f;
 }
 
 glm::vec3 closestPointToCapsule(glm::vec3 p, glm::vec3 a, glm::vec3 b, float r) {
@@ -540,44 +569,88 @@ void SkeletonObj::collisionPos(glm::vec3 &pos, glm::vec3 &vitesse) {
         float dist = sdCapsule(pos, colider.first, colider.second);
 
         if (dist < 0) {
-            // pos = closestPointToCapsule(pos, colider.first, colider.second, 0.25f);
+            pos = closestPointToCapsule(pos, colider.first, colider.second, 0.12f);
+            vitesse = glm::vec3(0.f);
 
-            vitesse = (closestPointToCapsule(pos, colider.first, colider.second, 0.25f) - pos) * 1000.f;
+            // vitesse = (closestPointToCapsule(pos, colider.first, colider.second, 0.1f) - pos) * 1000.f;
         }
     }
 }
 
 void SkeletonObj::updateFromInput(Window *window, float dt) {
+    static bool stateChanged = false;
     if (glfwGetKey(*window, keys.space) == GLFW_PRESS) {
         if (!keyPressed) {
             // state = (state + 1) % m_bvh.size();
-            lastFrame = 0;
+            // lastFrame = 0;
             keyPressed = true;
         }
     } else {
         keyPressed = false;
     }
+    State wantedState = State::IDLE;
+
+    
 
     if (glfwGetKey(*window, keys.lookUp) == GLFW_PRESS) {
-        speed = std::min(speed + accel * dt, speed_max);
-        if (speed > 5.5) {
-            state = State::RUN;
-        } else if (speed > 0.1) {
-            state = State::WALK;
+        if (glfwGetKey(*window, keys.shift) == GLFW_PRESS) {
+            speed = std::min(speed + accel * dt * 4, speed_max_run);
+            wantedState = State::RUN;
+           
+        } else {
+            speed = std::min(speed + accel * dt * 4, speed_max);
+            wantedState = State::WALK;
         }
 
     } else {
-        speed = std::max(speed / 2, 0.f);
-        if (speed < 0.1) {
-            state = State::IDLE;
-        }
+        speed = std::max(speed - accel * dt * 10, 0.f);
+        wantedState = State::IDLE;
     }
+
+   
 
     if (glfwGetKey(*window, keys.lookLeft) == GLFW_PRESS) {
         transform.rot->y += dt * 4;
     }
     if (glfwGetKey(*window, keys.lookRight) == GLFW_PRESS) {
         transform.rot->y -= dt * 4;
+    }
+
+
+    if (glfwGetKey(*window, keys.space) == GLFW_PRESS) {
+        wantedState = State::KICK;
+        speed = 0.f;
+        
+    }
+
+    if(!kickend) {
+        speed = 0.f;
+    }
+
+ 
+    if  (wantedState != state && (!wantTransition || wantedState != nextState) && (kickend || wantedState != State::KICK)) {
+        wantTransition = true;
+        
+        nextState = wantedState;
+        bool found = false;
+        // find the closest frame to the last frame
+        for (auto &frame : transitions_graph[{state, nextState}]) {
+            if (frame.frame_1 > lastFrame) {
+                startTransitionFrame = frame.frame_1;
+                nextStateFrameOffset = frame.frame_2;
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            startTransitionFrame = transitions_graph[{state, nextState}][0].frame_1;
+            nextStateFrameOffset = transitions_graph[{state, nextState}][0].frame_2;
+        }
+
+    } else if (state == wantedState) {
+        wantTransition = false;
+        transition = false;
+        startTransitionFrame = -1;
     }
 
     const float yaw = transform.rot->y;

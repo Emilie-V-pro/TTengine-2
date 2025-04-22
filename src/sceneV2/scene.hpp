@@ -22,6 +22,7 @@
 #include "sceneV2/i_object_file_loader.hpp"
 #include "sceneV2/node.hpp"
 #include "shader/pipeline/graphic_pipeline.hpp"
+#include "struct.hpp"
 
 namespace TTe {
 class Scene2 : public Node {
@@ -97,6 +98,8 @@ class Scene2 : public Node {
     std::shared_ptr<CameraV2> getMainCamera() { return mainCamera; }
 
     std::shared_ptr<Node> getNode(uint32_t id) { return objects[id]; }
+
+    std::vector<Material>& getMaterials() { return materials; }
 
     void updateCameraBuffer();
     void updateMaterialBuffer();

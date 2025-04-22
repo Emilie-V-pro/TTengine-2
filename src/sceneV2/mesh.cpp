@@ -1,5 +1,6 @@
 
 #include "mesh.hpp"
+
 #include <vulkan/vulkan_core.h>
 
 #include <tuple>
@@ -12,7 +13,6 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/normal.hpp>
 
-
 namespace TTe {
 
 float Triangle::area() const {
@@ -20,8 +20,8 @@ float Triangle::area() const {
     return returnValue;
 }
 
-Mesh::Mesh(Device* device, const std::vector<unsigned int>& indicies, const std::vector<Vertex>& verticies)
-    : device(device), indicies(indicies), verticies(verticies) {
+Mesh::Mesh(Device* device, const std::vector<unsigned int>& indicies, const std::vector<Vertex>& verticies, Buffer::BufferType type)
+    : device(device), indicies(indicies), verticies(verticies), type(type) {
     vertexBuffer = Buffer(device, sizeof(Vertex), verticies.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
     indexBuffer = Buffer(device, sizeof(unsigned int), indicies.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
     uploadToGPU();
@@ -35,7 +35,7 @@ struct hash_tuple {
     }
 };
 
-Mesh::Mesh(Device* device, std::string path) : device(device) {
+Mesh::Mesh(Device* device, std::string path, Buffer::BufferType type) : device(device), type(type) {
     MeshIOData data;
     read_meshio_data(path.c_str(), data);
     verticies = data.vertices;
@@ -45,16 +45,29 @@ Mesh::Mesh(Device* device, std::string path) : device(device) {
 }
 
 void Mesh::uploadToGPU() {
-    if((vertexBuffer == VK_NULL_HANDLE || indexBuffer == VK_NULL_HANDLE) || (vertexBuffer.getInstancesCount() != verticies.size()  || indexBuffer.getInstancesCount() != indicies.size())) {
-        vertexBuffer = Buffer(device, sizeof(Vertex), verticies.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
-        indexBuffer = Buffer(device, sizeof(unsigned int), indicies.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
+    if ((vertexBuffer == VK_NULL_HANDLE || indexBuffer == VK_NULL_HANDLE) ||
+        (vertexBuffer.getInstancesCount() != verticies.size() || indexBuffer.getInstancesCount() != indicies.size())) {
+        vertexBuffer = Buffer(device, sizeof(Vertex), verticies.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, type);
+        indexBuffer = Buffer(device, sizeof(unsigned int), indicies.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, type);
     }
+    if (type == Buffer::BufferType::DYNAMIC) {
+        vertexBuffer.writeToBuffer(verticies.data(), verticies.size() * sizeof(Vertex));
+        indexBuffer.writeToBuffer(indicies.data(), indicies.size() * sizeof(unsigned int));
+    } else {
+        // create staging buffer
+        Buffer stagingVertexBuffer(device, sizeof(Vertex), verticies.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, Buffer::BufferType::STAGING);
+        Buffer stagingIndexBuffer(device, sizeof(unsigned int), indicies.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, Buffer::BufferType::STAGING);
 
-    vertexBuffer.writeToBuffer(verticies.data(), verticies.size() * sizeof(Vertex));
-    indexBuffer.writeToBuffer(indicies.data(), indicies.size() * sizeof(unsigned int));
+        stagingVertexBuffer.writeToBuffer(verticies.data(), verticies.size() * sizeof(Vertex));
+        stagingIndexBuffer.writeToBuffer(indicies.data(), indicies.size() * sizeof(unsigned int));
+
+        // copy to device local buffer
+        Buffer::copyBuffer(device, stagingIndexBuffer, indexBuffer);
+        Buffer::copyBuffer(device, stagingVertexBuffer, vertexBuffer);
+    }
 }
 
-void Mesh::bindMesh(CommandBuffer &cmd) {
+void Mesh::bindMesh(CommandBuffer& cmd) {
     VkBuffer vbuffers[] = {vertexBuffer};
     VkDeviceSize offsets[] = {0};
     vkCmdBindVertexBuffers(cmd, 0, 1, vbuffers, offsets);

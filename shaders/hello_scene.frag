@@ -19,7 +19,6 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
 }
 ubo;
 
-
 struct Material {
     vec4 color;
     float metallic;
@@ -33,8 +32,7 @@ m;
 
 layout(set = 0, binding = 2) uniform sampler2D textures[1000];
 
-layout(set = 0 , binding = 3) uniform samplerCube samplerCubeMap;
-
+layout(set = 0, binding = 3) uniform samplerCube samplerCubeMap;
 
 struct ObjectInfo {
     mat4 modelMatrix;
@@ -90,6 +88,8 @@ float SchlickFresnel(float x) {
     return x2 * x2 * x;  // While this is equivalent to pow(1 - x, 5) it is two less mult instructions
 }
 
+vec3 fresnelSchlick(float cosTheta, vec3 F0) { return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0); }
+
 float rcp(float x) { return 1.0f / x; }
 
 float GTR1(float ndoth, float a) {
@@ -98,34 +98,30 @@ float GTR1(float ndoth, float a) {
     return (a2 - 1.0f) / (M_PI * log(a2) * t);
 }
 
+float DistributionGGX(float ndoth, float roughness) {
+    float a = roughness * roughness;
+    float a2 = a * a;
+    float NdotH2 = ndoth * ndoth;
 
-float DistributionGGX(float ndoth, float roughness)
-{
-    float a      = roughness*roughness;
-    float a2     = a*a;
-    float NdotH2 = ndoth*ndoth;
-	
-    float num   = a2;
+    float num = a2;
     float denom = (NdotH2 * (a2 - 1.0) + 1.0);
     denom = M_PI * denom * denom;
-	
+
     return num / denom;
 }
 
-float GeometrySchlickGGX(float NdotV, float roughness)
-{
+float GeometrySchlickGGX(float NdotV, float roughness) {
     float r = (roughness + 1.0);
-    float k = (r*r) / 8.0;
+    float k = (r * r) / 8.0;
 
-    float num   = NdotV;
+    float num = NdotV;
     float denom = NdotV * (1.0 - k) + k;
-	
+
     return num / denom;
 }
-float GeometrySmith(float ndotl, float ndotv, float roughness)
-{
-    float ggx2  = GeometrySchlickGGX(ndotv, roughness);
-    float ggx1  = GeometrySchlickGGX(ndotl, roughness);
+float GeometrySmith(float ndotl, float ndotv, float roughness) {
+    float ggx2 = GeometrySchlickGGX(ndotv, roughness);
+    float ggx1 = GeometrySchlickGGX(ndotl, roughness);
     return ggx1 * ggx2;
 }
 
@@ -169,8 +165,8 @@ BRDFResults DisneyBRDF(vec3 baseColor, float metallic, float roughness, vec3 N, 
     float ss = 1.25f * (Fss * (rcp(ndotl + ndotv) - 0.5f) + 0.5f);
 
     // Specular
-    float NDF = DistributionGGX(ndoth, roughness);       
-    float G = GeometrySmith(ndotl, ndotv, roughness); 
+    float NDF = DistributionGGX(ndoth, roughness);
+    float G = GeometrySmith(ndotl, ndotv, roughness);
 
     float FH = SchlickFresnel(ldoth);
     vec3 F = mix(Cspec0, vec3(1.0f), FH);
@@ -180,10 +176,44 @@ BRDFResults DisneyBRDF(vec3 baseColor, float metallic, float roughness, vec3 N, 
     return result;
 }
 
+vec3 LearnOpenGLBRDF(vec3 baseColor, float metallic, float roughness, vec3 N, vec3 V, vec3 L, vec3 radiance) {
+    BRDFResults result;
+    result.diffuse = vec3(0.0f);
+    result.specular = vec3(0.0f);
+    result.clearcoat = vec3(0.0f);
+
+    vec3 H = normalize(L + V);
+
+    float ndoth = dotClamp(N, H);
+    float ndotl = dotClamp(N, L);
+    float ndotv = dotClamp(N, V);
+
+    vec3 F0 = vec3(0.04);
+    F0 = mix(F0, baseColor, metallic);
+    vec3 F = fresnelSchlick(max(ndotv, 0.0), F0);
+
+    float NDF = DistributionGGX(ndoth, roughness);
+    float G = GeometrySmith(ndotl, ndotv, roughness);
+    vec3 numerator = NDF * G * F;
+
+    float denominator = 4.0 * ndotv * ndotl  + 0.0001;
+    vec3 specular     = numerator / denominator;  
+
+    vec3 kS = F;
+    vec3 kD = vec3(1.0) - kS;
+
+    kD *= 1.0 - metallic;
+
+    float NdotL = max(dot(N, L), 0.0);        
+
+
+    return  (kD * baseColor / M_PI + specular) * radiance * ndotl;
+
+}
+
 //////////////////////////////////////////////////////////////////////////
 // hemisphere sampling
 //////////////////////////////////////////////////////////////////////////
-
 
 //////////////////////////////////////////////////////////////////////////
 // Main
@@ -207,17 +237,16 @@ void main() {
         textColor = m.materials[fragmaterial].color;
     }
     vec3 surfaceNormal = normalize(fragNormalWorld);
-    if(!gl_FrontFacing){
+    if (!gl_FrontFacing) {
         surfaceNormal = -surfaceNormal;
     }
     if (m.materials[fragmaterial].normal_tex_id != -1) {
         surfaceNormal = perturb_normal(surfaceNormal, view, m.materials[fragmaterial].normal_tex_id, fraguv);
     }
 
-    if(m.materials[fragmaterial].metallic_roughness_tex_id != -1){
+    if (m.materials[fragmaterial].metallic_roughness_tex_id != -1) {
         metalRoughness = textureLod(textures[m.materials[fragmaterial].metallic_roughness_tex_id], fraguv, 0).rg;
-    }
-    else{
+    } else {
         metalRoughness = vec2(m.materials[fragmaterial].metallic, m.materials[fragmaterial].roughness);
     }
 
@@ -228,13 +257,21 @@ void main() {
     // vec3 sunDirection = vec3(0.744015, 0.666869, 0.0415573);
     vec3 color = vec3(0.0);
 
-    // metalRoughness.g = 0.001;
+    metalRoughness.g = max(0.01, metalRoughness.g); ;
+
+    vec3 diffuse_lightDir = surfaceNormal;
+    vec3 reflect_lightDir = reflect(-view, surfaceNormal);
+
+    vec4 diffuse_cubeMapColor = textureLod(samplerCubeMap, diffuse_lightDir, pow(textureQueryLevels(samplerCubeMap), metalRoughness.g));
+    vec4 reflect_cubeMapColor = textureLod(samplerCubeMap, reflect_lightDir, pow(textureQueryLevels(samplerCubeMap), metalRoughness.g));
+    // BRDFResults res = DisneyBRDF(textColor.rgb, metalRoughness.r, metalRoughness.g, surfaceNormal, view, lightDir);
+    // color += ((res.diffuse + res.specular) * cubeMapColor.rgb);
+
+    vec3 color_difuse = LearnOpenGLBRDF(textColor.rgb, metalRoughness.r, metalRoughness.g, surfaceNormal, view, diffuse_lightDir, diffuse_cubeMapColor.rgb );
+    vec3 color_reflect = LearnOpenGLBRDF(textColor.rgb, metalRoughness.r, metalRoughness.g, surfaceNormal, view, reflect_lightDir, reflect_cubeMapColor.rgb );
     
-    vec3 lightDir =  surfaceNormal;
-    vec4 cubeMapColor = textureLod(samplerCubeMap, lightDir, pow(textureQueryLevels(samplerCubeMap), metalRoughness.g)); 
-    BRDFResults res = DisneyBRDF(textColor.rgb, metalRoughness.r, metalRoughness.g, surfaceNormal, view, lightDir);
-    color += ((res.diffuse + res.specular) * cubeMapColor.rgb);
+    color +=  vec3(0.03) * textColor.rgb;
+    color += mix(color_reflect,color_difuse , metalRoughness.r);
 
-
-    outColor = vec4(color, 1);
+    outColor = vec4(surfaceNormal, 1); 
 }

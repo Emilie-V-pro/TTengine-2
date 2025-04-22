@@ -16,10 +16,12 @@
 #include "GPU_data/image.hpp"
 #include "device.hpp"
 #include "dynamic_renderpass.hpp"
+#include "imgui.h"
 #include "sceneV2/animatic/simulation/ObjetSimuleMSS.h"
 #include "sceneV2/animatic/skeleton/BVH.h"
 #include "sceneV2/animatic/skeletonObj.hpp"
 #include "sceneV2/collision/collision_obj.hpp"
+#include "sceneV2/container.hpp"
 #include "sceneV2/mesh.hpp"
 
 
@@ -36,23 +38,26 @@
 namespace TTe {
 
 void App::init(Device *device, SwapChain *swapchain, Window* window) {
+
     this->swapchain = swapchain;
     this->device = device;
-    ObjLoader objLoader = ObjLoader(device);
-    ObjectFileData data = objLoader.loadObject("../data/mesh/cubes.obj");
-    movementController.setCursors(window);
-
-   
-
     renderPass =
-        DynamicRenderPass(device, {1280, 720}, {}, swapchain->getswapChainImages().size(), depthAndStencil::DEPTH, swapchain, nullptr);
+    DynamicRenderPass(device, {1280, 720}, {}, swapchain->getswapChainImages().size(), depthAndStencil::DEPTH, swapchain, nullptr);
 
+    ObjLoader objLoader = ObjLoader(device);
+    ObjectFileData data = objLoader.loadObject("../data/mesh/lyoko.obj");
+    movementController.setCursors(window);
+    vkDeviceWaitIdle(*device);
+
+    scene2 = std::make_shared<Scene2>(device);
+
+ 
     BVH bvh = BVH("../data/danse.bvh");
     std::shared_ptr<SkeletonObj> skeleton = std::make_shared<SkeletonObj>();
     skeleton->init("../data/motionFSM");
 
 
-    scene2 = std::make_shared<Scene2>(device);
+    
     scene2->getMainCamera()->extent = {1280, 720};
     // scene2->addMesh(m2);
     
@@ -94,18 +99,14 @@ void App::init(Device *device, SwapChain *swapchain, Window* window) {
     // ObjetSimuleMSS objMss = ObjetSimuleMSS(device, "../data/simu/Fichier_Param.objet1");
 
     StaticMeshObj obj3 = StaticMeshObj();
-    obj3.setMeshId(0);
-    scene2->addNode(-1, std::make_shared<StaticMeshObj>(obj3));
-    obj3.setMeshId(1);
-    scene2->addNode(-1, std::make_shared<StaticMeshObj>(obj3));
-    obj3.setMeshId(2);
-    scene2->addNode(-1, std::make_shared<StaticMeshObj>(obj3));
-    obj3.setMeshId(3);
-    scene2->addNode(-1, std::make_shared<StaticMeshObj>(obj3));
-    obj3.setMeshId(4);
-    scene2->addNode(-1, std::make_shared<StaticMeshObj>(obj3));
-    obj3.setMeshId(5);
-    scene2->addNode(-1, std::make_shared<StaticMeshObj>(obj3));
+    int i = 0;
+    int mapId = scene2->addNode(-1, std::make_shared<Container>());
+    for (auto & mesh : data.meshes) {
+        obj3.setMeshId(i);
+        scene2->addNode(mapId, std::make_shared<StaticMeshObj>(obj3));
+        i++;
+    }
+    std::cout << "mapId : " << mapId << std::endl;
 
     uint32_t cape_id  = scene2->addNode(-1, std::make_shared<ObjetSimuleMSS>(device, "../data/simu/Fichier_Param.objet1"));
 
@@ -161,6 +162,66 @@ void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
     scene2->updateCameraBuffer();
 }
 void App::renderFrame(float deltatTime, CommandBuffer &cmdBuffer, uint32_t curentFrameIndex) {
+    // static float blend;
+    static float color[3] = {1.0f, 1.0f, 1.0f};
+    static float metallic = 0.0f;
+    static float roughness = 0.9f;
+
+    static glm::vec3 pos = {0.0f, 0.0f, 0.0f};
+    static glm::vec3 rot;
+    static float scale = 1.0f;
+
+    ImGui::Begin("test");
+    ImGui::Text("Hello, world!");
+    ImGui::Text("time: %f", time);
+    ImGui::Text("tick: %d", tick);
+    ImGui::Text("FPS: %f", 1.0f / deltatTime);
+    ImGui::Text("Camera pos: %f %f %f", scene2->getMainCamera()->transform.pos->x, scene2->getMainCamera()->transform.pos->y,
+                scene2->getMainCamera()->transform.pos->z);
+
+    // ImGui::SliderFloat("blending factor", &blend, 0.0f, 1.0f);
+    // ImGui::ColorPicker3("KOULEUR", color);
+    // ImGui::SliderFloat("metallic", &metallic, 0.0f, 1.0f);
+    // ImGui::SliderFloat("roughness", &roughness, 0.0f, 1.0f);
+
+    ImGui::PushItemWidth(80);
+        ImGui::Text("pos"); ImGui::SameLine();
+        ImGui::SliderFloat("X", &pos.x, -20.0f, 20.0f); ImGui::SameLine();
+        ImGui::SliderFloat("Y", &pos.y, -20.0f, 20.0f); ImGui::SameLine();
+        ImGui::SliderFloat("Z", &pos.z, -20.0f, 20.0f);
+    ImGui::PopItemWidth();
+
+    ImGui::PushItemWidth(80);
+        ImGui::Text("rot"); ImGui::SameLine();
+        ImGui::SliderFloat("rX", &rot.x, 0.0f, 5.0f); ImGui::SameLine();
+        ImGui::SliderFloat("rY", &rot.y, 0.0f, 5.0f); ImGui::SameLine();
+        ImGui::SliderFloat("rZ", &rot.z, 0.0f, 5.0f);
+    
+    ImGui::PopItemWidth();
+
+    ImGui::PushItemWidth(80);
+  
+        ImGui::SliderFloat("scale", &scale, 0.0f, 2.0f);
+
+    // ImGui::DragFloat("const char *label", float *v)
+    ImGui::End();
+
+    
+
+    // scene2->getMainCamera()->transform.pos->x = blend;
+    scene2->getMaterials()[0].color = glm::vec4(color[0], color[1], color[2], 1.0f);
+    scene2->getMaterials()[0].metallic = metallic;
+    scene2->getMaterials()[0].roughness = roughness;
+    scene2->getMaterials()[1].roughness = roughness;
+    scene2->getMaterials()[2].roughness = roughness;
+    scene2->getMaterials()[3].roughness = roughness;
+    scene2->getMaterials()[4].roughness = roughness;
+    scene2->getMaterials()[5].roughness = roughness;
+    scene2->updateMaterialBuffer();
+
+    scene2->getNode(2)->transform.pos = pos;
+    scene2->getNode(2)->transform.rot = rot;
+    scene2->getNode(2)->transform.scale = glm::vec3(scale);
 
     renderPass.beginRenderPass(cmdBuffer, curentFrameIndex);
 

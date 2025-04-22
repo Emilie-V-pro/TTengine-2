@@ -17,6 +17,7 @@ class IInputController {
         int lookDown = GLFW_KEY_DOWN;
         int space = GLFW_KEY_SPACE;
         int alt = GLFW_KEY_LEFT_ALT;
+        int shift = GLFW_KEY_LEFT_SHIFT;
     };
 
     virtual void updateFromInput(Window* window, float dt) = 0;
