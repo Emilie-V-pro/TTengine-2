@@ -271,7 +271,7 @@ void main() {
     vec3 color_reflect = LearnOpenGLBRDF(textColor.rgb, metalRoughness.r, metalRoughness.g, surfaceNormal, view, reflect_lightDir, reflect_cubeMapColor.rgb );
     
     color +=  vec3(0.03) * textColor.rgb;
-    color += mix(color_reflect,color_difuse , metalRoughness.r);
+    color += color_difuse;//mix(color_reflect,color_difuse , metalRoughness.r);
 
-    outColor = vec4(surfaceNormal, 1); 
+    outColor = vec4(color, 1); 
 }

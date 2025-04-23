@@ -1,5 +1,6 @@
 
 #include "buffer.hpp"
+
 #include <vulkan/vulkan_core.h>
 
 #include <fstream>
@@ -34,21 +35,24 @@ Buffer::Buffer(
     allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
     VmaAllocationInfo getAllocInfo;
 
-    
-    //save vmaBuildStatsString to file 
-    std::ofstream file("vmaStats.txt");
-    char * s;
-    vmaBuildStatsString(device->getAllocator(), &s, VK_FALSE);
-    
-    file << s;
-    file.close();
-    vmaFreeStatsString(device->getAllocator(), s);
-   
-    
+    // save vmaBuildStatsString to file
 
     VkResult res = vmaCreateBuffer(device->getAllocator(), &bufferInfo, &allocInfo, &vk_buffer, &allocation, &getAllocInfo);
     // std::cout << res << std::endl;
-   
+    if (res != VK_SUCCESS) {
+        // dump vma
+        std::ofstream file("vmaStats.json");
+        char* s;
+        vmaBuildStatsString(device->getAllocator(), &s, VK_TRUE);
+
+        file << s;
+        file.close();
+        vmaFreeStatsString(device->getAllocator(), s);
+        std::cout << "VMA stats dumped to vmaStats.json" << std::endl;
+
+        std::cerr << "Failed to create buffer: " << res << std::endl;
+        throw std::runtime_error("Failed to create buffer");
+    }
     // check if match VMA_ALLOCATION_CREATE_MAPPED_BIT
     if (bufferType == BufferType::STAGING || bufferType == BufferType::READBACK || bufferType == BufferType::DYNAMIC) {
         mappedMemory = getAllocInfo.pMappedData;
@@ -178,7 +182,8 @@ uint64_t Buffer::getBufferDeviceAddress(uint32_t offset) const {
 
 void Buffer::writeToBuffer(void* data, VkDeviceSize size, VkDeviceSize offset) {
     if (size > 0) {
-        // std::cout << "size : " << size << " allocator : " << device->getAllocator() << " src ptr : " << data << " dst alloc : " << allocation << std::endl;
+        // std::cout << "size : " << size << " allocator : " << device->getAllocator() << " src ptr : " << data << " dst alloc : " <<
+        // allocation << std::endl;
         vmaCopyMemoryToAllocation(device->getAllocator(), data, allocation, offset, size);
         mappedMemory = nullptr;
     }

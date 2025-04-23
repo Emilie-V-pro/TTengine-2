@@ -340,7 +340,7 @@ ObjectFileData ObjLoader::loadObject(std::string objectPath) {
     }
     auto group_indices = groups(object_indices);
     for (auto &group : group_indices) {
-        Mesh mesh = Mesh(device, group, vertices);
+        Mesh mesh = Mesh(device, group, vertices, Buffer::BufferType::GPU_ONLY);
         returnValue.meshes.push_back(mesh);
     }
     returnValue.images = std::move(textures);

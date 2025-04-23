@@ -78,7 +78,7 @@ class Mesh {
     }
 
     ~Mesh() {};
-    void uploadToGPU();
+    void uploadToGPU(CommandBuffer *ext_cmd = nullptr);
 
     void bindMesh(CommandBuffer &cmd);
 

@@ -40,7 +40,7 @@ void main() {
 
 
     
-    // outColor = texture(samplerCubeMap, inUVW);
-    outColor = vec4(inUVW, 1.0);
+    outColor = texture(samplerCubeMap, inUVW);
+    // outColor = vec4(inUVW, 1.0);
 
 }

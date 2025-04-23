@@ -7,6 +7,8 @@
 #include <vector>
 
 #include "GPU_data/buffer.hpp"
+#include "commandBuffer/commandPool_handler.hpp"
+#include "commandBuffer/command_buffer.hpp"
 #include "device.hpp"
 #include "mesh_io.h"
 
@@ -22,8 +24,6 @@ float Triangle::area() const {
 
 Mesh::Mesh(Device* device, const std::vector<unsigned int>& indicies, const std::vector<Vertex>& verticies, Buffer::BufferType type)
     : device(device), indicies(indicies), verticies(verticies), type(type) {
-    vertexBuffer = Buffer(device, sizeof(Vertex), verticies.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
-    indexBuffer = Buffer(device, sizeof(unsigned int), indicies.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
     uploadToGPU();
 }
 
@@ -44,26 +44,48 @@ Mesh::Mesh(Device* device, std::string path, Buffer::BufferType type) : device(d
     uploadToGPU();
 }
 
-void Mesh::uploadToGPU() {
+void Mesh::uploadToGPU(CommandBuffer* ext_cmd) {
     if ((vertexBuffer == VK_NULL_HANDLE || indexBuffer == VK_NULL_HANDLE) ||
         (vertexBuffer.getInstancesCount() != verticies.size() || indexBuffer.getInstancesCount() != indicies.size())) {
-        vertexBuffer = Buffer(device, sizeof(Vertex), verticies.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, type);
-        indexBuffer = Buffer(device, sizeof(unsigned int), indicies.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, type);
+        vertexBuffer =
+            Buffer(device, sizeof(Vertex), verticies.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, type);
+        indexBuffer = Buffer(
+            device, sizeof(unsigned int), indicies.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, type);
     }
+
     if (type == Buffer::BufferType::DYNAMIC) {
         vertexBuffer.writeToBuffer(verticies.data(), verticies.size() * sizeof(Vertex));
         indexBuffer.writeToBuffer(indicies.data(), indicies.size() * sizeof(unsigned int));
     } else {
-        // create staging buffer
-        Buffer stagingVertexBuffer(device, sizeof(Vertex), verticies.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, Buffer::BufferType::STAGING);
-        Buffer stagingIndexBuffer(device, sizeof(unsigned int), indicies.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, Buffer::BufferType::STAGING);
+        CommandBuffer* cmd_buffer = ext_cmd;
+        if (cmd_buffer == nullptr) {
+            cmd_buffer = new CommandBuffer(
+                std::move(CommandPoolHandler::getCommandPool(device, device->getTransferQueue())->createCommandBuffer(1)[0]));
+            cmd_buffer->beginCommandBuffer();
+        }
 
-        stagingVertexBuffer.writeToBuffer(verticies.data(), verticies.size() * sizeof(Vertex));
-        stagingIndexBuffer.writeToBuffer(indicies.data(), indicies.size() * sizeof(unsigned int));
+        // create staging buffer
+        Buffer* stagingVertexBuffer =
+            new Buffer(device, sizeof(Vertex), verticies.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, Buffer::BufferType::STAGING);
+        Buffer* stagingIndexBuffer =
+            new Buffer(device, sizeof(unsigned int), indicies.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, Buffer::BufferType::STAGING);
+
+        stagingVertexBuffer->writeToBuffer(verticies.data(), verticies.size() * sizeof(Vertex));
+        stagingIndexBuffer->writeToBuffer(indicies.data(), indicies.size() * sizeof(unsigned int));
 
         // copy to device local buffer
-        Buffer::copyBuffer(device, stagingIndexBuffer, indexBuffer);
-        Buffer::copyBuffer(device, stagingVertexBuffer, vertexBuffer);
+        Buffer::copyBuffer(device, *stagingIndexBuffer, indexBuffer, cmd_buffer);
+        Buffer::copyBuffer(device, *stagingVertexBuffer, vertexBuffer, cmd_buffer);
+
+        // add staging buffer to destroy list
+        cmd_buffer->addRessourceToDestroy(stagingVertexBuffer);
+        cmd_buffer->addRessourceToDestroy(stagingIndexBuffer);
+
+        if (ext_cmd == nullptr) {
+            cmd_buffer->endCommandBuffer();
+            cmd_buffer->addRessourceToDestroy(cmd_buffer);
+            cmd_buffer->submitCommandBuffer({}, {}, nullptr, true);
+        }
     }
 }
 
