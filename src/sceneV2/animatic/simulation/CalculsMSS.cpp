@@ -58,7 +58,7 @@ void ObjetSimuleMSS::CalculForceSpring() {
         glm::vec3 direction = mesh.verticies[particule2->GetId()].pos - mesh.verticies[particule1->GetId()].pos;
 
         glm::vec3 direction_norm = glm::normalize(direction);
-        glm::vec3 Fe = ressort->GetRaideur() * (glm::length(direction) - (ressort->GetLrepos() * 0.35f)) * direction_norm;
+        glm::vec3 Fe = ressort->GetRaideur() * (glm::length(direction) - (ressort->GetLrepos() * 0.5f)) * direction_norm;
         glm::vec3 Fv =
             ressort->GetAmortissement() * glm::dot((V[particule1->GetId()] - V[particule2->GetId()]), direction_norm) * direction_norm;
         this->Force[particule1->GetId()] += Fe + Fv;

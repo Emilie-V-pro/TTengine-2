@@ -569,10 +569,10 @@ void SkeletonObj::collisionPos(glm::vec3 &pos, glm::vec3 &vitesse) {
         float dist = sdCapsule(pos, colider.first, colider.second);
 
         if (dist < 0) {
-            pos = closestPointToCapsule(pos, colider.first, colider.second, 0.12f);
-            vitesse = glm::vec3(0.f);
+            // pos = closestPointToCapsule(pos, colider.first, colider.second, 0.12f);
+            // vitesse = glm::vec3(0.f);
 
-            // vitesse = (closestPointToCapsule(pos, colider.first, colider.second, 0.1f) - pos) * 1000.f;
+            vitesse = (closestPointToCapsule(pos, colider.first, colider.second, 0.1f) - pos) * 1000.f;
         }
     }
 }
