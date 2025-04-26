@@ -9,6 +9,7 @@
 
 #include "GPU_data/image.hpp"
 #include "sceneV2/mesh.hpp"
+#include "struct.hpp"
 
 namespace TTe {
 
@@ -340,7 +341,18 @@ ObjectFileData ObjLoader::loadObject(std::string objectPath) {
     }
     auto group_indices = groups(object_indices);
     for (auto &group : group_indices) {
-        Mesh mesh = Mesh(device, group, vertices, Buffer::BufferType::GPU_ONLY);
+        std::vector<Vertex> trunc_vertices;
+        std::vector<uint32_t> trunc_indices;
+        std::map<uint32_t, uint32_t> index_map;
+        for(auto index : group){
+            if(index_map.find(index) == index_map.end()){
+                trunc_vertices.push_back(vertices[index]);
+                
+                index_map[index] = trunc_vertices.size()-1;
+            }
+            trunc_indices.push_back(index_map[index]);
+        }
+        Mesh mesh = Mesh(device, trunc_indices, trunc_vertices, Buffer::BufferType::GPU_ONLY);
         returnValue.meshes.push_back(mesh);
     }
     returnValue.images = std::move(textures);

@@ -4,6 +4,7 @@
 #include <glm/fwd.hpp>
 #include <glm/glm.hpp>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "../utils.hpp"
@@ -78,6 +79,9 @@ class Mesh {
     }
 
     ~Mesh() {};
+
+    void createBVH();
+
     void uploadToGPU(CommandBuffer *ext_cmd = nullptr);
 
     void bindMesh(CommandBuffer &cmd);
@@ -117,6 +121,8 @@ class Mesh {
     std::string name;
     glm::vec3 min = {FLT_MAX, FLT_MAX, FLT_MAX};
     glm::vec3 max = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
+
+    // std::unordered_map<uint32_t, ><>
 
     // bool intersectAABBbox(Ray r) const;
 

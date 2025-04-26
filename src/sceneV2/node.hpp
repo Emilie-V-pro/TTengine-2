@@ -1,5 +1,6 @@
 #pragma once
 
+#include <glm/fwd.hpp>
 #include <iostream>
 #include <memory>
 #include <mutex>
@@ -64,8 +65,15 @@ class Node {
 
     void setDirty();
 
+    // virtual glm::vec3 intersect();
+
    protected:
     int id;
+
+    BoundingBox bbox;
+
+
+
     glm::mat4 worldMatrix;
     glm::mat3 worldNormalMatrix;
     std::mutex mtx;

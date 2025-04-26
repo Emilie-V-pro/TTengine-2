@@ -44,6 +44,11 @@ Mesh::Mesh(Device* device, std::string path, Buffer::BufferType type) : device(d
     uploadToGPU();
 }
 
+
+void Mesh::createBVH() {
+    
+}
+
 void Mesh::uploadToGPU(CommandBuffer* ext_cmd) {
     if ((vertexBuffer == VK_NULL_HANDLE || indexBuffer == VK_NULL_HANDLE) ||
         (vertexBuffer.getInstancesCount() != verticies.size() || indexBuffer.getInstancesCount() != indicies.size())) {

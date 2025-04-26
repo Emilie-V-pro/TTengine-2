@@ -2,13 +2,23 @@
 #extension GL_EXT_buffer_reference : require
 #extension GL_EXT_scalar_block_layout : require
 #extension GL_EXT_nonuniform_qualifier : require
+#extension GL_EXT_debug_printf : enable
 
 const float M_PI = 3.1415926538;
+
+struct Material {
+    vec4 color;
+    float metallic;
+    float roughness;
+    int albedo_tex_id;
+    int metallic_roughness_tex_id;
+    int normal_tex_id;
+};
 
 layout(location = 0) in vec3 fragPosWorld;
 layout(location = 1) in vec3 fragNormalWorld;
 layout(location = 2) in vec2 fraguv;
-layout(location = 3) in flat uint fragmaterial;
+layout(location = 3) in flat Material fragmaterial;
 
 layout(location = 0) out vec4 outColor;
 
@@ -19,14 +29,7 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
 }
 ubo;
 
-struct Material {
-    vec4 color;
-    float metallic;
-    float roughness;
-    int albedo_tex_id;
-    int metallic_roughness_tex_id;
-    int normal_tex_id;
-};
+
 layout(set = 0, binding = 1, scalar) uniform Mat { Material[1000] materials; }
 m;
 
@@ -229,35 +232,40 @@ void main() {
     vec3 pos = ubo.invView[3].xyz;
     vec3 view = normalize(pos - fragPosWorld);
     // vec3 sun = normalize(vec3(-1, 1, -1));
-    int texId = m.materials[fragmaterial].albedo_tex_id;
-    // vec3 H = normalize(sun + view);
-    if (texId != -1) {
-        textColor = texture(textures[texId], fraguv);
+    // int texId = m.materials[fragmaterial].albedo_tex_id;
+    // // vec3 H = normalize(sun + view);
+    // debugPrintfEXT("%i \n", fragmaterial.albedo_tex_id);
+
+
+    if (fragmaterial.albedo_tex_id != -1) {
+
+        textColor = texture(textures[fragmaterial.albedo_tex_id], fraguv);
     } else {
-        textColor = m.materials[fragmaterial].color;
+        textColor = fragmaterial.color;
     }
     vec3 surfaceNormal = normalize(fragNormalWorld);
     if (!gl_FrontFacing) {
         surfaceNormal = -surfaceNormal;
     }
-    if (m.materials[fragmaterial].normal_tex_id != -1) {
-        surfaceNormal = perturb_normal(surfaceNormal, view, m.materials[fragmaterial].normal_tex_id, fraguv);
+
+    if (fragmaterial.normal_tex_id != -1) {
+        surfaceNormal = perturb_normal(surfaceNormal, view, fragmaterial.normal_tex_id, fraguv);
     }
 
-    if (m.materials[fragmaterial].metallic_roughness_tex_id != -1) {
-        metalRoughness = textureLod(textures[m.materials[fragmaterial].metallic_roughness_tex_id], fraguv, 0).rg;
+    if (fragmaterial.metallic_roughness_tex_id != -1) {
+        metalRoughness = textureLod(textures[fragmaterial.metallic_roughness_tex_id], fraguv, 0).rg;
     } else {
-        metalRoughness = vec2(m.materials[fragmaterial].metallic, m.materials[fragmaterial].roughness);
+        metalRoughness = vec2(fragmaterial.metallic, fragmaterial.roughness);
     }
 
     if (textColor.a < 0.3) {
         discard;
     }
 
-    // vec3 sunDirection = vec3(0.744015, 0.666869, 0.0415573);
+    // // vec3 sunDirection = vec3(0.744015, 0.666869, 0.0415573);
     vec3 color = vec3(0.0);
 
-    metalRoughness.g = max(0.01, metalRoughness.g); ;
+    // metalRoughness.g = max(0.01, metalRoughness.g); ;
 
     vec3 diffuse_lightDir = surfaceNormal;
     vec3 reflect_lightDir = reflect(-view, surfaceNormal);
