@@ -1,7 +1,4 @@
 #version 450
-#extension GL_EXT_buffer_reference : require
-#extension GL_EXT_scalar_block_layout : require
-#extension GL_EXT_nonuniform_qualifier : require
 
 const float M_PI = 3.1415926538;
 
@@ -20,14 +17,14 @@ ubo;
 
 
 struct Material {
-    vec4 color;
+    vec3 color;
     float metallic;
     float roughness;
     int albedo_tex_id;
     int metallic_roughness_tex_id;
     int normal_tex_id;
 };
-layout(set = 0, binding = 1, scalar) uniform Mat { Material[1000] materials; }
+layout(set = 0, binding = 1) uniform Mat { Material[1000] materials; }
 m;
 
 layout(set = 0, binding = 2) uniform sampler2D textures[1000];

@@ -65,6 +65,21 @@ class Node {
 
     void setDirty();
 
+    virtual BoundingBox computeBoundingBox() {
+
+        BoundingBox tmp;
+        for(auto &child : children) {
+            BoundingBox childbb = child->computeBoundingBox();
+            bbox.pmin = glm::min(bbox.pmin, tmp.pmin);
+            bbox.pmax = glm::max(bbox.pmax, tmp.pmax);
+        };
+        return bbox;
+    }
+
+    BoundingBox getBoundingBox() {
+        return bbox;
+    }
+
     // virtual glm::vec3 intersect();
 
    protected:

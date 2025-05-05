@@ -1,5 +1,6 @@
 #pragma once
 
+#include <sys/types.h>
 #include <cstdint>
 #include <glm/fwd.hpp>
 #include <glm/glm.hpp>
@@ -10,6 +11,7 @@
 #include "../utils.hpp"
 #include "GPU_data/buffer.hpp"
 #include "device.hpp"
+#include "sceneV2/animatic/skeleton/BVH.h"
 #include "struct.hpp"
 // #include "object.hpp"
 
@@ -80,6 +82,9 @@ class Mesh {
 
     ~Mesh() {};
 
+
+   
+
     void createBVH();
 
     void uploadToGPU(CommandBuffer *ext_cmd = nullptr);
@@ -116,11 +121,25 @@ class Mesh {
 
     std::vector<Vertex> verticies;
     std::vector<uint32_t> indicies;
-
+    static uint32_t leaf_count;
+    static uint32_t leaf_without_triangle_count;
    private:
+
+    struct BVH_mesh {
+        enum struct SplitAxe { X_SPLIT, Y_SPLIT, Z_SPLIT };
+
+        glm::vec3 pmin;
+        glm::vec3 pmax;
+
+        uint32_t index = 0; // for child index and indicies index
+        uint32_t nbTriangle = 0;
+    };
+
+    void split(uint32_t index, uint32_t count, uint32_t bvh_index, uint32_t depth = 0);
+
     std::string name;
-    glm::vec3 min = {FLT_MAX, FLT_MAX, FLT_MAX};
-    glm::vec3 max = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
+    BoundingBox bbox;
+    std::vector<BVH_mesh> bvh;
 
     // std::unordered_map<uint32_t, ><>
 
@@ -132,6 +151,8 @@ class Mesh {
     Buffer::BufferType type;
 
     Device *device;
+
+   
 };
 
 }  // namespace TTe

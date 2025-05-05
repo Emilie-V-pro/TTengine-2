@@ -54,7 +54,7 @@ void App::init(Device *device, SwapChain *swapchain, Window* window) {
  
    
     std::shared_ptr<SkeletonObj> skeleton = std::make_shared<SkeletonObj>();
-    skeleton->init("../data/motionFSM");
+    // skeleton->init("../data/motionFSM");
 
 
     
@@ -108,23 +108,25 @@ void App::init(Device *device, SwapChain *swapchain, Window* window) {
     }
     std::cout << "mapId : " << mapId << std::endl;
 
-    uint32_t cape_id  = scene2->addNode(-1, std::make_shared<ObjetSimuleMSS>(device, "../data/simu/Fichier_Param.objet1"));
+    // uint32_t cape_id  = scene2->addNode(-1, std::make_shared<ObjetSimuleMSS>(device, "../data/simu/Fichier_Param.objet1"));
 
-    scene2->addNode(-1, skeleton);
+    // scene2->addNode(-1, skeleton);
 
     scene2->updateMaterialBuffer();
     scene2->updateDescriptorSets();
 
-    std::shared_ptr<Node> cape = scene2->getNode(cape_id);
-    // cast to ObjetSimuleMSS
-    std::shared_ptr<ObjetSimuleMSS> capeSim = std::dynamic_pointer_cast<ObjetSimuleMSS>(cape);
-    // capeSim->transform.rot->x = (M_PI/2.0);
-    capeSim->attachToNode(0, skeleton->getChild(0)->getChild(0)->getChild(0)->getChild(2)->getChild(0));
-    capeSim->attachToNode(69, skeleton->getChild(0)->getChild(0)->getChild(0)->getChild(1)->getChild(0));
+    std::cout << "\% de leaf sans triangle : " << Mesh::leaf_without_triangle_count * 100.0f / Mesh::leaf_count << std::endl;
 
-    capeSim->attachToNode(25, skeleton->getChild(0)->getChild(0)->getChild(0)->getChild(2));
-    capeSim->attachToNode(44, skeleton->getChild(0)->getChild(0)->getChild(0)->getChild(1));
-    capeSim->attachToNode(34, skeleton->getChild(0)->getChild(1)->getChild(0));
+    // std::shared_ptr<Node> cape = scene2->getNode(cape_id);
+    // cast to ObjetSimuleMSS
+    // std::shared_ptr<ObjetSimuleMSS> capeSim = std::dynamic_pointer_cast<ObjetSimuleMSS>(cape);
+    // capeSim->transform.rot->x = (M_PI/2.0);
+    // capeSim->attachToNode(0, skeleton->getChild(0)->getChild(0)->getChild(0)->getChild(2)->getChild(0));
+    // capeSim->attachToNode(69, skeleton->getChild(0)->getChild(0)->getChild(0)->getChild(1)->getChild(0));
+
+    // capeSim->attachToNode(25, skeleton->getChild(0)->getChild(0)->getChild(0)->getChild(2));
+    // capeSim->attachToNode(44, skeleton->getChild(0)->getChild(0)->getChild(0)->getChild(1));
+    // capeSim->attachToNode(34, skeleton->getChild(0)->getChild(1)->getChild(0));
 
     // std::shared_ptr<BasicMeshObj> b = std::make_shared<BasicMeshObj>();
     // std::shared_ptr<CollisionObject> c = std::make_shared<CollisionObject>(CollisionObject::cube);
@@ -135,7 +137,7 @@ void App::init(Device *device, SwapChain *swapchain, Window* window) {
     // auto iddd = scene2->addNode(-1, b);
     // scene2->addNode(iddd, c);
 
-    capeSim->setMaterial(mat_id);
+    // capeSim->setMaterial(mat_id);
 }
 
 void App::resize(int width, int height) { 
@@ -145,11 +147,11 @@ void App::resize(int width, int height) {
 void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
     tick++;
     float maxDT = 1.0f / 144.0f;
-    //if dt < 1/120, we wait
-    // if (deltaTime < maxDT) {
-    //     std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>((maxDT - deltaTime) * 1000)));
-    //     deltaTime = maxDT;
-    // }
+    // if dt < 1/120, we wait
+    if (deltaTime < maxDT) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>((maxDT - deltaTime) * 1000)));
+        deltaTime = maxDT;
+    }
     time += deltaTime;
 
 

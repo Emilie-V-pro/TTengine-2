@@ -27,6 +27,7 @@ class MovementController {
         int lookDown = GLFW_KEY_DOWN;
         int space = GLFW_KEY_SPACE;
         int alt = GLFW_KEY_LEFT_ALT;
+        int ct = GLFW_KEY_LEFT_CONTROL;
 
     };
 

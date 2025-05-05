@@ -184,6 +184,30 @@ Image &Image::operator=(Image &&other) {
     return *this;
 }
 
+
+void Image::writeToImage(void *data, size_t size, uint32_t offset, CommandBuffer *extCmdBuffer) {
+    CommandBuffer *cmdBuffer = extCmdBuffer;
+    if (cmdBuffer == nullptr) {
+        cmdBuffer =
+            new CommandBuffer(std::move(CommandPoolHandler::getCommandPool(device, device->getTransferQueue())->createCommandBuffer(1)[0]));
+        cmdBuffer->beginCommandBuffer();
+    }
+    
+    transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, cmdBuffer);
+    Buffer *b = new Buffer(device, getPixelSizeFromFormat(imageFormat), static_cast<u_int32_t>(size), 0, Buffer::BufferType::STAGING);
+    b->writeToBuffer(data, size, offset);
+    b->copyToImage(device, *this, width, height, layer, cmdBuffer);
+    transitionImageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, cmdBuffer);
+    cmdBuffer->addRessourceToDestroy(b);
+    
+    if (extCmdBuffer == nullptr) {
+        cmdBuffer->endCommandBuffer();
+        cmdBuffer->addRessourceToDestroy(cmdBuffer);
+        cmdBuffer->submitCommandBuffer({}, {}, nullptr, true);
+    }
+
+}
+
 void Image::transitionImageLayout(VkImageLayout newLayout, CommandBuffer *extCmdBuffer) {
     transitionImageLayout(actualImageLayout, newLayout, 0, this->mipLevels, extCmdBuffer);
     actualImageLayout = newLayout;

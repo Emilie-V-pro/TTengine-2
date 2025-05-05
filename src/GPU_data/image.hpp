@@ -76,6 +76,8 @@ class Image : public vk_cmdBuffer_OBJ {
     bool isSwapchainImg() const { return isSwapchainImage; }
 
 
+    void writeToImage(void *data, size_t size, uint32_t offset = 0, CommandBuffer *extCmdBuffer = nullptr);
+
     void transitionImageLayout(VkImageLayout newLayout, CommandBuffer *cmdBuffer = nullptr);
     void transitionImageLayout(
         VkImageLayout oldLayout, VkImageLayout newLayout, u_int32_t mipLevel, u_int32_t mipCount, CommandBuffer *extCmdBuffer = nullptr);

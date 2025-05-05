@@ -10,7 +10,7 @@ namespace TTe {
 
 struct Material {
     std::string name;
-    glm::vec4 color = glm::vec4(1, 1, 1, 1);
+    glm::vec3 color = glm::vec3(1, 1, 1);
     float metallic = 0;
     float roughness = 0.9;
     int albedo_tex_id = -1;
@@ -25,7 +25,7 @@ struct Material {
 };
 
 struct MaterialGPU {
-    glm::vec4 color;
+    glm::vec3 color;
     float metallic;
     float roughness;
     int albedo_tex_id = -1;
@@ -47,8 +47,8 @@ struct Ubo {
 };
 
 struct BoundingBox {
-    glm::vec3 pmin;
-    glm::vec3 pmax;
+    glm::vec3 pmin = {0,0,0};
+    glm::vec3 pmax = {0,0,0};
 
     bool intersect(glm::vec3 origin, glm::vec3 direction) {
         float txpmin = (pmin.x - origin.x) / direction.x;

@@ -1,13 +1,15 @@
 
 #include "scene.hpp"
+
 #include <vulkan/vulkan_core.h>
+
 #include <cstdint>
 
 #include "sceneV2/Icollider.hpp"
-#include "sceneV2/animatic/skeletonObj.hpp"
-#include "sceneV2/mesh.hpp"
 #include "sceneV2/Irenderable.hpp"
+#include "sceneV2/animatic/skeletonObj.hpp"
 #include "sceneV2/cameraV2.hpp"
+#include "sceneV2/mesh.hpp"
 #include "struct.hpp"
 
 namespace TTe {
@@ -28,6 +30,18 @@ Scene2::Scene2(Device *device) : device(device) {
     skyboxImageCreateInfo.enableMipMap = true;
     skyboxImage = Image(device, skyboxImageCreateInfo);
 
+    ImageCreateInfo imageCreateInfo;
+    imageCreateInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+    imageCreateInfo.width = 1;
+    imageCreateInfo.height = 1;
+    imageCreateInfo.usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    imageCreateInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    images.push_back(Image(device, imageCreateInfo));
+
+    uint32_t whitePixel = 0xFFFFFFFF;
+
+    images[0].writeToImage(&whitePixel, sizeof(uint32_t));
+
     addNode(-1, std::make_shared<CameraV2>());
 
     createPipelines();
@@ -40,7 +54,6 @@ Scene2::Scene2(Device *device) : device(device) {
 Scene2::~Scene2() {}
 
 void Scene2::render(CommandBuffer &cmd) {
-    
     std::vector<DescriptorSet *> descriptorSets = {&sceneDescriptorSet};
 
     meshPipeline.bindPipeline(cmd);
@@ -82,15 +95,15 @@ uint32_t Scene2::addNode(uint32_t Parent_id, std::shared_ptr<Node> node) {
         }
     }
 
-    if(dynamic_cast<IAnimatic *>(node.get())) {
+    if (dynamic_cast<IAnimatic *>(node.get())) {
         animaticObjs.push_back(std::dynamic_pointer_cast<IAnimatic>(node));
     }
 
-    if(dynamic_cast<ICollider *>(node.get())) {
+    if (dynamic_cast<ICollider *>(node.get())) {
         collisionObjects.push_back(std::dynamic_pointer_cast<ICollider>(node));
     }
 
-    if(dynamic_cast<IInputController *>(node.get())) {
+    if (dynamic_cast<IInputController *>(node.get())) {
         controlledObjects.push_back(std::dynamic_pointer_cast<IInputController>(node));
     }
 
@@ -106,7 +119,8 @@ uint32_t Scene2::addNode(uint32_t Parent_id, std::shared_ptr<Node> node) {
 
 void Scene2::removeNode(uint32_t id) {}
 
-uint32_t Scene2::addMaterial(Material material) { materials.push_back(material);
+uint32_t Scene2::addMaterial(Material material) {
+    materials.push_back(material);
     return materials.size() - 1;
 }
 
@@ -130,8 +144,8 @@ void Scene2::addObjectFileData(ObjectFileData &data) {
     }
 }
 
-uint32_t Scene2::addImage(Image image) { 
-    images.push_back(image); 
+uint32_t Scene2::addImage(Image image) {
+    images.push_back(image);
     return images.size() - 1;
 }
 
@@ -160,15 +174,15 @@ void Scene2::updateCameraBuffer() {
 
 void Scene2::updateMaterialBuffer() {
     if (materialBuffer.getInstancesCount() < materials.size() || materials.size() == 0) {
-        if (materials.size() == 0){
+        if (materials.size() == 0) {
             Material mat;
-            mat.color = glm::vec4(0.8,0,0,1);
+            mat.color = glm::vec4(0.8, 0, 0, 1);
             mat.metallic = 0.8f;
             mat.roughness = 0.9f;
             materials.push_back(mat);
         }
-        materialBuffer = Buffer(device, sizeof(MaterialGPU), materials.size(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
-        
+        materialBuffer =
+            Buffer(device, sizeof(MaterialGPU), materials.size(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
     }
     std::vector<MaterialGPU> materialsGPU;
 
@@ -176,20 +190,24 @@ void Scene2::updateMaterialBuffer() {
         materialsGPU.push_back(
             {material.color, material.metallic, material.roughness, material.albedo_tex_id, material.metallic_roughness_tex_id,
              material.normal_tex_id});
+
+        if (material.albedo_tex_id == -1) {
+            materialsGPU.back().albedo_tex_id = 0;
+        }
+        if (material.metallic_roughness_tex_id == -1) {
+            materialsGPU.back().metallic_roughness_tex_id = 0;
+        }
     }
     materialBuffer.writeToBuffer(materialsGPU.data(), sizeof(MaterialGPU) * materialsGPU.size(), 0);
 }
 
-void Scene2::createDescriptorSets() {
-    sceneDescriptorSet = DescriptorSet(device, meshPipeline.getDescriptorSetLayout(0));
-}
+void Scene2::createDescriptorSets() { sceneDescriptorSet = DescriptorSet(device, meshPipeline.getDescriptorSetLayout(0)); }
 
 void Scene2::updateDescriptorSets() {
     sceneDescriptorSet.writeBufferDescriptor(0, cameraBuffer);
-    
+
     sceneDescriptorSet.writeBufferDescriptor(1, materialBuffer);
-    
-    
+
     if (images.size() == 0) {
         ImageCreateInfo imageCreateInfo;
         imageCreateInfo.format = VK_FORMAT_R8G8B8A8_SRGB;

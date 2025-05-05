@@ -1,7 +1,5 @@
 #version 450
-#extension GL_EXT_buffer_reference : require
-#extension GL_EXT_scalar_block_layout : require
-// #extension GL_EXT_debug_printf : enable
+
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 normal;
 layout(location = 2) in vec2 uv;
@@ -9,7 +7,7 @@ layout(location = 3) in uint material;
 
 
 struct Material {
-    vec4 color;
+    vec3 color;
     float metallic;
     float roughness;
     int albedo_tex_id;
@@ -35,7 +33,7 @@ ubo;
 
 
 
-layout(set = 0, binding = 1, scalar) uniform Mat { Material[1000] materials; }
+layout(set = 0, binding = 1) uniform Mat { Material[1000] materials; }
 m;
 
 layout(set = 0, binding = 2) uniform sampler2D textures[1000];

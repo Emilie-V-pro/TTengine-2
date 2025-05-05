@@ -48,9 +48,18 @@ void MovementController::moveInPlaneXZ(Window* window, float dt, std::shared_ptr
     if (glfwGetKey(*window, keys.moveUp) == GLFW_PRESS) moveDir += upDir;
     if (glfwGetKey(*window, keys.moveDown) == GLFW_PRESS) moveDir -= upDir;
 
+    if (glfwGetKey(*window, keys.ct) == GLFW_PRESS) {
+        moveSpeed = 30.f;
+    } else {
+        moveSpeed = 3.f;
+    }
+
     if (glm::dot(moveDir, moveDir) > std::numeric_limits<float>::epsilon()) {
         cam->transform.pos += moveSpeed * dt * glm::normalize(moveDir);
+        // std::cout << moveSpeed * dt << "\n";
     }
+
+    
 }
 
 void MovementController::mouseMoveCallback(GLFWwindow* window, double xpos, double ypos) {
