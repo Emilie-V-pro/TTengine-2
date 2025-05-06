@@ -66,9 +66,8 @@ class Node {
     void setDirty();
 
     virtual BoundingBox computeBoundingBox() {
-
         BoundingBox tmp;
-        for(auto &child : children) {
+        for (auto &child : children) {
             BoundingBox childbb = child->computeBoundingBox();
             bbox.pmin = glm::min(bbox.pmin, tmp.pmin);
             bbox.pmax = glm::max(bbox.pmax, tmp.pmax);
@@ -76,18 +75,30 @@ class Node {
         return bbox;
     }
 
-    BoundingBox getBoundingBox() {
-        return bbox;
+    BoundingBox getBoundingBox() { return bbox; }
+
+
+    virtual float hit(glm::vec3 &ro, glm::vec3 &rd) {
+        float t_min = bbox.intersect(ro, rd);
+        if(t_min != -1){
+            for(auto& child : children){
+                float t = hit(ro, rd);
+                if( t < t_min && t != -1){
+                    t_min = t;
+                }
+            }
+        }
+
+        return t_min;
     }
 
     // virtual glm::vec3 intersect();
 
    protected:
+   
     int id;
 
     BoundingBox bbox;
-
-
 
     glm::mat4 worldMatrix;
     glm::mat3 worldNormalMatrix;

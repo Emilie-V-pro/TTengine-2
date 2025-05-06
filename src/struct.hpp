@@ -50,7 +50,7 @@ struct BoundingBox {
     glm::vec3 pmin = {0,0,0};
     glm::vec3 pmax = {0,0,0};
 
-    bool intersect(glm::vec3 origin, glm::vec3 direction) {
+    float intersect(glm::vec3 origin, glm::vec3 direction) {
         float txpmin = (pmin.x - origin.x) / direction.x;
         float txpmax = (pmax.x - origin.x) / direction.x;
 
@@ -69,9 +69,9 @@ struct BoundingBox {
         float t_min = std::max({txpmin, typmin, tzpmin});
         float t_max = std::min({txpmax, typmax, tzpmax});
 
-        
+        float t_final = (t_min < t_max) ?  t_min : -1;
 
-        return (t_min < t_max);
+        return t_final;
     }
 };
 

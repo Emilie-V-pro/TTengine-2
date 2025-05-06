@@ -66,7 +66,7 @@ void Mesh::split(uint32_t index, uint32_t count, uint32_t bvh_index, uint32_t de
     bvh[bvh_index].pmax = pmax;
 
     // leaf
-    if (count < (10 * 3) || depth > 32) {
+    if (count < (20 * 3) || depth > 32) {
         bvh[bvh_index].nbTriangle = count;
         bvh[bvh_index].index = index;
         std::cout << "Leaf " << bvh_index << " : " << count / 3 << " triangles" << std::endl;
@@ -168,6 +168,10 @@ void Mesh::createBVH() {
     bvh.push_back(BVH_mesh());
     split(0, indicies.size(), 0);
     // create bvh
+}
+
+float hit(glm::vec3& ro, glm::vec3& rd){
+    
 }
 
 void Mesh::uploadToGPU(CommandBuffer* ext_cmd) {
