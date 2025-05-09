@@ -19,6 +19,24 @@ void StaticMeshObj::render(CommandBuffer &cmd, GraphicPipeline &pipeline, std::v
     vkCmdDrawIndexed(cmd, mesh.nbIndicies(), 1, 0, 0, 0);
 }
 
+BoundingBox StaticMeshObj::computeBoundingBox() {
+    BoundingBox tmp;
+    bbox = meshList->at(meshId).getBoundingBox();
+    
 
+    for (auto &child : children) {
+        BoundingBox childbb = child->computeBoundingBox();
+        bbox.pmin = glm::min(bbox.pmin, tmp.pmin);
+        bbox.pmax = glm::max(bbox.pmax, tmp.pmax);
+    };
+    return bbox;
+}
 
+SceneHit StaticMeshObj::hit(glm::vec3 &ro, glm::vec3 &rd) {
+    //transform ray to local space
+    glm::vec3 localRo = glm::inverse(wMatrix()) * glm::vec4(ro, 1.0f);
+    glm::vec3 localRd = glm::inverse(wMatrix()) * glm::vec4(rd, 0.0f);
+    
+    return meshList->at(meshId).hit(localRo, localRd);
+}
 }  // namespace TTe

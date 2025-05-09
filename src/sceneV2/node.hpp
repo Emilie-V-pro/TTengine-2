@@ -2,6 +2,7 @@
 
 #include <glm/fwd.hpp>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <mutex>
 
@@ -78,18 +79,43 @@ class Node {
     BoundingBox getBoundingBox() { return bbox; }
 
 
-    virtual float hit(glm::vec3 &ro, glm::vec3 &rd) {
+    virtual SceneHit hit(glm::vec3 &ro, glm::vec3 &rd) {
+        SceneHit hit;
+        hit.t = -1;
         float t_min = bbox.intersect(ro, rd);
+
+        std::multimap<float, std::shared_ptr<Node>> sorted_children;
+
+
         if(t_min != -1){
-            for(auto& child : children){
-                float t = hit(ro, rd);
-                if( t < t_min && t != -1){
-                    t_min = t;
+            t_min = std::numeric_limits<float>::max();
+            for (auto &child : children) {
+                float t = child->getBoundingBox().intersect(ro, rd);
+                if (t != -1) {
+                    sorted_children.insert(std::make_pair(t, child));
                 }
+            }
+            
+            while (sorted_children.size() > 0) {
+                auto it = sorted_children.begin();
+                std::shared_ptr<Node> child = it->second;
+                sorted_children.erase(it);
+
+                if(it->first > t_min){
+                    continue;
+                }
+                
+                SceneHit child_hit = child->hit(ro, rd);
+                if (child_hit.t != -1 && child_hit.t < t_min) {
+                    t_min = child_hit.t;
+                    hit = child_hit;
+                }
+
+            
             }
         }
 
-        return t_min;
+        return hit;
     }
 
     // virtual glm::vec3 intersect();

@@ -75,6 +75,13 @@ struct BoundingBox {
     }
 };
 
+struct SceneHit{
+    glm::vec3 normal;
+    float t;
+    uint32_t node_index;
+    uint32_t material_id;
+};
+
 class Watchedvec3 {
    public:
     glm::vec3 value;

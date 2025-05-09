@@ -10,6 +10,7 @@
 #include "sceneV2/animatic/skeletonObj.hpp"
 #include "sceneV2/cameraV2.hpp"
 #include "sceneV2/mesh.hpp"
+#include "sceneV2/renderable/staticMeshObj.hpp"
 #include "struct.hpp"
 
 namespace TTe {
@@ -87,6 +88,11 @@ uint32_t Scene2::getNewID() {
 uint32_t Scene2::addNode(uint32_t Parent_id, std::shared_ptr<Node> node) {
     if (dynamic_cast<IRenderable *>(node.get())) {
         renderables.push_back(std::dynamic_pointer_cast<IRenderable>(node));
+        // check if node is a static mesh
+        if (dynamic_cast<StaticMeshObj *>(node.get())) {
+            std::shared_ptr<StaticMeshObj> staticMesh = std::dynamic_pointer_cast<StaticMeshObj>(node);
+            staticMesh->setMeshList(&meshes);
+        }
     }
     if (dynamic_cast<CameraV2 *>(node.get())) {
         cameras.push_back(std::dynamic_pointer_cast<CameraV2>(node));

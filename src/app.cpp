@@ -116,7 +116,7 @@ void App::init(Device *device, SwapChain *swapchain, Window* window) {
     scene2->updateDescriptorSets();
 
     std::cout << "\% de leaf sans triangle : " << Mesh::leaf_without_triangle_count * 100.0f / Mesh::leaf_count << std::endl;
-
+    // scene2->computeBoundingBox();
     // std::shared_ptr<Node> cape = scene2->getNode(cape_id);
     // cast to ObjetSimuleMSS
     // std::shared_ptr<ObjetSimuleMSS> capeSim = std::dynamic_pointer_cast<ObjetSimuleMSS>(cape);
