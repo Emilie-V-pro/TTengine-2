@@ -26,6 +26,8 @@ class App : public IApp {
     void renderFrame(float deltatTime, CommandBuffer& cmdBuffer, uint32_t curentFrameIndex);
 
    private:
+
+    uint32_t sphere_hit_id = 0;
   
     SwapChain* swapchain;
     

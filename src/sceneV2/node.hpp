@@ -68,11 +68,18 @@ class Node {
 
     virtual BoundingBox computeBoundingBox() {
         BoundingBox tmp;
-        for (auto &child : children) {
+        // get the pos of the node with the world matrix
+        glm::mat4 worldMatrix = wMatrix();
+        tmp.pmin = worldMatrix[3];
+        tmp.pmax = worldMatrix[3];
+
+
+        for (auto &child : children) { 
             BoundingBox childbb = child->computeBoundingBox();
-            bbox.pmin = glm::min(bbox.pmin, tmp.pmin);
-            bbox.pmax = glm::max(bbox.pmax, tmp.pmax);
+            tmp.pmin = glm::min(childbb.pmin, tmp.pmin);
+            tmp.pmax = glm::max(childbb.pmax, tmp.pmax);
         };
+        bbox = tmp;
         return bbox;
     }
 

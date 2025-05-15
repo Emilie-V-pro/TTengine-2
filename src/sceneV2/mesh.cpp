@@ -182,7 +182,7 @@ SceneHit Mesh::hit(glm::vec3& ro, glm::vec3& rd) {
 
         // if leaf
         if (bvh[index].nbTriangle != 0) {
-            for (uint32_t i; i < bvh[index].nbTriangle; i += 3) {
+            for (uint32_t i =0; i < bvh[index].nbTriangle; i += 3) {
                 glm::vec3 p1 = verticies[indicies[bvh[index].index + i]].pos;
                 glm::vec3 p2 = verticies[indicies[bvh[index].index + i + 1]].pos;
                 glm::vec3 p3 = verticies[indicies[bvh[index].index + i + 2]].pos;

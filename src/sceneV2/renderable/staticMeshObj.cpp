@@ -1,5 +1,6 @@
 
 #include "staticMeshObj.hpp"
+#include <glm/geometric.hpp>
 
 namespace TTe {
 
@@ -22,6 +23,12 @@ void StaticMeshObj::render(CommandBuffer &cmd, GraphicPipeline &pipeline, std::v
 BoundingBox StaticMeshObj::computeBoundingBox() {
     BoundingBox tmp;
     bbox = meshList->at(meshId).getBoundingBox();
+
+    // apply transformation to bounding box
+    tmp.pmin = glm::vec3(wMatrix() * glm::vec4(bbox.pmin, 1.0f));
+    tmp.pmax = glm::vec3(wMatrix() * glm::vec4(bbox.pmax, 1.0f));
+    bbox.pmin = glm::min(tmp.pmin, tmp.pmax);
+    bbox.pmax = glm::max(tmp.pmin, tmp.pmax);
     
 
     for (auto &child : children) {
@@ -35,7 +42,7 @@ BoundingBox StaticMeshObj::computeBoundingBox() {
 SceneHit StaticMeshObj::hit(glm::vec3 &ro, glm::vec3 &rd) {
     //transform ray to local space
     glm::vec3 localRo = glm::inverse(wMatrix()) * glm::vec4(ro, 1.0f);
-    glm::vec3 localRd = glm::inverse(wMatrix()) * glm::vec4(rd, 0.0f);
+    glm::vec3 localRd = glm::normalize(glm::inverse(wMatrix()) * glm::vec4(rd, 0.0f));
     
     return meshList->at(meshId).hit(localRo, localRd);
 }
