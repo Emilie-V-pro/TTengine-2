@@ -78,8 +78,8 @@ class Scene2 : public Node {
 
     void Param(std::string Fichier_Param);
 
-    void render(CommandBuffer &cmd);
-    void renderSkybox(CommandBuffer &cmd);
+    void render(CommandBuffer &cmd, RenderData &renderData);
+    
 
     void updateSim(float dt, float t,  uint32_t tick);
     void updateFromInput(Window *window, float dt);

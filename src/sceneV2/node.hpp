@@ -80,6 +80,15 @@ class Node {
             tmp.pmax = glm::max(childbb.pmax, tmp.pmax);
         };
         bbox = tmp;
+        if(bbox.pmin.x == bbox.pmax.x){
+            bbox.pmin.x = bbox.pmax.x - 0.000001f;
+        }
+        if(bbox.pmin.y == bbox.pmax.y){
+            bbox.pmin.y = bbox.pmax.y - 0.000001f;
+        }
+        if(bbox.pmin.z == bbox.pmax.z){
+            bbox.pmin.z = bbox.pmax.z - 0.000001f;
+        }
         return bbox;
     }
 

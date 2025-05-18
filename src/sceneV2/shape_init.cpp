@@ -312,6 +312,27 @@ Mesh init_cube(Device *d, uint res, Buffer::BufferType type) {
     return Mesh(d, indices, vertices);
 }
 
+Mesh init_plane(Device *d, uint res, Buffer::BufferType type){
+    std::vector<Vertex> vertices;
+    std::vector<uint32_t> indices;
+
+    // face avant
+    vertices.push_back({glm::vec3(-0.5f, 0.0f, -0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f)});
+    vertices.push_back({glm::vec3(0.5f, 0.0f, -0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f)});
+    vertices.push_back({glm::vec3(0.5f, 0.0f, 0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)});
+    vertices.push_back({glm::vec3(-0.5f, 0.0f, 0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)});
+
+    indices.push_back(0);
+    indices.push_back(1);
+    indices.push_back(2);
+    indices.push_back(0);
+    indices.push_back(2);
+    indices.push_back(3);
+
+
+    return Mesh(d, indices, vertices);
+}
+
 Mesh::Mesh(Device *d, const BasicShape &b, uint res, Buffer::BufferType type) : device(d), type(type) {
     switch (b) {
         case BasicShape::Sphere:
@@ -319,6 +340,9 @@ Mesh::Mesh(Device *d, const BasicShape &b, uint res, Buffer::BufferType type) : 
             break;
         case BasicShape::Cube:
             *this = init_cube(d, res, type);
+            break;
+        case BasicShape::Plane:
+            *this = init_plane(d, res, type);
             break;
         default:
             assert("Invalid shape");

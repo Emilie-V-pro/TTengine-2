@@ -165,6 +165,7 @@ void Mesh::createBVH() {
     bvh.clear();
     bvh.reserve(indicies.size() / 3);
     bvh.push_back(BVH_mesh());
+
     split(0, indicies.size(), 0);
     // create bvh
 }

@@ -18,6 +18,7 @@ namespace TTe {
 Scene2::Scene2(Device *device) : device(device) {
     basicMeshes[Sphere] = Mesh(device, Sphere, 4);
     basicMeshes[Cube] = Mesh(device, Cube, 1);
+    basicMeshes[Plane] = Mesh(device, Plane, 1);
 
     ImageCreateInfo skyboxImageCreateInfo;
     skyboxImageCreateInfo.filename.push_back("posx.jpg");
@@ -54,25 +55,37 @@ Scene2::Scene2(Device *device) : device(device) {
 
 Scene2::~Scene2() {}
 
-void Scene2::render(CommandBuffer &cmd) {
-    std::vector<DescriptorSet *> descriptorSets = {&sceneDescriptorSet};
+void Scene2::render(CommandBuffer &cmd, RenderData &renderData) {
 
-    meshPipeline.bindPipeline(cmd);
-    DescriptorSet::bindDescriptorSet(cmd, descriptorSets, meshPipeline.getPipelineLayout(), VK_PIPELINE_BIND_POINT_GRAPHICS);
 
-    for (auto &renderable : renderables) {
-        renderable->render(cmd, meshPipeline, meshes, basicMeshes);
-    }
-}
-
-void Scene2::renderSkybox(CommandBuffer &cmd) {
     skyboxPipeline.bindPipeline(cmd);
     std::vector<DescriptorSet *> descriptorSets = {&sceneDescriptorSet};
     DescriptorSet::bindDescriptorSet(cmd, descriptorSets, skyboxPipeline.getPipelineLayout(), VK_PIPELINE_BIND_POINT_GRAPHICS);
 
     basicMeshes[Cube].bindMesh(cmd);
+    renderData.renderPass->setDepthAndStencil(cmd, false);
     vkCmdDrawIndexed(cmd, basicMeshes[Cube].nbIndicies(), 1, 0, 0, 0);
+    renderData.renderPass->setDepthAndStencil(cmd, true);
+    descriptorSets = {&sceneDescriptorSet};
+
+    meshPipeline.bindPipeline(cmd);
+    DescriptorSet::bindDescriptorSet(cmd, descriptorSets, meshPipeline.getPipelineLayout(), VK_PIPELINE_BIND_POINT_GRAPHICS);
+
+
+    renderData.basicMeshes = &basicMeshes;
+    renderData.meshes = &meshes;
+    renderData.default_pipeline = &meshPipeline;
+    renderData.binded_pipeline = &meshPipeline;
+    renderData.binded_mesh = &basicMeshes[Cube];
+    renderData.descriptorSets.push(sceneDescriptorSet);
+
+
+    for (auto &renderable : renderables) {
+        renderable->render(cmd, renderData);
+    }
 }
+
+
 
 uint32_t Scene2::getNewID() {
     if (!freeIDs.empty()) {
@@ -169,7 +182,7 @@ void Scene2::updateFromInput(Window *window, float dt) {
 
 void Scene2::updateCameraBuffer() {
     if (cameraBuffer.getInstancesCount() == 0) {
-        cameraBuffer = Buffer(device, sizeof(Ubo), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
+        cameraBuffer = Buffer(device, sizeof(Ubo), 20, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
     }
     Ubo ubo;
     ubo.projection = mainCamera->getProjectionMatrix();

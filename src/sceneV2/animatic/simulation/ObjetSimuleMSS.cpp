@@ -352,20 +352,23 @@ void ObjetSimuleMSS::simulation(
         updateVertex();
 }
 
-void ObjetSimuleMSS::render(
-    CommandBuffer &cmd, GraphicPipeline &pipeline, std::vector<Mesh> &meshes, std::map<BasicShape, Mesh> basicMeshes) {
+void ObjetSimuleMSS::render(CommandBuffer &cmd, RenderData renderData) {
+
+    if(renderData.binded_pipeline != renderData.default_pipeline){
+        renderData.binded_pipeline->bindPipeline(cmd);
+        renderData.binded_pipeline = renderData.default_pipeline;
+    }
+
     mesh.bindMesh(cmd);
+    renderData.binded_mesh = &mesh;
 
     // push constant
+        PushConstantData pc = {wMatrix(), wNormalMatrix(), 0};
 
-    glm::mat4 wMatrix = this->wMatrix();
-    glm::mat4 wNormalMatrix = this->wNormalMatrix();
-
-    // push constant
-    vkCmdPushConstants(cmd, pipeline.getPipelineLayout(), pipeline.getPushConstantStage(), 0, sizeof(glm::mat4), &wMatrix);
     vkCmdPushConstants(
-        cmd, pipeline.getPipelineLayout(), pipeline.getPushConstantStage(), sizeof(glm::mat4), sizeof(glm::mat4), &wNormalMatrix);
-    vkCmdDrawIndexed(cmd, mesh.nbIndicies(), 1, 0, 0, 0);
+        cmd, renderData.binded_pipeline->getPipelineLayout(), renderData.binded_pipeline->getPushConstantStage(), 0, sizeof(PushConstantData), &pc);
+
+   vkCmdDrawIndexed(cmd, mesh.nbIndicies(), 1, 0, 0, 0);
 }
 
 void ObjetSimuleMSS::attachToNode(uint32_t i, std::shared_ptr<Node> node) {

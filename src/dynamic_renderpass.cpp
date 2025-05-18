@@ -125,6 +125,7 @@ void DynamicRenderPass::beginRenderPass(
         std::vector<VkBool32> colorBlend(attachments[0].colorAttachments.size(), VK_FALSE);
         vkCmdSetColorBlendEnableEXT(commandBuffer, 0, colorBlend.size(), colorBlend.data());
         VkColorBlendEquationEXT t{};
+        
         std::vector<VkColorBlendEquationEXT> colorBlendEquation(attachments[0].colorAttachments.size(), t);
         vkCmdSetColorBlendEquationEXT(commandBuffer, 0, colorBlendEquation.size(), colorBlendEquation.data());
     }

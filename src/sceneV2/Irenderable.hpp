@@ -1,13 +1,23 @@
 #pragma once
 
 
+#include <cstdint>
+#include <glm/fwd.hpp>
 #include <vector>
 #include "sceneV2/mesh.hpp"
+#include "sceneV2/render_data.hpp"
 #include "shader/pipeline/graphic_pipeline.hpp"
 namespace TTe {
+
+    struct PushConstantData{
+        glm::mat4 worldMatrix;
+        glm::mat4 normalMatrix;
+        uint32_t cam_id;
+    };
+
 class IRenderable {
    public:
-    virtual void render(CommandBuffer &cmd, GraphicPipeline &pipeline, std::vector<Mesh> &meshes,  std::map<BasicShape, Mesh> basicMeshes) = 0;
+    virtual void render(CommandBuffer &cmd, RenderData &renderData) = 0;
     void setMaterialOffset(uint offset) { materialOffset = offset; }
    private:
    protected:

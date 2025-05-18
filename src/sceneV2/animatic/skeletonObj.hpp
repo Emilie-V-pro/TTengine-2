@@ -48,7 +48,7 @@ class SkeletonObj : public Node, public IAnimatic, public IRenderable, public IC
 
 
     void simulation(glm::vec3 gravite, float viscosite, uint32_t tick, float dt, float t, std::vector<std::shared_ptr<ICollider>> &collisionObjects);
-    void render(CommandBuffer &cmd, GraphicPipeline &pipeline, std::vector<Mesh> &meshes,  std::map<BasicShape, Mesh> basicMeshes);
+    void render(CommandBuffer &cmd, RenderData &renderData);
     void collisionPos(glm::vec3 &pos, glm::vec3 &vitesse);
     void updateFromInput(Window* window, float dt);
     //! Positionne ce squelette entre la position frameNbSrc du BVH Src et la position frameNbDst du bvh Dst

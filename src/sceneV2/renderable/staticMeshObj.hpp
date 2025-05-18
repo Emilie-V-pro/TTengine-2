@@ -49,7 +49,7 @@ class StaticMeshObj : public IRenderable, public Node {
     virtual SceneHit hit(glm::vec3 &ro, glm::vec3 &rd) override;
     
     
-    void render(CommandBuffer &cmd, GraphicPipeline &pipeline, std::vector<Mesh> &meshes, std::map<BasicShape, Mesh> basicMeshes);
+    void render(CommandBuffer &cmd, RenderData &renderData);
     void setMeshId(int id) { meshId = id; }
     private:
     int meshId;

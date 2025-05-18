@@ -8,14 +8,25 @@ StaticMeshObj::StaticMeshObj() {}
 
 StaticMeshObj::~StaticMeshObj() {}
 
-void StaticMeshObj::render(CommandBuffer &cmd, GraphicPipeline &pipeline, std::vector<Mesh> &meshes,  std::map<BasicShape, Mesh> basicMeshes) {
-    Mesh &mesh = meshes[meshId];
+void StaticMeshObj::render(CommandBuffer &cmd, RenderData &renderData) {
+    if(renderData.binded_pipeline != renderData.default_pipeline){
+        renderData.binded_pipeline->bindPipeline(cmd);
+        renderData.binded_pipeline = renderData.default_pipeline;
+    }
+
+    Mesh &mesh = renderData.meshes->at(meshId);
+
+    if(renderData.binded_mesh != &mesh){
+        renderData.binded_mesh = &mesh;
+        renderData.binded_mesh->bindMesh(cmd);
+    }
     mesh.bindMesh(cmd);
-    glm::mat4 model = wMatrix();
-    vkCmdPushConstants(cmd, pipeline.getPipelineLayout(), pipeline.getPushConstantStage(), 0, sizeof(glm::mat4), &model);
-    glm::mat4 normalMatrix = wNormalMatrix();
+
+
+    PushConstantData pc = {wMatrix(), wNormalMatrix(), 0};
+
     vkCmdPushConstants(
-        cmd, pipeline.getPipelineLayout(), pipeline.getPushConstantStage(), sizeof(glm::mat4), sizeof(glm::mat4), &normalMatrix);
+        cmd, renderData.binded_pipeline->getPipelineLayout(), renderData.binded_pipeline->getPushConstantStage(), 0, sizeof(PushConstantData), &pc);
 
     vkCmdDrawIndexed(cmd, mesh.nbIndicies(), 1, 0, 0, 0);
 }
@@ -36,6 +47,16 @@ BoundingBox StaticMeshObj::computeBoundingBox() {
         bbox.pmin = glm::min(bbox.pmin, tmp.pmin);
         bbox.pmax = glm::max(bbox.pmax, tmp.pmax);
     };
+
+    if(bbox.pmin.x == bbox.pmax.x){
+            bbox.pmin.x = bbox.pmax.x - 0.000001f;
+        }
+        if(bbox.pmin.y == bbox.pmax.y){
+            bbox.pmin.y = bbox.pmax.y - 0.000001f;
+        }
+        if(bbox.pmin.z == bbox.pmax.z){
+            bbox.pmin.z = bbox.pmax.z - 0.000001f;
+        }
     return bbox;
 }
 

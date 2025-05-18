@@ -14,7 +14,7 @@ struct GraphicPipelineCreateInfo{
     std::string geometryShaderFile;
 };
 
-class GraphicPipeline : Pipeline {
+class GraphicPipeline : public Pipeline {
 
    public:
     GraphicPipeline(){};
@@ -27,9 +27,9 @@ class GraphicPipeline : Pipeline {
     GraphicPipeline &operator=(GraphicPipeline &&other);
 
 
-    VkPipelineLayout getPipelineLayout(){return pipelineLayout;};
+    VkPipelineLayout getPipelineLayout(){return vk_pipelineLayout;};
     std::shared_ptr<DescriptorSetLayout> getDescriptorSetLayout(uint32_t id){return pipelineDescriptorsSetsLayoutList[id];}
-    VkShaderStageFlags getPushConstantStage(){return pushConstantInfo.stageFlags;}
+    
 
     void bindPipeline(const CommandBuffer &cmdBuffer);
     void reloadShader(VkShaderStageFlagBits shaderStageToReload);
@@ -61,8 +61,8 @@ class GraphicPipeline : Pipeline {
     VkShaderStageFlags pipelineStageFlags = 0;
     std::unordered_map<std::vector<uint32_t>, std::shared_ptr<DescriptorSetLayout>> pipelineDescriptorsSetsLayout;
     std::map<uint32_t ,std::shared_ptr<DescriptorSetLayout>> pipelineDescriptorsSetsLayoutList;
-    VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
-    VkPushConstantRange pushConstantInfo;
+
+    
 
     Device *device = nullptr;
 };

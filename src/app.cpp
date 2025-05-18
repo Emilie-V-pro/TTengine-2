@@ -26,7 +26,9 @@
 // #include "scene/objects/simulation/ObjetSimuleMSS.h"
 #include "sceneV2/node.hpp"
 #include "sceneV2/objLoader.hpp"
+#include "sceneV2/render_data.hpp"
 #include "sceneV2/renderable/basicMeshObj.hpp"
+#include "sceneV2/renderable/portalObj.hpp"
 #include "sceneV2/renderable/staticMeshObj.hpp"
 #include "sceneV2/scene.hpp"
 #include "struct.hpp"
@@ -98,6 +100,8 @@ void App::init(Device *device, SwapChain *swapchain, Window *window) {
     }
     std::cout << "mapId : " << mapId << std::endl;
 
+    portal_id = scene2->addNode(-1, std::make_shared<PortalObj>(device));
+
     // uint32_t cape_id  = scene2->addNode(-1, std::make_shared<ObjetSimuleMSS>(device, "../data/simu/Fichier_Param.objet1"));
 
     // scene2->addNode(-1, skeleton);
@@ -130,6 +134,7 @@ void App::init(Device *device, SwapChain *swapchain, Window *window) {
     // capeSim->setMaterial(mat_id);
 
     // add sphere for show hit
+
     scene2->computeBoundingBox();
     std::shared_ptr<BasicMeshObj> sphere = std::make_shared<BasicMeshObj>();
     sphere->setShape(Sphere);
@@ -221,21 +226,19 @@ void App::renderFrame(float deltatTime, CommandBuffer &cmdBuffer, uint32_t curen
 
     auto hit = scene2->hit(scene2->getMainCamera()->transform.pos, forward);
 
+    
+
 
     if (hit.t != -1) {
-        std::cout << "hit : " << hit.t << std::endl;
+        // std::cout << "hit : " << hit.t << std::endl;
         scene2->getNode(sphere_hit_id)->transform.pos = scene2->getMainCamera()->transform.pos + forward * hit.t;
+        dynamic_pointer_cast<PortalObj>(scene2->getNode(portal_id))->placePortal(hit.normal, scene2->getNode(sphere_hit_id)->transform.pos);
     }
 
     // scene2->getMainCamera()->transform.pos->x = blend;
     scene2->getMaterials()[0].color = glm::vec4(color[0], color[1], color[2], 1.0f);
     scene2->getMaterials()[0].metallic = metallic;
-    scene2->getMaterials()[0].roughness = roughness;
-    scene2->getMaterials()[1].roughness = roughness;
-    scene2->getMaterials()[2].roughness = roughness;
-    scene2->getMaterials()[3].roughness = roughness;
-    scene2->getMaterials()[4].roughness = roughness;
-    scene2->getMaterials()[5].roughness = roughness;
+
     scene2->updateMaterialBuffer();
 
     scene2->getNode(2)->transform.pos = pos;
@@ -243,12 +246,11 @@ void App::renderFrame(float deltatTime, CommandBuffer &cmdBuffer, uint32_t curen
     scene2->getNode(2)->transform.scale = glm::vec3(scale);
 
     renderPass.beginRenderPass(cmdBuffer, curentFrameIndex);
+    RenderData rData;
+    rData.renderPass = &renderPass;
+    
 
-    renderPass.setDepthAndStencil(cmdBuffer, false);
-    scene2->renderSkybox(cmdBuffer);
-    renderPass.setDepthAndStencil(cmdBuffer, true);
-
-    scene2->render(cmdBuffer);
+    scene2->render(cmdBuffer, rData);
 
     renderPass.endRenderPass(cmdBuffer);
 }

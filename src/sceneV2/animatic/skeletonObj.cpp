@@ -12,6 +12,7 @@
 #include <glm/trigonometric.hpp>
 #include <string>
 
+#include "sceneV2/Irenderable.hpp"
 #include "sceneV2/animatic/skeleton/BVHAxis.h"
 #include "sceneV2/animatic/skeleton/BVHChannel.h"
 #include "sceneV2/collision/collision_obj.hpp"
@@ -140,13 +141,12 @@ void SkeletonObj::init(std::string bvh_folder) {
                         }
                     }
                     if (frameTransition.frame_1 != -1) {
-                        if(bvh.first == State::KICK){
+                        if (bvh.first == State::KICK) {
                             if (i == bvh.second.getNumberOfFrame() - 1) {
                                 frameTransition.frame_1 = 0;
                                 transitions_graph[{bvh.first, other_bvh.first}].push_back(frameTransition);
                             }
-                        }else {
-
+                        } else {
                             transitions_graph[{bvh.first, other_bvh.first}].push_back(frameTransition);
                         }
                     }
@@ -334,7 +334,7 @@ void SkeletonObj::simulation(
     int frameNB2;
     State secon_State;
     if (transition && frameNB == startTransitionFrame + 1) {
-        if(state == State::KICK) {
+        if (state == State::KICK) {
             kickend = true;
         }
         transition = false;
@@ -342,12 +342,11 @@ void SkeletonObj::simulation(
         state = nextState;
         frameOffset = nextStateFrameOffset;
         startTransitionFrame = -1;
-       
     }
 
     if (frameNB == startTransitionFrame) {
         transition = true;
-        if(nextState == State::KICK) {
+        if (nextState == State::KICK) {
             kickend = false;
         }
     }
@@ -470,7 +469,7 @@ void SkeletonObj::simulation(
         // m_joints_final[i]->transform.pos = m_joints_1[i]->transform.pos;
 
         if (m_joints_final[i]->id != 0) {
-            if(m_joints_final[i]->children.size() == 0) {
+            if (m_joints_final[i]->children.size() == 0) {
                 continue;
             }
             glm::vec3 jpos = m_joints_final[i]->wMatrix()[3];
@@ -482,34 +481,22 @@ void SkeletonObj::simulation(
     }
 }
 
-void SkeletonObj::render(CommandBuffer &cmd, GraphicPipeline &pipeline, std::vector<Mesh> &meshes, std::map<BasicShape, Mesh> basicMeshes) {
+void SkeletonObj::render(CommandBuffer &cmd, RenderData &renderData) {
     // bind sphere
-    basicMeshes[Sphere].bindMesh(cmd);
-
+    renderData.basicMeshes->at(Sphere).bindMesh(cmd);
+    if (renderData.binded_pipeline != renderData.default_pipeline) {
+        renderData.binded_pipeline->bindPipeline(cmd);
+        renderData.binded_pipeline = renderData.default_pipeline;
+    }
     for (int i = 0; i < m_joints_final.size(); i++) {
-        glm::mat4 wMatrix = m_joints_final[i]->wMatrix() * glm::scale(glm::vec3(0.5f));
-        glm::mat4 wNormalMatrix = m_joints_final[i]->wNormalMatrix();
+        PushConstantData pc = {m_joints_final[i]->wMatrix() * glm::scale(glm::vec3(0.5f)), m_joints_final[i]->wNormalMatrix(), 0};
 
-        // glm::quat quat1 = glm::toQuat(wMatrix);
-        // glm::quat quat2 = glm::toQuat(wMatrix2);
+        vkCmdPushConstants(cmd, renderData.binded_pipeline->getPipelineLayout(), renderData.binded_pipeline->getPushConstantStage(), 0, sizeof(PushConstantData), &pc);
 
-        // glm::quat quatNormal = glm::toQuat(wNormalMatrix);
-        // glm::quat quatNormal2 = glm::toQuat(wNormalMatrix2);
-
-        // quat1 = glm::slerp(quat1, quat2, interpol);
-        // quatNormal = glm::slerp(quatNormal, quatNormal2, interpol);
-
-        // wMatrix = glm::toMat4(quat1);
-        // wNormalMatrix = glm::toMat4(quat2);
-
-        // push constant
-        vkCmdPushConstants(cmd, pipeline.getPipelineLayout(), pipeline.getPushConstantStage(), 0, sizeof(glm::mat4), &wMatrix);
-        vkCmdPushConstants(
-            cmd, pipeline.getPipelineLayout(), pipeline.getPushConstantStage(), sizeof(glm::mat4), sizeof(glm::mat4), &wNormalMatrix);
-        vkCmdDrawIndexed(cmd, basicMeshes[Sphere].nbIndicies(), 1, 0, 0, 0);
+        vkCmdDrawIndexed(cmd, renderData.basicMeshes->at(Sphere).nbIndicies(), 1, 0, 0, 0);
     }
 
-    basicMeshes[Cube].bindMesh(cmd);
+    renderData.basicMeshes->at(Sphere).bindMesh(cmd);
     for (auto &joint : m_joints_final) {
         // draw cube as line between joints
         glm::mat4 wPoint = joint->wMatrix();
@@ -541,14 +528,14 @@ void SkeletonObj::render(CommandBuffer &cmd, GraphicPipeline &pipeline, std::vec
             glm::mat4 wMatrix = glm::translate(glm::mat4(1.0f), position) * glm::toMat4(rotation) *
                                 glm::scale(glm::mat4(1.0f), glm::vec3(0.07f, 0.07f, length));
             glm::mat4 wNormalMatrix = glm::inverseTranspose(glm::mat3(wMatrix));
-
+            PushConstantData pc = {wMatrix, wNormalMatrix, 0};
             // push constant
-            vkCmdPushConstants(cmd, pipeline.getPipelineLayout(), pipeline.getPushConstantStage(), 0, sizeof(glm::mat4), &wMatrix);
-            vkCmdPushConstants(
-                cmd, pipeline.getPipelineLayout(), pipeline.getPushConstantStage(), sizeof(glm::mat4), sizeof(glm::mat4), &wNormalMatrix);
-            vkCmdDrawIndexed(cmd, basicMeshes[Cube].nbIndicies(), 1, 0, 0, 0);
+            vkCmdPushConstants(cmd, renderData.binded_pipeline->getPipelineLayout(), renderData.binded_pipeline->getPushConstantStage(), 0, sizeof(PushConstantData), &pc);
+            vkCmdDrawIndexed(cmd, renderData.basicMeshes->at(Sphere).nbIndicies(), 1, 0, 0, 0);
         }
     }
+
+    renderData.binded_mesh = &renderData.basicMeshes->at(Sphere);
 }
 
 float sdCapsule(glm::vec3 &p, glm::vec3 &a, glm::vec3 &b) {
@@ -590,13 +577,11 @@ void SkeletonObj::updateFromInput(Window *window, float dt) {
     }
     State wantedState = State::IDLE;
 
-    
-
     if (glfwGetKey(*window, keys.lookUp) == GLFW_PRESS) {
         if (glfwGetKey(*window, keys.shift) == GLFW_PRESS) {
             speed = std::min(speed + accel * dt * 4, speed_max_run);
             wantedState = State::RUN;
-           
+
         } else {
             speed = std::min(speed + accel * dt * 4, speed_max);
             wantedState = State::WALK;
@@ -607,8 +592,6 @@ void SkeletonObj::updateFromInput(Window *window, float dt) {
         wantedState = State::IDLE;
     }
 
-   
-
     if (glfwGetKey(*window, keys.lookLeft) == GLFW_PRESS) {
         transform.rot->y += dt * 4;
     }
@@ -616,21 +599,18 @@ void SkeletonObj::updateFromInput(Window *window, float dt) {
         transform.rot->y -= dt * 4;
     }
 
-
     if (glfwGetKey(*window, keys.space) == GLFW_PRESS) {
         wantedState = State::KICK;
         speed = 0.f;
-        
     }
 
-    if(!kickend) {
+    if (!kickend) {
         speed = 0.f;
     }
 
- 
-    if  (wantedState != state && (!wantTransition || wantedState != nextState) && (kickend || wantedState != State::KICK)) {
+    if (wantedState != state && (!wantTransition || wantedState != nextState) && (kickend || wantedState != State::KICK)) {
         wantTransition = true;
-        
+
         nextState = wantedState;
         bool found = false;
         // find the closest frame to the last frame

@@ -28,6 +28,7 @@ class App : public IApp {
    private:
 
     uint32_t sphere_hit_id = 0;
+    uint32_t portal_id = 0;
   
     SwapChain* swapchain;
     

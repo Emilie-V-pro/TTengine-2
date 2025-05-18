@@ -18,31 +18,30 @@ layout(location = 3) in flat Material fragmaterial;
 
 layout(location = 0) out vec4 outColor;
 
-layout(set = 0, binding = 0) uniform GlobalUbo {
-    mat4 projection;
+struct Camera_data {
+     mat4 projection;
     mat4 view;
     mat4 invView;
-}
-ubo;
+};
+
+layout(set = 0, binding = 0) uniform UBO {
+    Camera_data cameras[20];
+}ubo;
 
 layout(set = 0, binding = 1) uniform Mat { Material[1000] materials; }
 m;
 
 layout(set = 0, binding = 2) uniform sampler2D textures[1000];
 
-layout(set = 0, binding = 3) uniform samplerCube samplerCubeMap;
-
-struct ObjectInfo {
-    mat4 modelMatrix;
-    mat4 normalMatrix;
-};
+layout(set = 0 , binding = 3) uniform samplerCube samplerCubeMap;
 
 // layout(buffer_reference, scalar) readonly buffer InstanceBuffer2 { ObjectInfo objInfo[]; };
 layout(push_constant) uniform constants {
     mat4 modelMatrix;
     mat4 normalMatrix;
+    uint camera_id;
 }
-PushConstants;
+pc;
 
 // http://www.thetenthplanet.de/archives/1180
 mat3 cotangent_frame(vec3 N, vec3 p, vec2 uv) {
@@ -222,7 +221,7 @@ void main() {
     vec4 textColor;
     vec2 metalRoughness;
     // vec3 ambiant = vec3(0.01);
-    vec3 pos = ubo.invView[3].xyz;
+    vec3 pos = ubo.cameras[pc.camera_id].invView[3].xyz;
     vec3 view = normalize(pos - fragPosWorld);
     // vec3 sun = normalize(vec3(-1, 1, -1));
     // int texId = m.materials[fragmaterial].albedo_tex_id;
@@ -269,5 +268,5 @@ void main() {
     color += vec3(0.03) * textColor.rgb;
     color += color_difuse;  // mix(color_reflect,color_difuse , metalRoughness.r);
 
-    outColor = vec4(color, 1);
+    outColor = vec4(color, 0);
 }

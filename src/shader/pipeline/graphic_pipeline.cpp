@@ -20,8 +20,8 @@ GraphicPipeline::GraphicPipeline(Device* device, GraphicPipelineCreateInfo& pipe
 
 GraphicPipeline::~GraphicPipeline() {
     // shadersMap.clear();
-    if(pipelineLayout != VK_NULL_HANDLE)
-        vkDestroyPipelineLayout(*device, pipelineLayout, nullptr);
+    if(vk_pipelineLayout != VK_NULL_HANDLE)
+        vkDestroyPipelineLayout(*device, vk_pipelineLayout, nullptr);
 }
 
 GraphicPipeline::GraphicPipeline(GraphicPipeline&& other) {
@@ -33,11 +33,11 @@ GraphicPipeline::GraphicPipeline(GraphicPipeline&& other) {
     pipelineStageFlags = other.pipelineStageFlags;
     pipelineDescriptorsSetsLayout = std::move(other.pipelineDescriptorsSetsLayout);
     pipelineDescriptorsSetsLayoutList = std::move(other.pipelineDescriptorsSetsLayoutList);
-    pipelineLayout = other.pipelineLayout;
+    vk_pipelineLayout = other.vk_pipelineLayout;
     pushConstantInfo = other.pushConstantInfo;
 
     device = other.device;
-    other.pipelineLayout = VK_NULL_HANDLE;
+    other.vk_pipelineLayout = VK_NULL_HANDLE;
 }
 
 GraphicPipeline& GraphicPipeline::operator=(GraphicPipeline&& other) {
@@ -50,11 +50,11 @@ GraphicPipeline& GraphicPipeline::operator=(GraphicPipeline&& other) {
         pipelineStageFlags = other.pipelineStageFlags;
         pipelineDescriptorsSetsLayout = std::move(other.pipelineDescriptorsSetsLayout);
         pipelineDescriptorsSetsLayoutList = std::move(other.pipelineDescriptorsSetsLayoutList);
-        pipelineLayout = other.pipelineLayout;
+        vk_pipelineLayout = other.vk_pipelineLayout;
         pushConstantInfo = other.pushConstantInfo;
 
         device = other.device;
-        other.pipelineLayout = VK_NULL_HANDLE;
+        other.vk_pipelineLayout = VK_NULL_HANDLE;
     }
     return *this;
 }
@@ -246,7 +246,7 @@ void GraphicPipeline::createPipelineLayout(GraphicPipelineCreateInfo& pipelineCr
         pipelineLayoutInfo.pPushConstantRanges = &pushConstantInfo;
     }
 
-    if (vkCreatePipelineLayout(*device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+    if (vkCreatePipelineLayout(*device, &pipelineLayoutInfo, nullptr, &vk_pipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     }
 }

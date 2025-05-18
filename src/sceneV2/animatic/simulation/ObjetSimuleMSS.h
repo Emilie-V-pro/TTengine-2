@@ -123,7 +123,7 @@ public:
 
     /*! Simulation de l objet */
     void simulation(glm::vec3 gravite, float viscosite, uint32_t tick, float dt, float t, std::vector<std::shared_ptr<ICollider>> &collisionObjects);
-    void render(CommandBuffer &cmd, GraphicPipeline &pipeline, std::vector<Mesh> &meshes,  std::map<BasicShape, Mesh> basicMeshes);
+    void render(CommandBuffer &cmd, RenderData renderData);
     
     void applyForceGravity(float t, glm::vec3 g);
     void solveExplicit(float visco, float deltaT);

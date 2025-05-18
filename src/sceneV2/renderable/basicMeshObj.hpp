@@ -39,7 +39,7 @@ class BasicMeshObj : public IRenderable, public Node {
 
     ~BasicMeshObj();
     
-    void render(CommandBuffer &cmd, GraphicPipeline &pipeline, std::vector<Mesh> &meshes, std::map<BasicShape, Mesh> basicMeshes);
+    void render(CommandBuffer &cmd, RenderData &renderData);
     void setShape(BasicShape shape) { this->shape = shape; }
     private:
     BasicShape shape;

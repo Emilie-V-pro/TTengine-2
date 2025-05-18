@@ -18,7 +18,8 @@ struct Material {
 layout(location = 0) out vec3 fragPosWorld;
 layout(location = 1) out vec3 fragNormalWorld;
 layout(location = 2) out vec2 fraguv;
-layout(location = 3) out flat Material fragmaterial;
+layout(location = 3) out flat uint fragmaterial;
+
 
 struct Camera_data {
      mat4 projection;
@@ -41,13 +42,20 @@ layout(set = 0, binding = 2) uniform sampler2D textures[1000];
 
 layout(set = 0 , binding = 3) uniform samplerCube samplerCubeMap;
 
-// layout(buffer_reference, scalar) readonly buffer InstanceBuffer2 { ObjectInfo objInfo[]; };
+
+layout(set = 1, binding = 0) uniform sampler2D portalTextures[10];
+
 layout(push_constant) uniform constants {
     mat4 modelMatrix;
     mat4 normalMatrix;
     uint camera_id;
+    vec3 portal_color;
+    uint portal_id;
+    uint portal_recurs_id;
 }
 pc;
+
+
 
 void main() {
     vec4 positionWorld = pc.modelMatrix * vec4(position, 1.0);
@@ -55,7 +63,7 @@ void main() {
     gl_Position = c.projection * c.view * positionWorld;
     fragNormalWorld = normalize(mat3(pc.normalMatrix) * normal);
     fragPosWorld = positionWorld.xyz;
-    fragmaterial = m.materials[material];
+    fragmaterial = material;
     // debugPrintfEXT("%i \n", fragmaterial.albedo_tex_id);
     fraguv = uv;
 }
