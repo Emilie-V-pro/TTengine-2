@@ -11,7 +11,11 @@
 namespace TTe {
 class PortalController {
    public:
-    PortalController(Device *device, Scene2 *scene) : device(device), scene(scene) {
+    PortalController(){};
+
+    void init(Device *device, Scene2 *scene){
+        this->device = device;
+        this->scene = scene;
 
         int id = scene->addNode(-1, std::make_shared<PortalObj>(device));
         portalObjA = std::dynamic_pointer_cast<PortalObj>(scene->getNode(id)).get();
@@ -23,7 +27,7 @@ class PortalController {
         portalObjA->transform.pos = glm::vec3(100000, 100000, 100000);
         portalObjB->transform.pos = glm::vec3(100000, 100000, 100000);
 
-    };
+    }
 
     void setCursors(Window* window) {
         glfwSetCursorPosCallback(*window, mouseMoveCallback);
@@ -58,6 +62,12 @@ class PortalController {
 
 
     bool focus = false;
+    bool escPressed = false;
+
+
+    bool leftClick = false;
+    bool rightClick = false;
+
 
     Device* device;
     Scene2* scene;

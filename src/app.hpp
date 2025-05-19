@@ -7,6 +7,7 @@
 #include "device.hpp"
 #include "dynamic_renderpass.hpp"
 #include "movement_controller.hpp"
+#include "sceneV2/portal_controller.hpp"
 #include "sceneV2/scene.hpp"
 #include "swapchain.hpp"
 #include "circular_queue.hpp"
@@ -33,7 +34,7 @@ class App : public IApp {
     SwapChain* swapchain;
     
     DynamicRenderPass renderPass;
-    MovementController movementController;
+    PortalController movementController;
 
     
     std::shared_ptr<Scene2> scene2;

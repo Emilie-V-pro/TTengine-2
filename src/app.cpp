@@ -100,8 +100,7 @@ void App::init(Device *device, SwapChain *swapchain, Window *window) {
     }
     std::cout << "mapId : " << mapId << std::endl;
 
-    portal_id = scene2->addNode(-1, std::make_shared<PortalObj>(device));
-
+   
     // uint32_t cape_id  = scene2->addNode(-1, std::make_shared<ObjetSimuleMSS>(device, "../data/simu/Fichier_Param.objet1"));
 
     // scene2->addNode(-1, skeleton);
@@ -142,6 +141,8 @@ void App::init(Device *device, SwapChain *swapchain, Window *window) {
     sphere->transform.pos = glm::vec3(0.0f, 0.0f, 0.0f);
 
     sphere_hit_id = scene2->addNode(-1, sphere);
+
+    movementController.init(device, scene2.get());
 }
 
 void App::resize(int width, int height) {
@@ -158,7 +159,7 @@ void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
     }
     time += deltaTime;
 
-    movementController.moveInPlaneXZ(&windowObj, deltaTime, scene2->getMainCamera());
+    movementController.moveInPlaneXZ(&windowObj, deltaTime);
     // scene.updateCameraBuffer();
     // calcul time
     scene2->updateFromInput(&windowObj, deltaTime);
@@ -218,22 +219,8 @@ void App::renderFrame(float deltatTime, CommandBuffer &cmdBuffer, uint32_t curen
     // ImGui::DragFloat("const char *label", float *v)
     ImGui::End();
 
-    const float yaw = scene2->getMainCamera()->transform.rot->y;
-    // transform.rot.
-    const float pitch = scene2->getMainCamera()->transform.rot->x;
+  
 
-    glm::vec3 forward = glm::normalize(glm::vec3{std::sin(yaw) * std::cos(pitch), std::sin(pitch), std::cos(yaw) * std::cos(pitch)});
-
-    auto hit = scene2->hit(scene2->getMainCamera()->transform.pos, forward);
-
-    
-
-
-    if (hit.t != -1) {
-        // std::cout << "hit : " << hit.t << std::endl;
-        scene2->getNode(sphere_hit_id)->transform.pos = scene2->getMainCamera()->transform.pos + forward * hit.t;
-        dynamic_pointer_cast<PortalObj>(scene2->getNode(portal_id))->placePortal(hit.normal, scene2->getNode(sphere_hit_id)->transform.pos);
-    }
 
     // scene2->getMainCamera()->transform.pos->x = blend;
     scene2->getMaterials()[0].color = glm::vec4(color[0], color[1], color[2], 1.0f);

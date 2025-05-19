@@ -1,4 +1,4 @@
-#include "movement_controller.hpp"
+#include "portal_controller.hpp"
 
 #include <GLFW/glfw3.h>
 
@@ -17,7 +17,87 @@ namespace TTe {
 
 
 
-void MovementController::moveInPlaneXZ(Window* window, float dt, std::shared_ptr<CameraV2> cam) {
+void PortalController::moveInPlaneXZ(Window* window, float dt) {
+
+    ImGuiIO& io = ImGui::GetIO();
+
+    if (glfwGetKey(*window, keys.esc) == GLFW_PRESS) {
+        escPressed = true;
+    }
+    else{
+        if(escPressed){
+            escPressed = false;
+            focus = !focus;
+            if (focus){
+                window->moveCam = true;
+                glfwSetInputMode(*window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                
+                io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
+            } 
+            else{
+                window->moveCam = false;
+                glfwSetInputMode(*window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                io.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
+            }
+        }
+    }
+
+
+    if(glfwGetMouseButton(*window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS){
+        leftClick = true;
+    } else {
+        if(leftClick){
+            leftClick = false;
+
+            const float yaw = scene->getMainCamera()->transform.rot->y;
+            // transform.rot.
+            const float pitch = scene->getMainCamera()->transform.rot->x;
+        
+            glm::vec3 forward = glm::normalize(glm::vec3{std::sin(yaw) * std::cos(pitch), std::sin(pitch), std::cos(yaw) * std::cos(pitch)});
+        
+            auto hit = scene->hit(scene->getMainCamera()->transform.pos, forward);
+            
+            if (hit.t != -1) {
+                // std::cout << "hit : " << hit.t << std::endl;
+                portalObjB->transform.pos = scene->getMainCamera()->transform.pos + forward * hit.t;
+                portalObjB->placePortal(hit.normal, scene->getMainCamera()->transform.pos + forward * hit.t);
+            }
+
+        }
+    }
+
+    if(glfwGetMouseButton(*window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS){
+        rightClick = true;
+    } else {
+        if(rightClick){
+            rightClick = false;
+
+            const float yaw = scene->getMainCamera()->transform.rot->y;
+            // transform.rot.
+            const float pitch = scene->getMainCamera()->transform.rot->x;
+        
+            glm::vec3 forward = glm::normalize(glm::vec3{std::sin(yaw) * std::cos(pitch), std::sin(pitch), std::cos(yaw) * std::cos(pitch)});
+        
+            auto hit = scene->hit(scene->getMainCamera()->transform.pos, forward);
+            
+            if (hit.t != -1) {
+                // std::cout << "hit : " << hit.t << std::endl;
+                portalObjA->transform.pos = scene->getMainCamera()->transform.pos + forward * hit.t;
+                portalObjA->placePortal(hit.normal, scene->getMainCamera()->transform.pos + forward * hit.t);
+            }
+
+        }
+    }
+    
+
+
+
+        
+
+
+
+
+    std::shared_ptr<CameraV2> cam = scene->getMainCamera();
     glm::vec3 rotate{0};
 
     // if (glfwGetKey(*window, keys.lookRight) == GLFW_PRESS) rotate.y -= 1.f;
@@ -62,7 +142,7 @@ void MovementController::moveInPlaneXZ(Window* window, float dt, std::shared_ptr
     
 }
 
-void MovementController::mouseMoveCallback(GLFWwindow* window, double xpos, double ypos) {
+void PortalController::mouseMoveCallback(GLFWwindow* window, double xpos, double ypos) {
     Window* windowObj = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
     
     double xoffset =  windowObj->lastX - xpos ;
@@ -82,30 +162,10 @@ void MovementController::mouseMoveCallback(GLFWwindow* window, double xpos, doub
     windowObj->mouseMove += glm::vec3(yoffset, xoffset, 0);
 }
 
-void MovementController::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+void PortalController::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
     Window* windowObj = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
 
     ImGuiIO& io = ImGui::GetIO();
-    if(!io.WantCaptureMouse){
-
-        if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-            if(windowObj->moveCam == false){
-                windowObj->moveCam = true;
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                
-                io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
-            }
-        }
-        else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
-            if(windowObj->moveCam == true){
-                windowObj->moveCam = false;
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-                io.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
-            }
-        
-        }
-
-    }
 }  // namespace TTe
 
 }  // namespace vk_stage
