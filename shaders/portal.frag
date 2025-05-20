@@ -55,25 +55,27 @@ pc;
 
 
 void main() {
-    vec4 color = vec4(0.0);
-    if (fragmaterial != -1) {
-        color = vec4(pc.portal_color, 1.0);
+    vec4 color = vec4(0,0,0, 1);
+    if (fragmaterial == 1) {
+        color = vec4(fragNormalWorld, 1.0);
+        
     } else {
         // screen space coordinates
-        vec2 uv = gl_FragCoord.xy;;
-        if (pc.recurs_id == 5) {
+        vec2 uv = gl_FragCoord.xy / vec2(1280, 720);;
+        if (pc.recurs_id == 1) {
             //sample cube map
             vec3 dir = normalize(fragPosWorld - ubo.cameras[pc.camera_id].view[3].xyz);
             color = vec4(textureLod(samplerCubeMap, dir, 6.0).rgb, 1.0);
 
         } else if (pc.recurs_id == 0) {
-            uint portal_id = pc.portal_id;
+            uint portal_id =  ((pc.portal_id % 2) == 0) ? pc.portal_id + 1 : pc.portal_id - 1;
 
-            do {
+            // do {
                 color = texture(portalTextures[portal_id], uv);
+                // color = vec4(uv, 0, 1);
                 // get new portal id from the alpha channel
-                uint next_portal_id = uint(color.a * 255.0);
-            } while (color.a != 1.0);
+                portal_id = uint(color.a * 255.0);
+            // } while (color.a != 1.0);
         } 
         
         else {

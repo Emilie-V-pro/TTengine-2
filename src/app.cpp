@@ -42,8 +42,26 @@ void App::init(Device *device, SwapChain *swapchain, Window *window) {
     renderPass =
         DynamicRenderPass(device, {1280, 720}, {}, swapchain->getswapChainImages().size(), depthAndStencil::DEPTH, swapchain, nullptr);
 
+    VkExtent2D size = {1280, 720};
+    PortalObj::init(device);
+    std::vector<std::vector<std::vector<Image>>> portalATextures;
+    std::vector<std::vector<std::vector<Image>>> portalBTextures;
+
+    for (int i = 0; i < 5; i++) {
+        portalARenderPasses.push_back(
+            DynamicRenderPass(device, size, {VK_FORMAT_R8G8B8A8_SRGB}, swapchain->getswapChainImages().size(), depthAndStencil::DEPTH, nullptr, nullptr));
+        portalBRenderPasses.push_back(
+            DynamicRenderPass(device, size, {VK_FORMAT_R8G8B8A8_SRGB}, swapchain->getswapChainImages().size(), depthAndStencil::DEPTH, nullptr, nullptr));
+        size = {size.width / 2, size.height / 2};
+        
+        portalATextures.push_back(portalARenderPasses.back().getimageAttachement());
+        portalBTextures.push_back(portalBRenderPasses.back().getimageAttachement());
+    }
+    
+    PortalObj::resize(device, portalATextures, portalBTextures);
+
     ObjLoader objLoader = ObjLoader(device);
-    ObjectFileData data = objLoader.loadObject("../data/mesh/lyoko.obj");
+    ObjectFileData data = objLoader.loadObject("../data/mesh/cubes.obj");
     movementController.setCursors(window);
     vkDeviceWaitIdle(*device);
 
@@ -63,28 +81,28 @@ void App::init(Device *device, SwapChain *swapchain, Window *window) {
     imageCreateInfo.usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT;
     imageCreateInfo.filename.push_back("dt.jpg");
 
-    Image image = Image(device, imageCreateInfo);
+    // Image image = Image(device, imageCreateInfo);
 
-    imageCreateInfo.filename[0] = "normal.jpg";
-    Image normal = Image(device, imageCreateInfo);
+    // imageCreateInfo.filename[0] = "normal.jpg";
+    // Image normal = Image(device, imageCreateInfo);
 
-    imageCreateInfo.filename[0] = "mr.jpg";
-    Image mr = Image(device, imageCreateInfo);
+    // imageCreateInfo.filename[0] = "mr.jpg";
+    // Image mr = Image(device, imageCreateInfo);
 
-    uint32_t albedo_id = scene2->addImage(image);
-    uint32_t normal_id = scene2->addImage(normal);
-    uint32_t mr_id = scene2->addImage(mr);
+    // uint32_t albedo_id = scene2->addImage(image);
+    // uint32_t normal_id = scene2->addImage(normal);
+    // uint32_t mr_id = scene2->addImage(mr);
 
-    Material mat;
-    mat.albedo_tex_id = albedo_id;
-    mat.normal_tex_id = normal_id;
-    mat.metallic_roughness_tex_id = mr_id;
+    // Material mat;
+    // mat.albedo_tex_id = albedo_id;
+    // mat.normal_tex_id = normal_id;
+    // mat.metallic_roughness_tex_id = mr_id;
 
-    std::cout << "albedo_id : " << albedo_id << " normal_id : " << normal_id << " mr_id : " << mr_id << std::endl;
+    // std::cout << "albedo_id : " << albedo_id << " normal_id : " << normal_id << " mr_id : " << mr_id << std::endl;
 
-    uint mat_id = scene2->addMaterial(mat);
+    // uint mat_id = scene2->addMaterial(mat);
 
-    std::cout << "mat_id : " << mat_id << std::endl;
+    // std::cout << "mat_id : " << mat_id << std::endl;
 
     scene2->addObjectFileData(data);
     scene2->Param("../data/simu/Fichier_Param.simu");
@@ -100,7 +118,6 @@ void App::init(Device *device, SwapChain *swapchain, Window *window) {
     }
     std::cout << "mapId : " << mapId << std::endl;
 
-   
     // uint32_t cape_id  = scene2->addNode(-1, std::make_shared<ObjetSimuleMSS>(device, "../data/simu/Fichier_Param.objet1"));
 
     // scene2->addNode(-1, skeleton);
@@ -151,7 +168,7 @@ void App::resize(int width, int height) {
 }
 void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
     tick++;
-    float maxDT = 1.0f / 144.0f;
+    float maxDT = 1.0f / 280.0f;
     // if dt < 1/120, we wait
     if (deltaTime < maxDT) {
         std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>((maxDT - deltaTime) * 1000)));
@@ -165,9 +182,9 @@ void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
     scene2->updateFromInput(&windowObj, deltaTime);
     scene2->updateSim(deltaTime, time, tick);
 
-    scene2->updateCameraBuffer();
+    // scene2->updateCameraBuffer();
 }
-void App::renderFrame(float deltatTime, CommandBuffer &cmdBuffer, uint32_t curentFrameIndex) {
+void App::renderFrame(float deltatTime, CommandBuffer &cmdBuffer, uint32_t curentFrameIndex, uint32_t render_index) {
     // static float blend;
     static float color[3] = {1.0f, 1.0f, 1.0f};
     static float metallic = 0.0f;
@@ -176,6 +193,8 @@ void App::renderFrame(float deltatTime, CommandBuffer &cmdBuffer, uint32_t curen
     static glm::vec3 pos = {0.0f, 0.0f, 0.0f};
     static glm::vec3 rot;
     static float scale = 1.0f;
+
+    static uint camid = 0;
 
     ImGui::Begin("test");
     ImGui::Text("Hello, world!");
@@ -216,11 +235,11 @@ void App::renderFrame(float deltatTime, CommandBuffer &cmdBuffer, uint32_t curen
 
     ImGui::SliderFloat("scale", &scale, 0.0f, 2.0f);
 
+    ImGui::PopItemWidth();
+    ImGui::SliderInt("camid", (int *)&camid, 0, 19);
+
     // ImGui::DragFloat("const char *label", float *v)
     ImGui::End();
-
-  
-
 
     // scene2->getMainCamera()->transform.pos->x = blend;
     scene2->getMaterials()[0].color = glm::vec4(color[0], color[1], color[2], 1.0f);
@@ -232,10 +251,36 @@ void App::renderFrame(float deltatTime, CommandBuffer &cmdBuffer, uint32_t curen
     scene2->getNode(2)->transform.rot = rot;
     scene2->getNode(2)->transform.scale = glm::vec3(scale);
 
-    renderPass.beginRenderPass(cmdBuffer, curentFrameIndex);
+
+
+    // render from portal perspective
     RenderData rData;
-    rData.renderPass = &renderPass;
+    rData.recursionLevel = 1;
+    rData.cameraId = 1;
+    rData.frameIndex = render_index;
+    rData.renderPass = &portalARenderPasses[0];
+
+    portalARenderPasses[0].beginRenderPass(cmdBuffer, curentFrameIndex);
+    scene2->render(cmdBuffer, rData);
+    portalARenderPasses[0].endRenderPass(cmdBuffer);
+
+    rData.cameraId = 2;
+    rData.renderPass = &portalBRenderPasses[0];
+    portalBRenderPasses[0].beginRenderPass(cmdBuffer, curentFrameIndex);
+    scene2->render(cmdBuffer, rData);
+    portalBRenderPasses[0].endRenderPass(cmdBuffer);
+
+    // put a sync point here to wait for the render pass to finish
+    vkCmdPipelineBarrier(cmdBuffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0,
+                         nullptr, 0, nullptr);
+
+rData.recursionLevel = 0;
+    rData.cameraId = camid;
+
+
+    renderPass.beginRenderPass(cmdBuffer, curentFrameIndex);
     
+    rData.renderPass = &renderPass;
 
     scene2->render(cmdBuffer, rData);
 

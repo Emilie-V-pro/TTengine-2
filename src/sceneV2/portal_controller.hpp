@@ -1,9 +1,11 @@
 #pragma once
 
 #include <GLFW/glfw3.h>
+#include <cmath>
 
 #include "device.hpp"
 #include "sceneV2/cameraV2.hpp"
+#include "sceneV2/renderable/basicMeshObj.hpp"
 #include "sceneV2/renderable/portalObj.hpp"
 #include "sceneV2/scene.hpp"
 #include "window.hpp"
@@ -17,15 +19,46 @@ class PortalController {
         this->device = device;
         this->scene = scene;
 
-        int id = scene->addNode(-1, std::make_shared<PortalObj>(device));
+
+
+        int id = scene->addNode(-1, std::make_shared<BasicMeshObj>());
+        s1 = std::dynamic_pointer_cast<BasicMeshObj>(scene->getNode(id)).get();
+        s1->setShape(Sphere);
+        s1->transform.scale = glm::vec3(0.5f);
+
+        id = scene->addNode(-1, std::make_shared<BasicMeshObj>());
+        s2 = std::dynamic_pointer_cast<BasicMeshObj>(scene->getNode(id)).get();
+        s2->setShape(Sphere);
+        s2->transform.scale = glm::vec3(0.5f);
+
+        // blue material
+        Material mat;
+        mat.color = glm::vec4(0, 0, 1, 1);
+        mat.metallic = 0.0f;
+        mat.roughness = 1.0f;
+
+        // s1->setMaterialOffset(scene->addMaterial(mat));
+        mat.color = glm::vec4(1, 0, 0, 1);
+        // s2->setMaterialOffset(scene->addMaterial(mat));
+
+         id = scene->addNode(-1, std::make_shared<PortalObj>());
         portalObjA = std::dynamic_pointer_cast<PortalObj>(scene->getNode(id)).get();
 
-        id = scene->addNode(-1, std::make_shared<PortalObj>(device));
+        id = scene->addNode(-1, std::make_shared<PortalObj>());
         portalObjB = std::dynamic_pointer_cast<PortalObj>(scene->getNode(id)).get();
 
 
-        portalObjA->transform.pos = glm::vec3(100000, 100000, 100000);
-        portalObjB->transform.pos = glm::vec3(100000, 100000, 100000);
+        portalObjA->transform.pos = glm::vec3(0, 0, 0);
+        portalObjB->transform.pos = glm::vec3(5, 0, 0);
+
+        portalObjA->transform.rot = glm::vec3(M_PI / 2, M_PI / 2, 0);
+        portalObjB->transform.rot = glm::vec3(M_PI / 2, M_PI / 2, 0);
+
+        portalObjA->portalColor = glm::vec3(0, 0, 1);
+        portalObjB->portalColor = glm::vec3(1, 0, 0);
+
+        portalObjB->portalId = 1;
+
 
     }
 
@@ -73,5 +106,8 @@ class PortalController {
     Scene2* scene;
     PortalObj* portalObjA;
     PortalObj* portalObjB;
+
+    BasicMeshObj* s1;
+    BasicMeshObj* s2;
 };
 }  // namespace TTe

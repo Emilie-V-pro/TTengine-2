@@ -1,5 +1,6 @@
 
 #include "portalObj.hpp"
+#include <vector>
 
 #include "descriptor/descriptorSet.hpp"
 #include "device.hpp"
@@ -13,31 +14,49 @@ namespace TTe {
 
 std::array<DescriptorSet, MAX_FRAMES_IN_FLIGHT> PortalObj::portalDescriptorSets;
 GraphicPipeline PortalObj::portalPipeline;
-PortalObj::PortalObj(Device *device) {
-    portalMesh = Mesh(device, "../data/mesh/portal.obj", Buffer::BufferType::GPU_ONLY);
+Mesh PortalObj::portalMesh;
+Device *PortalObj::device = nullptr;
+
+
+PortalObj::PortalObj() {
+    
+}
+
+void PortalObj::init(Device *device) {
+portalMesh = Mesh(device, "../data/mesh/portal.obj", Buffer::BufferType::GPU_ONLY);
 
     GraphicPipelineCreateInfo pipelineCreateInfo;
-    pipelineCreateInfo.fragmentShaderFile = "hello_scene.frag";
-    pipelineCreateInfo.vexterShaderFile = "hello_scene.vert";
+    pipelineCreateInfo.fragmentShaderFile = "portal.frag";
+    pipelineCreateInfo.vexterShaderFile = "portal.vert";
     portalPipeline = GraphicPipeline(device, pipelineCreateInfo);
 }
 
 PortalObj::~PortalObj() {}
 
 void PortalObj::render(CommandBuffer &cmd, RenderData &renderData) {
-
-     if(renderData.binded_pipeline != renderData.default_pipeline){
-        renderData.binded_pipeline->bindPipeline(cmd);
-        renderData.binded_pipeline = renderData.default_pipeline;
+    if(renderData.recursionLevel != 0){
+        if(renderData.cameraId % 2 == 0 && !portalId){
+           return;
+        } else if(renderData.cameraId % 2 == 1 && portalId){
+            return;
+        }
+    }
+    if(renderData.binded_pipeline != &portalPipeline){
+        portalPipeline.bindPipeline(cmd);
+        renderData.binded_pipeline = &portalPipeline;
     }
 
     Mesh &mesh = portalMesh;
 
     renderData.binded_mesh = &mesh;
     mesh.bindMesh(cmd);
-    PushConstantData pc = {wMatrix(), wNormalMatrix(), 0};
 
-    vkCmdPushConstants(cmd, renderData.binded_pipeline->getPipelineLayout(), renderData.binded_pipeline->getPushConstantStage(), 0, sizeof(PushConstantData), &pc);
+    PushConstantPortal pc = {{wMatrix(), wNormalMatrix(), renderData.cameraId}, {},portalColor, renderData.recursionLevel * 2 +  portalId, renderData.recursionLevel};
+
+    vkCmdPushConstants(cmd, renderData.binded_pipeline->getPipelineLayout(), renderData.binded_pipeline->getPushConstantStage(), 0, sizeof(PushConstantPortal), &pc);
+    std::vector<DescriptorSet*> descriptorSet = {&portalDescriptorSets[renderData.frameIndex]};
+    // bind descriptor set
+    DescriptorSet::bindDescriptorSet(cmd, descriptorSet, renderData.binded_pipeline->getPipelineLayout(), VK_PIPELINE_BIND_POINT_GRAPHICS, 1);
 
     vkCmdDrawIndexed(cmd, mesh.nbIndicies(), 1, 0, 0, 0);
 }
@@ -48,8 +67,8 @@ void PortalObj::resize(Device *device,
         std::vector<VkDescriptorImageInfo> imagesInfo;
         DescriptorSet portalDescriptorSet = DescriptorSet(device, portalPipeline.getDescriptorSetLayout(1));
         for (int j = 0; j < portalATextures.size(); j++) {
-            imagesInfo.push_back(portalATextures[j][i][1].getDescriptorImageInfo(samplerType::LINEAR));
-            imagesInfo.push_back(portalBTextures[j][i][1].getDescriptorImageInfo(samplerType::LINEAR));
+            imagesInfo.push_back(portalATextures[j][i][0].getDescriptorImageInfo(samplerType::LINEAR));
+            imagesInfo.push_back(portalBTextures[j][i][0].getDescriptorImageInfo(samplerType::LINEAR));
         }
         portalDescriptorSet.writeImagesDescriptor(0, imagesInfo);
         portalDescriptorSets[i] = portalDescriptorSet;

@@ -191,6 +191,15 @@ void Scene2::updateCameraBuffer() {
     cameraBuffer.writeToBuffer(&ubo, sizeof(Ubo));
 }
 
+void Scene2::updateCameraBuffer(std::vector<Ubo> camData) {
+    if (cameraBuffer.getInstancesCount() == 0) {
+        cameraBuffer = Buffer(device, sizeof(Ubo), 20, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
+    }
+
+    cameraBuffer.writeToBuffer(&camData[0], sizeof(Ubo) * camData.size(), 0);
+
+}
+
 void Scene2::updateMaterialBuffer() {
     if (materialBuffer.getInstancesCount() < materials.size() || materials.size() == 0) {
         if (materials.size() == 0) {

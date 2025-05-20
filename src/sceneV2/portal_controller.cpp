@@ -3,38 +3,38 @@
 #include <GLFW/glfw3.h>
 
 // std
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/fwd.hpp>
 #include <glm/gtc/constants.hpp>
+#include <glm/matrix.hpp>
 #include <limits>
 #include <memory>
+#include <utility>
+#include <vector>
+
 #include "imgui.h"
 #include "sceneV2/cameraV2.hpp"
+#include "sceneV2/scene.hpp"
+#include "struct.hpp"
 #include "window.hpp"
-
-
 
 namespace TTe {
 
-
-
-
 void PortalController::moveInPlaneXZ(Window* window, float dt) {
-
     ImGuiIO& io = ImGui::GetIO();
-
+    bool portal_move = false;
     if (glfwGetKey(*window, keys.esc) == GLFW_PRESS) {
         escPressed = true;
-    }
-    else{
-        if(escPressed){
+    } else {
+        if (escPressed) {
             escPressed = false;
             focus = !focus;
-            if (focus){
+            if (focus) {
                 window->moveCam = true;
                 glfwSetInputMode(*window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                
+
                 io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
-            } 
-            else{
+            } else {
                 window->moveCam = false;
                 glfwSetInputMode(*window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
                 io.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
@@ -42,60 +42,53 @@ void PortalController::moveInPlaneXZ(Window* window, float dt) {
         }
     }
 
-
-    if(glfwGetMouseButton(*window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS){
+    if (glfwGetMouseButton(*window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
         leftClick = true;
     } else {
-        if(leftClick){
+        if (leftClick) {
             leftClick = false;
 
             const float yaw = scene->getMainCamera()->transform.rot->y;
             // transform.rot.
             const float pitch = scene->getMainCamera()->transform.rot->x;
-        
-            glm::vec3 forward = glm::normalize(glm::vec3{std::sin(yaw) * std::cos(pitch), std::sin(pitch), std::cos(yaw) * std::cos(pitch)});
-        
+
+            glm::vec3 forward =
+                glm::normalize(glm::vec3{std::sin(yaw) * std::cos(pitch), std::sin(pitch), std::cos(yaw) * std::cos(pitch)});
+
             auto hit = scene->hit(scene->getMainCamera()->transform.pos, forward);
-            
+
             if (hit.t != -1) {
                 // std::cout << "hit : " << hit.t << std::endl;
                 portalObjB->transform.pos = scene->getMainCamera()->transform.pos + forward * hit.t;
                 portalObjB->placePortal(hit.normal, scene->getMainCamera()->transform.pos + forward * hit.t);
+                portal_move = true;
             }
-
         }
     }
 
-    if(glfwGetMouseButton(*window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS){
+    if (glfwGetMouseButton(*window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
         rightClick = true;
     } else {
-        if(rightClick){
+        if (rightClick) {
             rightClick = false;
 
             const float yaw = scene->getMainCamera()->transform.rot->y;
             // transform.rot.
             const float pitch = scene->getMainCamera()->transform.rot->x;
-        
-            glm::vec3 forward = glm::normalize(glm::vec3{std::sin(yaw) * std::cos(pitch), std::sin(pitch), std::cos(yaw) * std::cos(pitch)});
-        
+
+            glm::vec3 forward =
+                glm::normalize(glm::vec3{std::sin(yaw) * std::cos(pitch), std::sin(pitch), std::cos(yaw) * std::cos(pitch)});
+
             auto hit = scene->hit(scene->getMainCamera()->transform.pos, forward);
-            
+
             if (hit.t != -1) {
                 // std::cout << "hit : " << hit.t << std::endl;
                 portalObjA->transform.pos = scene->getMainCamera()->transform.pos + forward * hit.t;
                 portalObjA->placePortal(hit.normal, scene->getMainCamera()->transform.pos + forward * hit.t);
+                portal_move = true;
             }
-
         }
     }
-    
-
-
-
-        
-
-
-
 
     std::shared_ptr<CameraV2> cam = scene->getMainCamera();
     glm::vec3 rotate{0};
@@ -110,7 +103,7 @@ void PortalController::moveInPlaneXZ(Window* window, float dt) {
     }
     cam->transform.rot += window->mouseMove;
     window->mouseMove = glm::vec3(0);
-    
+
     // limit pitch values between about +/- 85ish degrees
     cam->transform.rot->x = glm::clamp(cam->transform.rot->x, -1.5f, 1.5f);
     cam->transform.rot->y = glm::mod(cam->transform.rot->y, glm::two_pi<float>());
@@ -139,14 +132,54 @@ void PortalController::moveInPlaneXZ(Window* window, float dt) {
         // std::cout << moveSpeed * dt << "\n";
     }
 
-    
+    // update camera buffer
+
+    std::vector<Ubo> camData;
+    Ubo playerCam = {cam->getProjectionMatrix(), cam->getViewMatrix(), cam->getInvViewMatrix()};
+    camData.push_back(playerCam);
+
+    // previous invView matrix
+
+    glm::mat4 portalAView = playerCam.view;
+    glm::mat4 portalBView = playerCam.view;
+
+    // create camera data for portal view
+    glm::mat4 mirrorMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(1, 1, -1));
+
+    for (int i = 0; i < 5; i++) {
+
+         // B portal camera
+        glm::mat4 view = inverse(portalObjB->wMatrix()  * inverse(portalObjA->wMatrix()) * cam->wMatrix());
+        glm::mat4 projection = cam->getProjectionMatrix();
+        camData.push_back({projection, view, inverse(view)});
+        // A portal camera
+         view = inverse(portalObjA->wMatrix()  * inverse(portalObjB->wMatrix()) * cam->wMatrix());
+         projection = cam->getProjectionMatrix();
+        camData.push_back({projection, view, inverse(view)});
+        
+
+       
+    }
+
+    if(portal_move) {
+        s1->transform.pos = camData[1].view[3];
+        s2->transform.pos = camData[2].view[3];
+
+        std::cout << "s1 pos : " << s1->transform.pos->x << " " << s1->transform.pos->y << " " << s1->transform.pos->z << "\n";
+        std::cout << "s2 pos : " << s2->transform.pos->x << " " << s2->transform.pos->y << " " << s2->transform.pos->z << "\n";
+    }
+
+    // std::cout << "camera pos : " << cam->transform.pos->x << " " << cam->transform.pos->y << " " << cam->transform.pos->z << std::endl;
+    // std::cout << "portala "
+
+    scene->updateCameraBuffer(camData);
 }
 
 void PortalController::mouseMoveCallback(GLFWwindow* window, double xpos, double ypos) {
     Window* windowObj = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
-    
-    double xoffset =  windowObj->lastX - xpos ;
-    double yoffset = windowObj->lastY - ypos; // reversed since y-coordinates go from bottom to top
+
+    double xoffset = windowObj->lastX - xpos;
+    double yoffset = windowObj->lastY - ypos;  // reversed since y-coordinates go from bottom to top
 
     // std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
     // std::chrono::duration<double> elapsed = now - windowObj->mouseLastMoved;
@@ -154,7 +187,7 @@ void PortalController::mouseMoveCallback(GLFWwindow* window, double xpos, double
 
     windowObj->lastX = xpos;
     windowObj->lastY = ypos;
-    if(windowObj->moveCam == false) return;
+    if (windowObj->moveCam == false) return;
 
     xoffset *= 0.005;
     yoffset *= 0.005;
@@ -168,4 +201,4 @@ void PortalController::mouseButtonCallback(GLFWwindow* window, int button, int a
     ImGuiIO& io = ImGui::GetIO();
 }  // namespace TTe
 
-}  // namespace vk_stage
+}  // namespace TTe

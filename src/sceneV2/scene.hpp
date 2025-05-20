@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <glm/fwd.hpp>
 #include <map>
 #include <memory>
 #include <unordered_map>
@@ -102,6 +103,7 @@ class Scene2 : public Node {
     std::vector<Material>& getMaterials() { return materials; }
 
     void updateCameraBuffer();
+    void updateCameraBuffer(std::vector<Ubo> camData);
     void updateMaterialBuffer();
     void updateDescriptorSets();
    private:

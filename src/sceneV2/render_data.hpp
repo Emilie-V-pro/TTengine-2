@@ -1,5 +1,7 @@
 #pragma once
 
+#include <sys/types.h>
+#include <cstdint>
 #include <stack>
 #include "descriptor/descriptorSet.hpp"
 #include "dynamic_renderpass.hpp"
@@ -15,6 +17,11 @@ namespace TTe {
         Mesh* binded_mesh;
         std::vector<Mesh> *meshes; 
         std::map<BasicShape, Mesh> *basicMeshes;
+
+        uint recursionLevel = 0;
+        uint cameraId = 0;
+
+        uint32_t frameIndex = 0;
 
         private:
     };

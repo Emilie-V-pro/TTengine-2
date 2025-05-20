@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <glm/fwd.hpp>
 #include <vector>
 
@@ -15,22 +16,33 @@
 namespace TTe {
 class PortalObj : public IRenderable, public Node {
    public:
-    PortalObj(Device *device);
+
+
+    struct PushConstantPortal: public PushConstantData {
+        glm::vec3 offset;
+        glm::vec3 portalColor;
+        uint32_t portalId;
+        uint32_t recursionLevel;
+    };
+
+
+    PortalObj();
+    static void init(Device *device);
 
     ~PortalObj();
 
     void render(CommandBuffer &cmd, RenderData &renderData);
     void placePortal(glm::vec3 normal, glm::vec3 pos);
    static void resize(Device *device, std::vector<std::vector<std::vector<Image>>> &portalATextures, std::vector<std::vector<std::vector<Image>>> &portalBTextures);
-
+   glm::vec3 portalColor = glm::vec3(0, 0, 0);
+    int portalId = 0;
        private :
-
 
 
     static GraphicPipeline portalPipeline;
     static std::array<DescriptorSet, MAX_FRAMES_IN_FLIGHT> portalDescriptorSets;
 
-    Mesh portalMesh;
-    Device *device;
+    static Mesh portalMesh;
+    static Device *device;
 };
 }  // namespace TTe

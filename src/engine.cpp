@@ -171,7 +171,7 @@ void Engine::renderLoop(Engine &engine) {
         engine.renderCommandBuffers[engine.renderIndex].beginCommandBuffer();
       
  
-        engine.app->renderFrame(deltatTime, engine.renderCommandBuffers[engine.renderIndex], engine.currentSwapchainImage);
+        engine.app->renderFrame(deltatTime, engine.renderCommandBuffers[engine.renderIndex], engine.currentSwapchainImage, engine.renderIndex);
     
       
         engine.renderPass.beginRenderPass(engine.renderCommandBuffers[engine.renderIndex], engine.currentSwapchainImage);

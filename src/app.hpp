@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <vector>
 
 #include "Iapp.hpp"
 #include "device.hpp"
@@ -24,7 +25,7 @@ class App : public IApp {
 
     // update the application
     void update(float deltaTime, CommandBuffer& cmdBuffer, Window& windowObj);
-    void renderFrame(float deltatTime, CommandBuffer& cmdBuffer, uint32_t curentFrameIndex);
+    void renderFrame(float deltatTime, CommandBuffer& cmdBuffer, uint32_t curentFrameIndex, uint32_t render_index);
 
    private:
 
@@ -35,6 +36,9 @@ class App : public IApp {
     
     DynamicRenderPass renderPass;
     PortalController movementController;
+
+    std::vector<DynamicRenderPass> portalARenderPasses;
+    std::vector<DynamicRenderPass> portalBRenderPasses;
 
     
     std::shared_ptr<Scene2> scene2;

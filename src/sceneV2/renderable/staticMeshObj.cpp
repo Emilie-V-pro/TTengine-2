@@ -23,7 +23,7 @@ void StaticMeshObj::render(CommandBuffer &cmd, RenderData &renderData) {
     mesh.bindMesh(cmd);
 
 
-    PushConstantData pc = {wMatrix(), wNormalMatrix(), 0};
+    PushConstantData pc = {wMatrix(), wNormalMatrix(), renderData.cameraId};
 
     vkCmdPushConstants(
         cmd, renderData.binded_pipeline->getPipelineLayout(), renderData.binded_pipeline->getPushConstantStage(), 0, sizeof(PushConstantData), &pc);

@@ -16,7 +16,7 @@ class IApp {
 
     // update the application
     void virtual update(float deltaTime, CommandBuffer &cmdBuffer, Window& windowObj) = 0;
-    void virtual renderFrame(float deltatTime, CommandBuffer &cmdBuffer, uint32_t curentFrameIndex) = 0;
+    void virtual renderFrame(float deltatTime, CommandBuffer &cmdBuffer, uint32_t curentFrameIndex, uint32_t render_index) = 0;
    protected:
    Device *device;
    private:
