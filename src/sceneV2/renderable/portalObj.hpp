@@ -32,12 +32,12 @@ class PortalObj : public IRenderable, public Node {
     ~PortalObj();
 
     void render(CommandBuffer &cmd, RenderData &renderData);
-    void placePortal(glm::vec3 normal, glm::vec3 pos);
+    void placePortal(glm::vec3 normal, glm::vec3 pos, glm::vec3 campos);
+    glm::vec3 normal;
    static void resize(Device *device, std::vector<std::vector<std::vector<Image>>> &portalATextures, std::vector<std::vector<std::vector<Image>>> &portalBTextures);
    glm::vec3 portalColor = glm::vec3(0, 0, 0);
     int portalId = 0;
        private :
-
 
     static GraphicPipeline portalPipeline;
     static std::array<DescriptorSet, MAX_FRAMES_IN_FLIGHT> portalDescriptorSets;

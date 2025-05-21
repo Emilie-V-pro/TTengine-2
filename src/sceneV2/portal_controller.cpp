@@ -20,8 +20,28 @@
 
 namespace TTe {
 
+glm::mat4 makeObliqueProjection(glm::mat4& proj, const glm::vec4& clipPlane_eye) {
+    // Transpose pour accès ligne par ligne
+    glm::mat4 P = proj;
+    glm::vec4 q = glm::inverse(proj) * glm::vec4(
+        glm::sign(clipPlane_eye.x),
+        glm::sign(clipPlane_eye.y),
+        1.0f,
+        1.0f
+    );
+    glm::vec4 c = clipPlane_eye * (2.0f / glm::dot(clipPlane_eye, q));
+    
+    // Remplacement de la 3ème ligne de la matrice de projection
+    proj[2] = c - proj[3];
+
+    return P;
+}
+
 void PortalController::moveInPlaneXZ(Window* window, float dt) {
     ImGuiIO& io = ImGui::GetIO();
+    std::shared_ptr<CameraV2> cam = scene->getMainCamera();
+
+
     bool portal_move = false;
     if (glfwGetKey(*window, keys.esc) == GLFW_PRESS) {
         escPressed = true;
@@ -60,7 +80,7 @@ void PortalController::moveInPlaneXZ(Window* window, float dt) {
             if (hit.t != -1) {
                 // std::cout << "hit : " << hit.t << std::endl;
                 portalObjB->transform.pos = scene->getMainCamera()->transform.pos + forward * hit.t;
-                portalObjB->placePortal(hit.normal, scene->getMainCamera()->transform.pos + forward * hit.t);
+                portalObjB->placePortal(hit.normal, scene->getMainCamera()->transform.pos + forward * hit.t, cam->transform.pos );
                 portal_move = true;
             }
         }
@@ -84,13 +104,13 @@ void PortalController::moveInPlaneXZ(Window* window, float dt) {
             if (hit.t != -1) {
                 // std::cout << "hit : " << hit.t << std::endl;
                 portalObjA->transform.pos = scene->getMainCamera()->transform.pos + forward * hit.t;
-                portalObjA->placePortal(hit.normal, scene->getMainCamera()->transform.pos + forward * hit.t);
+                portalObjA->placePortal(hit.normal, scene->getMainCamera()->transform.pos + forward * hit.t, cam->transform.pos);
                 portal_move = true;
             }
         }
     }
 
-    std::shared_ptr<CameraV2> cam = scene->getMainCamera();
+    
     glm::vec3 rotate{0};
 
     // if (glfwGetKey(*window, keys.lookRight) == GLFW_PRESS) rotate.y -= 1.f;
@@ -148,20 +168,35 @@ void PortalController::moveInPlaneXZ(Window* window, float dt) {
 
     for (int i = 0; i < 5; i++) {
 
-         // B portal camera
-        glm::mat4 view = inverse(portalObjB->wMatrix()  * inverse(portalObjA->wMatrix()) * cam->wMatrix());
+
+        portalObjB->transform.rot->y += M_PI; 
+        // B portal camera
+        glm::mat4 view = inverse(portalObjB->wMatrix()  * inverse(portalObjA->wMatrix()) * cam->getInvViewMatrix());
+        portalObjB->transform.rot->y -= M_PI; 
         glm::mat4 projection = cam->getProjectionMatrix();
+        
+        glm::vec3 Q_eye = glm::vec3(view * glm::vec4(portalObjB->transform.pos.value, 1.0));
+        glm::vec3 N_eye = glm::normalize(glm::mat3(view) * portalObjB->normal);
+        glm::vec4 clipPlane_eye = glm::vec4(N_eye, -glm::dot(N_eye, Q_eye));
+
+        // projection = makeObliqueProjection(projection, clipPlane_eye);
+
         camData.push_back({projection, view, inverse(view)});
         // A portal camera
-         view = inverse(portalObjA->wMatrix()  * inverse(portalObjB->wMatrix()) * cam->wMatrix());
-         projection = cam->getProjectionMatrix();
-        camData.push_back({projection, view, inverse(view)});
         
+        portalObjA->transform.rot->y += M_PI; 
+        view = inverse(portalObjA->wMatrix() * mirrorMatrix *  inverse(portalObjB->wMatrix()) * cam->getInvViewMatrix());
+        portalObjA->transform.rot->y -= M_PI; 
+        projection = cam->getProjectionMatrix();
+        Q_eye = glm::vec3(view * glm::vec4(portalObjA->transform.pos.value, 1.0));
+        N_eye = glm::normalize(glm::mat3(view) * portalObjA->normal);
+        clipPlane_eye = glm::vec4(N_eye, -glm::dot(N_eye, Q_eye));
+        // projection = makeObliqueProjection(projection, clipPlane_eye);
 
-       
+        camData.push_back({projection, view, inverse(view)});
     }
 
-    if(portal_move) {
+    if (portal_move) {
         s1->transform.pos = camData[1].view[3];
         s2->transform.pos = camData[2].view[3];
 

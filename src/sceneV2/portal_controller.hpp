@@ -48,7 +48,7 @@ class PortalController {
         portalObjB = std::dynamic_pointer_cast<PortalObj>(scene->getNode(id)).get();
 
 
-        portalObjA->transform.pos = glm::vec3(0, 0, 0);
+        portalObjA->transform.pos = glm::vec3(-5, 0, 0);
         portalObjB->transform.pos = glm::vec3(5, 0, 0);
 
         portalObjA->transform.rot = glm::vec3(M_PI / 2, M_PI / 2, 0);

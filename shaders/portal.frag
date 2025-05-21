@@ -57,7 +57,7 @@ pc;
 void main() {
     vec4 color = vec4(0,0,0, 1);
     if (fragmaterial == 1) {
-        color = vec4(fragNormalWorld, 1.0);
+        color = vec4(pc.portal_color, 1.0);
         
     } else {
         // screen space coordinates

@@ -1,5 +1,8 @@
 
 #include "portalObj.hpp"
+#include <glm/fwd.hpp>
+#include <glm/geometric.hpp>
+#include <glm/matrix.hpp>
 #include <vector>
 
 #include "descriptor/descriptorSet.hpp"
@@ -51,7 +54,7 @@ void PortalObj::render(CommandBuffer &cmd, RenderData &renderData) {
     renderData.binded_mesh = &mesh;
     mesh.bindMesh(cmd);
 
-    PushConstantPortal pc = {{wMatrix(), wNormalMatrix(), renderData.cameraId}, {},portalColor, renderData.recursionLevel * 2 +  portalId, renderData.recursionLevel};
+    PushConstantPortal pc = {{wMatrix(), wNormalMatrix(), renderData.cameraId}, {},portalColor, renderData.recursionLevel * 2 +   1 -portalId, renderData.recursionLevel};
 
     vkCmdPushConstants(cmd, renderData.binded_pipeline->getPipelineLayout(), renderData.binded_pipeline->getPushConstantStage(), 0, sizeof(PushConstantPortal), &pc);
     std::vector<DescriptorSet*> descriptorSet = {&portalDescriptorSets[renderData.frameIndex]};
@@ -75,12 +78,22 @@ void PortalObj::resize(Device *device,
     }
 }
 
-void PortalObj::placePortal(glm::vec3 normal, glm::vec3 pos) {
-    this->transform.pos = pos + normal * 0.01f;
+void PortalObj::placePortal(glm::vec3 normal, glm::vec3 pos, glm::vec3 campos) {
+    this->transform.pos = pos + normal * 0.2f;
     normal = glm::normalize(normal);
-    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+    this->normal = normal;
+    auto t = normal-glm::vec3(0.0f, 1.0f, 0.0f);
+
+    auto t2 = glm::length(t);
+    glm::vec3 up = (t2 > 0.0001 ) ? glm::vec3(0.0f, 1.0f, 0.0f) : glm::normalize(campos - pos) ;
     auto rotationQuat = glm::rotation(up, normal);
+
+
     this->transform.rot = glm::eulerAngles(rotationQuat);
+
+
+    this->worldMatrix = glm::inverse(glm::lookAt(transform.pos.value, this->transform.pos + normal,  up));
+    this->dirty = false;
 }
 
 }  // namespace TTe

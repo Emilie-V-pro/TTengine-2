@@ -168,7 +168,7 @@ void App::resize(int width, int height) {
 }
 void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
     tick++;
-    float maxDT = 1.0f / 280.0f;
+    float maxDT = 1.0f / 60.0f;
     // if dt < 1/120, we wait
     if (deltaTime < maxDT) {
         std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>((maxDT - deltaTime) * 1000)));
