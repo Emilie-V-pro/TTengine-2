@@ -103,6 +103,7 @@ class Scene2 : public Node {
     std::vector<Material>& getMaterials() { return materials; }
 
     void updateCameraBuffer();
+    void updateCameraBuffer(float near, float x_rot);
     void updateCameraBuffer(std::vector<Ubo> camData);
     void updateMaterialBuffer();
     void updateDescriptorSets();

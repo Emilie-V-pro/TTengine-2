@@ -3,9 +3,13 @@
 #include <GLFW/glfw3.h>
 
 // std
+#include <glm/common.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/fwd.hpp>
+#include <glm/geometric.hpp>
 #include <glm/gtc/constants.hpp>
+#include <glm/gtc/matrix_access.hpp>
+#include <glm/gtc/matrix_inverse.hpp>
 #include <glm/matrix.hpp>
 #include <limits>
 #include <memory>
@@ -20,27 +24,89 @@
 
 namespace TTe {
 
-glm::mat4 makeObliqueProjection(glm::mat4& proj, const glm::vec4& clipPlane_eye) {
-    // Transpose pour accès ligne par ligne
-    glm::mat4 P = proj;
-    glm::vec4 q = glm::inverse(proj) * glm::vec4(
-        glm::sign(clipPlane_eye.x),
-        glm::sign(clipPlane_eye.y),
-        1.0f,
-        1.0f
-    );
-    glm::vec4 c = clipPlane_eye * (2.0f / glm::dot(clipPlane_eye, q));
-    
-    // Remplacement de la 3ème ligne de la matrice de projection
-    proj[2] = c - proj[3];
+inline float sign(float a)
+{
+    if (a > 0.0F) return (1.0F);
+    if (a < 0.0F) return (-1.0F);
+    return (0.0F);
+}
 
-    return P;
+glm::mat4 makeObliqueClippedProjection(
+    const glm::mat4& proj, const glm::mat4& viewPortal, const glm::vec3& portalPos, const glm::vec3& portalNormal) {
+    
+    // 1) Plan en espace œil
+    glm::vec3 P_eye = viewPortal * glm::vec4(portalPos, 1.0f);
+    glm::vec3 N_eye =  glm::normalize(glm::inverseTranspose(glm::mat3(viewPortal)) * portalNormal);
+    
+    
+
+    
+    glm::vec4 clip_plane = glm::vec4(N_eye, -glm::length(P_eye));
+    
+    
+    // std::cout << glm::length(P_eye) << "\n";
+    std::cout << clip_plane.x << " " << clip_plane.y << " " << clip_plane.z << " " << clip_plane.w << "\n";
+    clip_plane.x = -clip_plane.x; 
+
+    // 2) Calcul du point q dans l'espace caméra
+ 
+    glm::vec4 q = glm::vec4(
+        (sign(clip_plane.x) + proj[2][0]) / proj[0][0],
+        (sign(clip_plane.y) + proj[2][1]) / proj[1][1],
+        -1.0f,
+        (1.0f + proj[2][2]) / proj[3][2]
+    );
+
+    glm::vec4 clip_plane4 = glm::vec4(clip_plane.x, clip_plane.y, clip_plane.z, clip_plane.w);
+
+    // 3) Mise à l'échelle du plan de coupe
+    glm::vec4 c = clip_plane4 * (2.0f / glm::dot(clip_plane4, q));
+
+    // 4) Construction de la nouvelle matrice
+    glm::mat4 result = proj;
+    // dans glm : result[col][row]
+    result[0][2] = c.x - proj[0][3];
+    result[1][2] = c.y - proj[1][3];
+    result[2][2] = c.z - proj[2][3];
+    result[3][2] = c.w - proj[3][3];
+
+    return result;
+}
+
+glm::mat4 makeObliqueClippedProjection2(
+    const glm::mat4& proj, const glm::mat4& viewPortal, const glm::vec3& portalPos, const glm::vec3& portalNormal) {
+    
+    
+    glm::vec3 P_eye = viewPortal * glm::vec4(portalPos, 1.0f);
+    glm::vec3 N_eye = glm::mat3(viewPortal) * portalNormal;
+    N_eye = glm::normalize(N_eye);
+
+    // 1. Plan en espace œil
+    glm::vec4 plane_eye = glm::vec4(N_eye, -glm::dot(N_eye, P_eye));
+
+    // 2. Calcul q en homogene
+    glm::vec4 q;
+    q.x = (glm::sign(plane_eye.x) + proj[0][2]) / proj[0][0];
+    q.y = (glm::sign(plane_eye.y) + proj[1][2]) / proj[1][1];
+    q.z = -1.0f;
+    q.w = (1.0f + proj[2][2]) / proj[2][3];
+
+    // 3. Calcul c
+    float c = 2.0f / glm::dot(plane_eye, q);
+
+    // 4. Nouveau plan homogene
+    glm::vec4 newPlane = plane_eye * c;
+
+    // 5. Modification de la matrice de projection
+    glm::mat4 P_oblique = proj;
+    // row 3 = newPlane – row 4
+    P_oblique[2] = newPlane - proj[3];
+    return P_oblique;
 }
 
 void PortalController::moveInPlaneXZ(Window* window, float dt) {
     ImGuiIO& io = ImGui::GetIO();
     std::shared_ptr<CameraV2> cam = scene->getMainCamera();
-
 
     bool portal_move = false;
     if (glfwGetKey(*window, keys.esc) == GLFW_PRESS) {
@@ -80,7 +146,7 @@ void PortalController::moveInPlaneXZ(Window* window, float dt) {
             if (hit.t != -1) {
                 // std::cout << "hit : " << hit.t << std::endl;
                 portalObjB->transform.pos = scene->getMainCamera()->transform.pos + forward * hit.t;
-                portalObjB->placePortal(hit.normal, scene->getMainCamera()->transform.pos + forward * hit.t, cam->transform.pos );
+                portalObjB->placePortal(hit.normal, scene->getMainCamera()->transform.pos + forward * hit.t, cam->transform.pos);
                 portal_move = true;
             }
         }
@@ -110,7 +176,6 @@ void PortalController::moveInPlaneXZ(Window* window, float dt) {
         }
     }
 
-    
     glm::vec3 rotate{0};
 
     // if (glfwGetKey(*window, keys.lookRight) == GLFW_PRESS) rotate.y -= 1.f;
@@ -149,8 +214,24 @@ void PortalController::moveInPlaneXZ(Window* window, float dt) {
 
     if (glm::dot(moveDir, moveDir) > std::numeric_limits<float>::epsilon()) {
         cam->transform.pos += moveSpeed * dt * glm::normalize(moveDir);
+
         // std::cout << moveSpeed * dt << "\n";
     }
+
+    // // apply gravity
+    // glm::vec3 move_vector = {0,0,0};
+
+    // move_vector.y -= 9.81f * dt;
+
+    // glm::vec3 normalized_move_vector = glm::normalize(move_vector);
+    // // launche ray from camera
+    // auto hit = scene->hit(scene->getMainCamera()->transform.pos, normalized_move_vector);
+
+    // if (hit.t != -1) {
+    //     move_vector = normalized_move_vector * glm::min(glm::length(move_vector), hit.t - 1.7f);
+    // }
+
+    // cam->transform.pos += move_vector;
 
     // update camera buffer
 
@@ -167,38 +248,33 @@ void PortalController::moveInPlaneXZ(Window* window, float dt) {
     glm::mat4 mirrorMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(1, 1, -1));
 
     for (int i = 0; i < 5; i++) {
-
-
-        portalObjB->transform.rot->y += M_PI; 
         // B portal camera
-        glm::mat4 view = inverse(portalObjB->wMatrix()  * inverse(portalObjA->wMatrix()) * cam->getInvViewMatrix());
-        portalObjB->transform.rot->y -= M_PI; 
-        glm::mat4 projection = cam->getProjectionMatrix();
-        
-        glm::vec3 Q_eye = glm::vec3(view * glm::vec4(portalObjB->transform.pos.value, 1.0));
-        glm::vec3 N_eye = glm::normalize(glm::mat3(view) * portalObjB->normal);
-        glm::vec4 clipPlane_eye = glm::vec4(N_eye, -glm::dot(N_eye, Q_eye));
+        glm::mat4 view = inverse(
+            portalObjB->wMatrix() * glm::rotate(glm::mat4(1.0f), glm::radians(180.f), glm::vec3(0.0f, 1.0f, 0.0f)) *
+            inverse(portalObjA->wMatrix()) * cam->getInvViewMatrix());
 
-        // projection = makeObliqueProjection(projection, clipPlane_eye);
+        glm::mat4 projection = cam->getProjectionMatrix();
+
+        projection = makeObliqueClippedProjection(projection, view, portalObjB->transform.pos.value, portalObjB->normal);
 
         camData.push_back({projection, view, inverse(view)});
         // A portal camera
-        
-        portalObjA->transform.rot->y += M_PI; 
-        view = inverse(portalObjA->wMatrix() * mirrorMatrix *  inverse(portalObjB->wMatrix()) * cam->getInvViewMatrix());
-        portalObjA->transform.rot->y -= M_PI; 
+
+        view = inverse(
+            portalObjA->wMatrix() * glm::rotate(glm::mat4(1.0f), glm::radians(180.f), glm::vec3(0.0f, 1.0f, 0.0f)) *
+            inverse(portalObjB->wMatrix()) * cam->getInvViewMatrix());
+
         projection = cam->getProjectionMatrix();
-        Q_eye = glm::vec3(view * glm::vec4(portalObjA->transform.pos.value, 1.0));
-        N_eye = glm::normalize(glm::mat3(view) * portalObjA->normal);
-        clipPlane_eye = glm::vec4(N_eye, -glm::dot(N_eye, Q_eye));
-        // projection = makeObliqueProjection(projection, clipPlane_eye);
+        // get the clip plane in world space
+
+        projection = makeObliqueClippedProjection(projection, view, portalObjA->transform.pos.value, portalObjA->normal);
 
         camData.push_back({projection, view, inverse(view)});
     }
 
     if (portal_move) {
-        s1->transform.pos = camData[1].view[3];
-        s2->transform.pos = camData[2].view[3];
+        s1->transform.pos = camData[1].invView[3];
+        s2->transform.pos = camData[2].invView[3];
 
         std::cout << "s1 pos : " << s1->transform.pos->x << " " << s1->transform.pos->y << " " << s1->transform.pos->z << "\n";
         std::cout << "s2 pos : " << s2->transform.pos->x << " " << s2->transform.pos->y << " " << s2->transform.pos->z << "\n";

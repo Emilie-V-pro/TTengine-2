@@ -4,6 +4,10 @@
 #include <vulkan/vulkan_core.h>
 
 #include <cstdint>
+#include <glm/fwd.hpp>
+#include <glm/geometric.hpp>
+#include <glm/gtc/matrix_access.hpp>
+#include <glm/matrix.hpp>
 
 #include "sceneV2/Icollider.hpp"
 #include "sceneV2/Irenderable.hpp"
@@ -56,8 +60,6 @@ Scene2::Scene2(Device *device) : device(device) {
 Scene2::~Scene2() {}
 
 void Scene2::render(CommandBuffer &cmd, RenderData &renderData) {
-
-
     skyboxPipeline.bindPipeline(cmd);
     std::vector<DescriptorSet *> descriptorSets = {&sceneDescriptorSet};
     DescriptorSet::bindDescriptorSet(cmd, descriptorSets, skyboxPipeline.getPipelineLayout(), VK_PIPELINE_BIND_POINT_GRAPHICS);
@@ -71,7 +73,6 @@ void Scene2::render(CommandBuffer &cmd, RenderData &renderData) {
     meshPipeline.bindPipeline(cmd);
     DescriptorSet::bindDescriptorSet(cmd, descriptorSets, meshPipeline.getPipelineLayout(), VK_PIPELINE_BIND_POINT_GRAPHICS);
 
-
     renderData.basicMeshes = &basicMeshes;
     renderData.meshes = &meshes;
     renderData.default_pipeline = &meshPipeline;
@@ -79,13 +80,10 @@ void Scene2::render(CommandBuffer &cmd, RenderData &renderData) {
     renderData.binded_mesh = &basicMeshes[Cube];
     renderData.descriptorSets.push(sceneDescriptorSet);
 
-
     for (auto &renderable : renderables) {
         renderable->render(cmd, renderData);
     }
 }
-
-
 
 uint32_t Scene2::getNewID() {
     if (!freeIDs.empty()) {
@@ -191,13 +189,69 @@ void Scene2::updateCameraBuffer() {
     cameraBuffer.writeToBuffer(&ubo, sizeof(Ubo));
 }
 
+inline float sign(float a)
+{
+    if (a > 0.0F) return (1.0F);
+    if (a < 0.0F) return (-1.0F);
+    return (0.0F);
+}
+
+glm::mat4 oblic_projection(const glm::mat4 &proj, glm::vec4 &clip_plane) {
+    // 1) Inversion de la matrice de projection
+    glm::mat4 invProj = glm::inverse(proj);
+
+    // 2) Calcul du point q dans l'espace caméra
+ 
+    glm::vec4 q = glm::vec4(
+        (sign(clip_plane.x) + proj[2][0]) / proj[0][0],
+        (sign(clip_plane.y) + proj[2][1]) / proj[1][1],
+        -1.0f,
+        (1.0f + proj[2][2]) / proj[3][2]
+    );
+
+    glm::vec4 clip_plane4 = glm::vec4(clip_plane.x, clip_plane.y, clip_plane.z, clip_plane.w);
+
+    // 3) Mise à l'échelle du plan de coupe
+    glm::vec4 c = clip_plane4 * (2.0f / glm::dot(clip_plane4, q));
+
+    // 4) Construction de la nouvelle matrice
+    glm::mat4 result = proj;
+    // dans glm : result[col][row]
+    result[0][2] = c.x - proj[0][3];
+    result[1][2] = c.y - proj[1][3];
+    result[2][2] = c.z - proj[2][3];
+    result[3][2] = c.w - proj[3][3];
+
+    return result;
+}
+
+void Scene2::updateCameraBuffer(float near, float x_rot) {
+    if (cameraBuffer.getInstancesCount() == 0) {
+        cameraBuffer = Buffer(device, sizeof(Ubo), 20, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
+    }
+    glm::vec3 normal = glm::normalize(glm::vec3{x_rot, 0, M_PI - x_rot});
+
+    glm::vec4 plane_world;
+    plane_world.x = 0;
+    plane_world.y = 0;
+    plane_world.z = -1;
+    plane_world.w = near;
+
+    // glm::vec4 clipPlane_cameraSpace = glm::transpose(glm::inverse(mainCamera->getViewMatrix())) * plane_world;
+
+    Ubo ubo;
+    ubo.projection = oblic_projection(mainCamera->getProjectionMatrix(), plane_world);
+    ubo.view = mainCamera->getViewMatrix();
+    ubo.invView = glm::inverse(mainCamera->getViewMatrix());
+    cameraBuffer.writeToBuffer(&ubo, sizeof(Ubo));
+}
+
 void Scene2::updateCameraBuffer(std::vector<Ubo> camData) {
     if (cameraBuffer.getInstancesCount() == 0) {
         cameraBuffer = Buffer(device, sizeof(Ubo), 20, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
     }
 
     cameraBuffer.writeToBuffer(&camData[0], sizeof(Ubo) * camData.size(), 0);
-
 }
 
 void Scene2::updateMaterialBuffer() {

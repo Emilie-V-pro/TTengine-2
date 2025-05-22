@@ -1,5 +1,6 @@
 
 #include "cameraV2.hpp"
+#include <glm/fwd.hpp>
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -38,7 +39,9 @@ glm::mat4 CameraV2::getInvViewMatrix() {
 }
 
 glm::mat4 CameraV2::getProjectionMatrix() {
-    return glm::perspective(glm::radians(fov), ((float) extent.width / (float) extent.height), near, far);
+    // return glm::perspective(glm::radians(fov), ((float) extent.width / (float) extent.height), near, far);
+
+    return glm::mat4(0.733,0,0,0,0,1.303,0,0,0,0,-1,-1,0,0,-0.1,0);
 }
 
 }

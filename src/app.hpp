@@ -43,6 +43,9 @@ class App : public IApp {
     
     std::shared_ptr<Scene2> scene2;
 
+    float near = 0.1f;
+    float x_rot = 0.0f;
+
     float time = 0.0f;
     uint32_t tick = 0; 
 };

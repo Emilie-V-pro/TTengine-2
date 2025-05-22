@@ -79,7 +79,7 @@ void PortalObj::resize(Device *device,
 }
 
 void PortalObj::placePortal(glm::vec3 normal, glm::vec3 pos, glm::vec3 campos) {
-    this->transform.pos = pos + normal * 0.2f;
+    this->transform.pos = pos + normal * 0.1f;
     normal = glm::normalize(normal);
     this->normal = normal;
     auto t = normal-glm::vec3(0.0f, 1.0f, 0.0f);

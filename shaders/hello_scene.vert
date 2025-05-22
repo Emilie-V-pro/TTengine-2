@@ -54,7 +54,8 @@ void main() {
     Camera_data c = ubo.cameras[pc.camera_id];
     gl_Position = c.projection * c.view * positionWorld;
     fragNormalWorld = normalize(mat3(pc.normalMatrix) * normal);
-    fragPosWorld = positionWorld.xyz;
+    
+    fragPosWorld = (pc.camera_id == 0) ? positionWorld.xyz :  vec3(positionWorld.x, positionWorld.y , positionWorld.z) ;
     fragmaterial = m.materials[material];
     // debugPrintfEXT("%i \n", fragmaterial.albedo_tex_id);
     fraguv = uv;

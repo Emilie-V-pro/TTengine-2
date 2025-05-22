@@ -168,7 +168,7 @@ void App::resize(int width, int height) {
 }
 void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
     tick++;
-    float maxDT = 1.0f / 60.0f;
+    float maxDT = 1.0f / 144.0f;
     // if dt < 1/120, we wait
     if (deltaTime < maxDT) {
         std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>((maxDT - deltaTime) * 1000)));
@@ -181,6 +181,8 @@ void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
     // calcul time
     scene2->updateFromInput(&windowObj, deltaTime);
     scene2->updateSim(deltaTime, time, tick);
+
+    scene2->updateCameraBuffer(near, x_rot);
 
     // scene2->updateCameraBuffer();
 }
@@ -210,26 +212,11 @@ void App::renderFrame(float deltatTime, CommandBuffer &cmdBuffer, uint32_t curen
     // ImGui::SliderFloat("metallic", &metallic, 0.0f, 1.0f);
     // ImGui::SliderFloat("roughness", &roughness, 0.0f, 1.0f);
 
-    ImGui::PushItemWidth(80);
-    ImGui::Text("pos");
-    ImGui::SameLine();
-    ImGui::SliderFloat("X", &pos.x, -20.0f, 20.0f);
-    ImGui::SameLine();
-    ImGui::SliderFloat("Y", &pos.y, -20.0f, 20.0f);
-    ImGui::SameLine();
-    ImGui::SliderFloat("Z", &pos.z, -20.0f, 20.0f);
-    ImGui::PopItemWidth();
+    ImGui::SliderFloat("near", &near, -M_PI, M_PI);
+    ImGui::SliderFloat("x_rot", &x_rot, -M_PI, M_PI);
 
-    ImGui::PushItemWidth(80);
-    ImGui::Text("rot");
-    ImGui::SameLine();
-    ImGui::SliderFloat("rX", &rot.x, 0.0f, 5.0f);
-    ImGui::SameLine();
-    ImGui::SliderFloat("rY", &rot.y, 0.0f, 5.0f);
-    ImGui::SameLine();
-    ImGui::SliderFloat("rZ", &rot.z, 0.0f, 5.0f);
 
-    ImGui::PopItemWidth();
+
 
     ImGui::PushItemWidth(80);
 
