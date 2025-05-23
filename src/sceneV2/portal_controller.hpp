@@ -21,27 +21,10 @@ class PortalController {
 
 
 
-        int id = scene->addNode(-1, std::make_shared<BasicMeshObj>());
-        s1 = std::dynamic_pointer_cast<BasicMeshObj>(scene->getNode(id)).get();
-        s1->setShape(Sphere);
-        s1->transform.scale = glm::vec3(0.5f);
 
-        id = scene->addNode(-1, std::make_shared<BasicMeshObj>());
-        s2 = std::dynamic_pointer_cast<BasicMeshObj>(scene->getNode(id)).get();
-        s2->setShape(Sphere);
-        s2->transform.scale = glm::vec3(0.5f);
-
-        // blue material
-        Material mat;
-        mat.color = glm::vec4(0, 0, 1, 1);
-        mat.metallic = 0.0f;
-        mat.roughness = 1.0f;
-
-        // s1->setMaterialOffset(scene->addMaterial(mat));
-        mat.color = glm::vec4(1, 0, 0, 1);
         // s2->setMaterialOffset(scene->addMaterial(mat));
 
-         id = scene->addNode(-1, std::make_shared<PortalObj>());
+        int id = scene->addNode(-1, std::make_shared<PortalObj>());
         portalObjA = std::dynamic_pointer_cast<PortalObj>(scene->getNode(id)).get();
 
         id = scene->addNode(-1, std::make_shared<PortalObj>());
@@ -106,8 +89,5 @@ class PortalController {
     Scene2* scene;
     PortalObj* portalObjA;
     PortalObj* portalObjB;
-
-    BasicMeshObj* s1;
-    BasicMeshObj* s2;
 };
 }  // namespace TTe

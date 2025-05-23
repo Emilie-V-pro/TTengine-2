@@ -43,9 +43,11 @@ layout(set = 0 , binding = 3) uniform samplerCube samplerCubeMap;
 
 // layout(buffer_reference, scalar) readonly buffer InstanceBuffer2 { ObjectInfo objInfo[]; };
 layout(push_constant) uniform constants {
-    mat4 modelMatrix;
+        mat4 modelMatrix;
     mat4 normalMatrix;
+    vec3 portal_pos;
     uint camera_id;
+    vec3 portal_normal;
 }
 pc;
 

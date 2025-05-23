@@ -46,22 +46,32 @@ layout(set = 1, binding = 0) uniform sampler2D portalTextures[10];
 layout(push_constant) uniform constants {
     mat4 modelMatrix;
     mat4 normalMatrix;
+    vec3 portal_pos;
     uint camera_id;
-    vec3 portal_color;
+    vec3 portal_normal;
     uint portal_id;
+    vec3 portal_color;
     uint recurs_id;
+
+    ivec2 screen_res;
 }
 pc;
 
 
 void main() {
     vec4 color = vec4(0,0,0, 1);
+
+    vec3 dir = pc.portal_pos - fragPosWorld;
+    if(dot(dir, pc.portal_normal) > 0.0 && pc.camera_id != 0) {
+        discard;
+    }
+
     if (fragmaterial == 1) {
         color = vec4(pc.portal_color, 1.0);
         
     } else {
         // screen space coordinates
-        vec2 uv = gl_FragCoord.xy / vec2(1280, 720);;
+        vec2 uv = gl_FragCoord.xy / pc.screen_res;
         if (pc.recurs_id == 1) {
             //sample cube map
             vec3 dir = normalize(fragPosWorld - ubo.cameras[pc.camera_id].view[3].xyz);

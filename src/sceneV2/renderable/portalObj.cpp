@@ -19,6 +19,7 @@ std::array<DescriptorSet, MAX_FRAMES_IN_FLIGHT> PortalObj::portalDescriptorSets;
 GraphicPipeline PortalObj::portalPipeline;
 Mesh PortalObj::portalMesh;
 Device *PortalObj::device = nullptr;
+glm::ivec2 PortalObj::screen_size = {1280, 720};
 
 
 PortalObj::PortalObj() {
@@ -54,7 +55,7 @@ void PortalObj::render(CommandBuffer &cmd, RenderData &renderData) {
     renderData.binded_mesh = &mesh;
     mesh.bindMesh(cmd);
 
-    PushConstantPortal pc = {{wMatrix(), wNormalMatrix(), renderData.cameraId}, {},portalColor, renderData.recursionLevel * 2 +   1 -portalId, renderData.recursionLevel};
+    PushConstantPortal pc = {{wMatrix(), wNormalMatrix(), renderData.portal_pos, renderData.cameraId, renderData.portal_normal} , renderData.recursionLevel * 2 +   1 -portalId, portalColor,renderData.recursionLevel, screen_size};
 
     vkCmdPushConstants(cmd, renderData.binded_pipeline->getPipelineLayout(), renderData.binded_pipeline->getPushConstantStage(), 0, sizeof(PushConstantPortal), &pc);
     std::vector<DescriptorSet*> descriptorSet = {&portalDescriptorSets[renderData.frameIndex]};
@@ -76,6 +77,7 @@ void PortalObj::resize(Device *device,
         portalDescriptorSet.writeImagesDescriptor(0, imagesInfo);
         portalDescriptorSets[i] = portalDescriptorSet;
     }
+    screen_size = {portalATextures[0][0][0].getWidth(), portalATextures[0][0][0].getHeight()};
 }
 
 void PortalObj::placePortal(glm::vec3 normal, glm::vec3 pos, glm::vec3 campos) {

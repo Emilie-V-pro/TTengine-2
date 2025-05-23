@@ -84,7 +84,7 @@ Buffer::Buffer(const Buffer& other)
       allocation(other.allocation),
       vk_buffer(other.vk_buffer),
       vk_memory(other.vk_memory),
-      device(other.device) {
+      device(other.device), mappedMemory(other.mappedMemory) {
     refCount.store(other.refCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
     (*refCount.load())++;
 }
@@ -101,6 +101,7 @@ Buffer& Buffer::operator=(const Buffer& other) {
         vk_buffer = other.vk_buffer;
         vk_memory = other.vk_memory;
         device = other.device;
+        mappedMemory = other.mappedMemory;
         refCount.store(other.refCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
         (*refCount.load())++;
     }
@@ -116,9 +117,10 @@ Buffer::Buffer(Buffer&& other)
       allocation(other.allocation),
       vk_buffer(other.vk_buffer),
       vk_memory(other.vk_memory),
-      device(other.device) {
+      device(other.device), mappedMemory(other.mappedMemory) {
     refCount.store(other.refCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
     other.vk_buffer = VK_NULL_HANDLE;
+    mappedMemory = nullptr;
 }
 
 Buffer& Buffer::operator=(Buffer&& other) {
@@ -134,11 +136,13 @@ Buffer& Buffer::operator=(Buffer&& other) {
         vk_buffer = other.vk_buffer;
         vk_memory = other.vk_memory;
         device = other.device;
+        mappedMemory = other.mappedMemory;
 
         other.vk_buffer = VK_NULL_HANDLE;
         other.vk_memory = VK_NULL_HANDLE;
         other.allocation = VK_NULL_HANDLE;
         other.device = nullptr;
+        mappedMemory = nullptr;
         refCount.store(other.refCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
     }
     return *this;

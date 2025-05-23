@@ -5,7 +5,6 @@ layout(location = 1) in vec3 normal;
 layout(location = 2) in vec2 uv;
 layout(location = 3) in uint material;
 
-
 struct Material {
     vec3 color;
     float metallic;
@@ -20,42 +19,41 @@ layout(location = 1) out vec3 fragNormalWorld;
 layout(location = 2) out vec2 fraguv;
 layout(location = 3) out flat uint fragmaterial;
 
-
 struct Camera_data {
-     mat4 projection;
+    mat4 projection;
     mat4 view;
     mat4 invView;
 };
 
 layout(set = 0, binding = 0) uniform UBO {
     Camera_data cameras[20];
-}ubo;
+} ubo;
 
-
-
-
-
-layout(set = 0, binding = 1) uniform Mat { Material[1000] materials; }
+layout(set = 0, binding = 1) uniform Mat {
+    Material[1000] materials;
+}
 m;
 
 layout(set = 0, binding = 2) uniform sampler2D textures[1000];
 
-layout(set = 0 , binding = 3) uniform samplerCube samplerCubeMap;
-
+layout(set = 0, binding = 3) uniform samplerCube samplerCubeMap;
 
 layout(set = 1, binding = 0) uniform sampler2D portalTextures[10];
 
 layout(push_constant) uniform constants {
-    mat4 modelMatrix;
+     mat4 modelMatrix;
     mat4 normalMatrix;
+    vec3 portal_pos;
     uint camera_id;
-    vec3 portal_color;
+    vec3 portal_normal;
+    
     uint portal_id;
-    uint portal_recurs_id;
+    vec3 portal_color;
+    uint recurs_id;
+    ivec2 screen_res;
+
 }
 pc;
-
-
 
 void main() {
     vec4 positionWorld = pc.modelMatrix * vec4(position, 1.0);

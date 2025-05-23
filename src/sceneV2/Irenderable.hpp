@@ -10,9 +10,11 @@
 namespace TTe {
 
     struct PushConstantData{
-        glm::mat4 worldMatrix;
+        glm::mat4 modelMatrix;
         glm::mat4 normalMatrix;
-        uint32_t cam_id;
+        glm::vec3 portal_pos;
+        uint32_t camera_id;
+        glm::vec3 portal_normal;
     };
 
 class IRenderable {

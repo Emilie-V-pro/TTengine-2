@@ -66,6 +66,10 @@ void Scene2::render(CommandBuffer &cmd, RenderData &renderData) {
 
     basicMeshes[Cube].bindMesh(cmd);
     renderData.renderPass->setDepthAndStencil(cmd, false);
+
+    //set push_constant for cam_id
+    vkCmdPushConstants(cmd, skyboxPipeline.getPipelineLayout(), skyboxPipeline.getPushConstantStage(), 0, sizeof(uint32_t), &renderData.cameraId);
+
     vkCmdDrawIndexed(cmd, basicMeshes[Cube].nbIndicies(), 1, 0, 0, 0);
     renderData.renderPass->setDepthAndStencil(cmd, true);
     descriptorSets = {&sceneDescriptorSet};

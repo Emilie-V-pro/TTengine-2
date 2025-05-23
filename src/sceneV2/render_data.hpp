@@ -2,6 +2,7 @@
 
 #include <sys/types.h>
 #include <cstdint>
+#include <glm/fwd.hpp>
 #include <stack>
 #include "descriptor/descriptorSet.hpp"
 #include "dynamic_renderpass.hpp"
@@ -22,6 +23,9 @@ namespace TTe {
         uint cameraId = 0;
 
         uint32_t frameIndex = 0;
+
+        glm::vec3 portal_pos;
+        glm::vec3 portal_normal;
 
         private:
     };

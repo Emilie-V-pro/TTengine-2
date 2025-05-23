@@ -165,6 +165,19 @@ void App::init(Device *device, SwapChain *swapchain, Window *window) {
 void App::resize(int width, int height) {
     renderPass.resize({static_cast<uint32_t>(width), static_cast<uint32_t>(height)});
     scene2->getMainCamera()->extent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+
+
+    VkExtent2D size = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+    std::vector<std::vector<std::vector<Image>>> portalATextures;
+    std::vector<std::vector<std::vector<Image>>> portalBTextures;
+    for (int i = 0; i < 5; i++) {
+        portalARenderPasses[i].resize(size);
+        portalBRenderPasses[i].resize(size);
+        portalATextures.push_back(portalARenderPasses[i].getimageAttachement());
+        portalBTextures.push_back(portalBRenderPasses[i].getimageAttachement());
+    }
+
+    PortalObj::resize(device, portalATextures, portalBTextures);
 }
 void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
     tick++;
@@ -182,7 +195,7 @@ void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
     scene2->updateFromInput(&windowObj, deltaTime);
     scene2->updateSim(deltaTime, time, tick);
 
-    scene2->updateCameraBuffer(near, x_rot);
+    // scene2->updateCameraBuffer(near, x_rot);
 
     // scene2->updateCameraBuffer();
 }
@@ -247,11 +260,17 @@ void App::renderFrame(float deltatTime, CommandBuffer &cmdBuffer, uint32_t curen
     rData.frameIndex = render_index;
     rData.renderPass = &portalARenderPasses[0];
 
+    rData.portal_pos = movementController.portalObjB->transform.pos.value;
+    rData.portal_normal = movementController.portalObjB->normal;
+
     portalARenderPasses[0].beginRenderPass(cmdBuffer, curentFrameIndex);
     scene2->render(cmdBuffer, rData);
     portalARenderPasses[0].endRenderPass(cmdBuffer);
+    
 
     rData.cameraId = 2;
+    rData.portal_pos = movementController.portalObjA->transform.pos.value;
+    rData.portal_normal = movementController.portalObjA->normal;
     rData.renderPass = &portalBRenderPasses[0];
     portalBRenderPasses[0].beginRenderPass(cmdBuffer, curentFrameIndex);
     scene2->render(cmdBuffer, rData);

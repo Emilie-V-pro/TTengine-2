@@ -363,7 +363,7 @@ void ObjetSimuleMSS::render(CommandBuffer &cmd, RenderData renderData) {
     renderData.binded_mesh = &mesh;
 
     // push constant
-        PushConstantData pc = {wMatrix(), wNormalMatrix(), renderData.cameraId};
+        PushConstantData pc = {wMatrix(), wNormalMatrix(), renderData.portal_pos, renderData.cameraId, renderData.portal_normal};
 
     vkCmdPushConstants(
         cmd, renderData.binded_pipeline->getPipelineLayout(), renderData.binded_pipeline->getPushConstantStage(), 0, sizeof(PushConstantData), &pc);

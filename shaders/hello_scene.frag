@@ -39,7 +39,9 @@ layout(set = 0 , binding = 3) uniform samplerCube samplerCubeMap;
 layout(push_constant) uniform constants {
     mat4 modelMatrix;
     mat4 normalMatrix;
+    vec3 portal_pos;
     uint camera_id;
+    vec3 portal_normal;
 }
 pc;
 
@@ -218,11 +220,20 @@ void main() {
     // if (false) {
     //     mat4 test = PushConstants.instances.objInfo[0].modelMatrix;
     // }
+
+
+
     vec4 textColor;
     vec2 metalRoughness;
     // vec3 ambiant = vec3(0.01);
     vec3 pos = ubo.cameras[pc.camera_id].invView[3].xyz;
     vec3 view = normalize(pos - fragPosWorld);
+
+
+    vec3 dir = pc.portal_pos - fragPosWorld;
+    if(dot(dir, pc.portal_normal) < 0.0 && pc.camera_id != 0) {
+        discard;
+    }
     // vec3 sun = normalize(vec3(-1, 1, -1));
     // int texId = m.materials[fragmaterial].albedo_tex_id;
     // // vec3 H = normalize(sun + view);

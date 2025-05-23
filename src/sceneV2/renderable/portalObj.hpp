@@ -19,10 +19,10 @@ class PortalObj : public IRenderable, public Node {
 
 
     struct PushConstantPortal: public PushConstantData {
-        glm::vec3 offset;
-        glm::vec3 portalColor;
         uint32_t portalId;
+        glm::vec3 portalColor;
         uint32_t recursionLevel;
+        glm::ivec2 screenSize;
     };
 
 
@@ -44,5 +44,6 @@ class PortalObj : public IRenderable, public Node {
 
     static Mesh portalMesh;
     static Device *device;
+    static glm::ivec2 screen_size;
 };
 }  // namespace TTe
