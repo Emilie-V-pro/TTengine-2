@@ -145,7 +145,7 @@ void Engine::endAndPresentFrame(Semaphore *waitRenderSemaphore) {
 
 void Engine::renderLoop(Engine &engine) {
     auto start = std::chrono::high_resolution_clock::now();
-    while (!engine.shouldClose) {
+    while (!engine.window.shouldClose()) {
         auto newTime = std::chrono::high_resolution_clock::now();
 
         float deltatTime = std::chrono::duration<float, std::chrono::seconds::period>(newTime - start).count();
@@ -207,7 +207,7 @@ void Engine::renderLoop(Engine &engine) {
 void Engine::updateLoop(Engine &engine) {
     auto start = std::chrono::high_resolution_clock::now();
     uint32_t frameIndex = 0;
-    while (!engine.shouldClose) {
+    while (!engine.window.shouldClose()) {
         glfwPollEvents();
         if (engine.resizeMutex.try_lock()) {
             frameIndex++;
