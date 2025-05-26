@@ -348,11 +348,11 @@ void ObjetSimuleMSS::simulation(
 
     /** Modification des normales **/
     setNormals();
-    if(tick %10 == 0)
+    if(tick %5 == 0)
         updateVertex();
 }
 
-void ObjetSimuleMSS::render(CommandBuffer &cmd, RenderData renderData) {
+void ObjetSimuleMSS::render(CommandBuffer &cmd, RenderData &renderData) {
 
     if(renderData.binded_pipeline != renderData.default_pipeline){
         renderData.binded_pipeline->bindPipeline(cmd);

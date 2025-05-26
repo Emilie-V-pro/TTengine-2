@@ -232,7 +232,7 @@ void main() {
 
     vec3 dir = pc.portal_pos - fragPosWorld;
     if(dot(dir, pc.portal_normal) < 0.0 && pc.camera_id != 0) {
-        discard;
+        // discard;
     }
     // vec3 sun = normalize(vec3(-1, 1, -1));
     // int texId = m.materials[fragmaterial].albedo_tex_id;
@@ -263,21 +263,21 @@ void main() {
     // metalRoughness.g = max(0.01, metalRoughness.g); ;
 
     vec3 diffuse_lightDir = surfaceNormal;
-    // vec3 reflect_lightDir = reflect(-view, surfaceNormal);
+    vec3 reflect_lightDir = surfaceNormal;
 
     vec4 diffuse_cubeMapColor =
         textureLod(samplerCubeMap, diffuse_lightDir, pow(textureQueryLevels(samplerCubeMap), max(metalRoughness.g + 0.2, 1.f)));
-    // vec4 reflect_cubeMapColor = textureLod(samplerCubeMap, reflect_lightDir, pow(textureQueryLevels(samplerCubeMap), metalRoughness.g));
+    vec4 reflect_cubeMapColor = textureLod(samplerCubeMap, reflect_lightDir, pow(textureQueryLevels(samplerCubeMap), metalRoughness.g));
     // BRDFResults res = DisneyBRDF(textColor.rgb, metalRoughness.r, metalRoughness.g, surfaceNormal, view, lightDir);
     // color += ((res.diffuse + res.specular) * cubeMapColor.rgb);
 
     vec3 color_difuse =
         LearnOpenGLBRDF(textColor.rgb, metalRoughness.r, metalRoughness.g, surfaceNormal, view, diffuse_lightDir, diffuse_cubeMapColor.rgb);
-    // vec3 color_reflect = LearnOpenGLBRDF(textColor.rgb, metalRoughness.r, metalRoughness.g, surfaceNormal, view, reflect_lightDir,
-    // reflect_cubeMapColor.rgb );
+    vec3 color_reflect = LearnOpenGLBRDF(textColor.rgb, metalRoughness.r, metalRoughness.g, surfaceNormal, view, reflect_lightDir,
+    reflect_cubeMapColor.rgb );
 
     color += vec3(0.03) * textColor.rgb;
-    color += color_difuse;  // mix(color_reflect,color_difuse , metalRoughness.r);
+    color += mix(color_reflect, color_difuse , metalRoughness.r);
 
     outColor = vec4(color, 0);
 }

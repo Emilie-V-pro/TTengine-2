@@ -71,7 +71,7 @@ void SkeletonObj::init(BVH bvh) {
 
 void SkeletonObj::init(std::string bvh_folder) {
     for (const auto &entry : std::filesystem::directory_iterator(bvh_folder)) {
-        if (entry.path().filename().string().find("idle") != std::string::npos) {
+        if (entry.path().filename().string().find("talk") != std::string::npos) {
             m_bvh[State::IDLE] = BVH(entry.path(), true);
         }
         if (entry.path().filename().string().find("walk") != std::string::npos) {
@@ -489,14 +489,14 @@ void SkeletonObj::render(CommandBuffer &cmd, RenderData &renderData) {
         renderData.binded_pipeline = renderData.default_pipeline;
     }
     for (int i = 0; i < m_joints_final.size(); i++) {
-        PushConstantData pc = {m_joints_final[i]->wMatrix() * glm::scale(glm::vec3(0.5f)), m_joints_final[i]->wNormalMatrix(), renderData.portal_pos, renderData.cameraId, renderData.portal_normal};
+        PushConstantData pc = {m_joints_final[i]->wMatrix() * glm::scale(glm::vec3(1.3f)), m_joints_final[i]->wNormalMatrix(), renderData.portal_pos, renderData.cameraId, renderData.portal_normal};
 
         vkCmdPushConstants(cmd, renderData.binded_pipeline->getPipelineLayout(), renderData.binded_pipeline->getPushConstantStage(), 0, sizeof(PushConstantData), &pc);
 
         vkCmdDrawIndexed(cmd, renderData.basicMeshes->at(Sphere).nbIndicies(), 1, 0, 0, 0);
     }
 
-    renderData.basicMeshes->at(Sphere).bindMesh(cmd);
+    renderData.basicMeshes->at(Cube).bindMesh(cmd);
     for (auto &joint : m_joints_final) {
         // draw cube as line between joints
         glm::mat4 wPoint = joint->wMatrix();
@@ -526,7 +526,7 @@ void SkeletonObj::render(CommandBuffer &cmd, RenderData &renderData) {
 
             // Calculer la matrice de transformation
             glm::mat4 wMatrix = glm::translate(glm::mat4(1.0f), position) * glm::toMat4(rotation) *
-                                glm::scale(glm::mat4(1.0f), glm::vec3(0.07f, 0.07f, length));
+                                glm::scale(glm::mat4(1.0f), glm::vec3(0.14f, 0.14f, length));
             glm::mat4 wNormalMatrix = glm::inverseTranspose(glm::mat3(wMatrix));
             PushConstantData pc = {wMatrix, wNormalMatrix, renderData.portal_pos, renderData.cameraId, renderData.portal_normal};
             // push constant
@@ -556,10 +556,10 @@ void SkeletonObj::collisionPos(glm::vec3 &pos, glm::vec3 &vitesse) {
         float dist = sdCapsule(pos, colider.first, colider.second);
 
         if (dist < 0) {
-            // pos = closestPointToCapsule(pos, colider.first, colider.second, 0.12f);
-            // vitesse = glm::vec3(0.f);
+            pos = closestPointToCapsule(pos, colider.first, colider.second, 0.12f);
+            vitesse = glm::vec3(0.f);
 
-            vitesse = (closestPointToCapsule(pos, colider.first, colider.second, 0.1f) - pos) * 1000.f;
+            // vitesse = (closestPointToCapsule(pos, colider.first, colider.second, 0.1f) - pos) * 1000.f;
         }
     }
 }
@@ -630,6 +630,7 @@ void SkeletonObj::updateFromInput(Window *window, float dt) {
     } else if (state == wantedState) {
         wantTransition = false;
         transition = false;
+        nextState = wantedState;
         startTransitionFrame = -1;
     }
 

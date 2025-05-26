@@ -26,7 +26,7 @@ class Pipeline {
 
    protected:
    
-    VkPushConstantRange pushConstantInfo;
+    VkPushConstantRange pushConstantInfo = {};
     VkPipelineLayout vk_pipelineLayout = VK_NULL_HANDLE;
     Device *device = nullptr;
 };

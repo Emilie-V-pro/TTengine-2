@@ -5,6 +5,7 @@
 
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
 #include <memory>
@@ -67,8 +68,8 @@ void App::init(Device *device, SwapChain *swapchain, Window *window) {
 
     scene2 = std::make_shared<Scene2>(device);
 
-    std::shared_ptr<SkeletonObj> skeleton = std::make_shared<SkeletonObj>();
-    // skeleton->init("../data/motionFSM");
+    skeleton = std::make_shared<SkeletonObj>();
+    skeleton->init("../data/motionFSM");
 
     scene2->getMainCamera()->extent = {1280, 720};
     // scene2->addMesh(m2);
@@ -81,28 +82,27 @@ void App::init(Device *device, SwapChain *swapchain, Window *window) {
     imageCreateInfo.usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT;
     imageCreateInfo.filename.push_back("dt.jpg");
 
-    // Image image = Image(device, imageCreateInfo);
+    Image image = Image(device, imageCreateInfo);
 
-    // imageCreateInfo.filename[0] = "normal.jpg";
-    // Image normal = Image(device, imageCreateInfo);
+    imageCreateInfo.filename[0] = "normal.jpg";
+    Image normal = Image(device, imageCreateInfo);
 
-    // imageCreateInfo.filename[0] = "mr.jpg";
-    // Image mr = Image(device, imageCreateInfo);
+    imageCreateInfo.filename[0] = "mr.jpg";
+    Image mr = Image(device, imageCreateInfo);
 
-    // uint32_t albedo_id = scene2->addImage(image);
-    // uint32_t normal_id = scene2->addImage(normal);
-    // uint32_t mr_id = scene2->addImage(mr);
+    uint32_t albedo_id = scene2->addImage(image);
+    uint32_t normal_id = scene2->addImage(normal);
+    uint32_t mr_id = scene2->addImage(mr);
 
-    // Material mat;
-    // mat.albedo_tex_id = albedo_id;
-    // mat.normal_tex_id = normal_id;
-    // mat.metallic_roughness_tex_id = mr_id;
+    Material mat;
+    mat.albedo_tex_id = albedo_id;
+    mat.normal_tex_id = normal_id;
+    mat.metallic_roughness_tex_id = mr_id;
 
-    // std::cout << "albedo_id : " << albedo_id << " normal_id : " << normal_id << " mr_id : " << mr_id << std::endl;
+   
+    uint mat_id = scene2->addMaterial(mat);
 
-    // uint mat_id = scene2->addMaterial(mat);
 
-    // std::cout << "mat_id : " << mat_id << std::endl;
 
     scene2->addObjectFileData(data);
     scene2->Param("../data/simu/Fichier_Param.simu");
@@ -111,26 +111,27 @@ void App::init(Device *device, SwapChain *swapchain, Window *window) {
     StaticMeshObj obj3 = StaticMeshObj();
     int i = 0;
     int mapId = scene2->addNode(-1, std::make_shared<Container>());
-    for (auto &mesh : data.meshes) {
-        obj3.setMeshId(i);
-        scene2->addNode(mapId, std::make_shared<StaticMeshObj>(obj3));
-        i++;
-    }
+    // for (auto &mesh : data.meshes) {
+    //     obj3.setMeshId(i);
+    //     scene2->addNode(mapId, std::make_shared<StaticMeshObj>(obj3));
+    //     i++;
+    // }
     std::cout << "mapId : " << mapId << std::endl;
 
-    // uint32_t cape_id  = scene2->addNode(-1, std::make_shared<ObjetSimuleMSS>(device, "../data/simu/Fichier_Param.objet1"));
+    uint32_t cape_id  = scene2->addNode(-1, std::make_shared<ObjetSimuleMSS>(device, "../data/simu/Fichier_Param.objet1"));
 
     // scene2->addNode(-1, skeleton);
+
 
     scene2->updateMaterialBuffer();
     scene2->updateDescriptorSets();
 
     std::cout << "\% de leaf sans triangle : " << Mesh::leaf_without_triangle_count * 100.0f / Mesh::leaf_count << std::endl;
-    // scene2->computeBoundingBox();
-    // std::shared_ptr<Node> cape = scene2->getNode(cape_id);
+    scene2->computeBoundingBox();
+    std::shared_ptr<Node> cape = scene2->getNode(cape_id);
     // cast to ObjetSimuleMSS
-    // std::shared_ptr<ObjetSimuleMSS> capeSim = std::dynamic_pointer_cast<ObjetSimuleMSS>(cape);
-    // capeSim->transform.rot->x = (M_PI/2.0);
+    std::shared_ptr<ObjetSimuleMSS> capeSim = std::dynamic_pointer_cast<ObjetSimuleMSS>(cape);
+    capeSim->transform.rot->x = (M_PI/2.0);
     // capeSim->attachToNode(0, skeleton->getChild(0)->getChild(0)->getChild(0)->getChild(2)->getChild(0));
     // capeSim->attachToNode(69, skeleton->getChild(0)->getChild(0)->getChild(0)->getChild(1)->getChild(0));
 
@@ -138,16 +139,16 @@ void App::init(Device *device, SwapChain *swapchain, Window *window) {
     // capeSim->attachToNode(44, skeleton->getChild(0)->getChild(0)->getChild(0)->getChild(1));
     // capeSim->attachToNode(34, skeleton->getChild(0)->getChild(1)->getChild(0));
 
-    // std::shared_ptr<BasicMeshObj> b = std::make_shared<BasicMeshObj>();
-    // std::shared_ptr<CollisionObject> c = std::make_shared<CollisionObject>(CollisionObject::cube);
-    // b->setShape(Cube);
+    std::shared_ptr<BasicMeshObj> b = std::make_shared<BasicMeshObj>();
+    std::shared_ptr<CollisionObject> c = std::make_shared<CollisionObject>(CollisionObject::cube);
+    b->setShape(Cube);
 
-    // b->transform.pos = glm::vec3(3.5,-2,-1.5);
-    // c->transform.scale = glm::vec3(1.08);
+    b->transform.pos = glm::vec3(3.5,-2,-1.5);
+    c->transform.scale = glm::vec3(1.08);
     // auto iddd = scene2->addNode(-1, b);
     // scene2->addNode(iddd, c);
 
-    // capeSim->setMaterial(mat_id);
+    capeSim->setMaterial(mat_id);
 
     // add sphere for show hit
 
@@ -158,8 +159,9 @@ void App::init(Device *device, SwapChain *swapchain, Window *window) {
     sphere->transform.pos = glm::vec3(0.0f, 0.0f, 0.0f);
 
     sphere_hit_id = scene2->addNode(-1, sphere);
+    scene2->getMainCamera()->setParent(skeleton.get());
 
-    movementController.init(device, scene2.get());
+    // movementController.init(device, scene2.get());
 }
 
 void App::resize(int width, int height) {
@@ -183,13 +185,14 @@ void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
     tick++;
     float maxDT = 1.0f / 144.0f;
     // if dt < 1/120, we wait
-    if (deltaTime < maxDT) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>((maxDT - deltaTime) * 1000)));
-        deltaTime = maxDT;
-    }
+    // if (deltaTime < maxDT) {
+    //     std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>((maxDT - deltaTime) * 1000)));
+    //     deltaTime = maxDT;
+    // }
     time += deltaTime;
+    printf("%f \n", deltaTime);
 
-    movementController.moveInPlaneXZ(&windowObj, deltaTime);
+    movementController.moveInPlaneXZ(&windowObj, deltaTime, scene2->getMainCamera());
     // scene.updateCameraBuffer();
     // calcul time
     scene2->updateFromInput(&windowObj, deltaTime);
@@ -197,7 +200,7 @@ void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
 
     // scene2->updateCameraBuffer(near, x_rot);
 
-    // scene2->updateCameraBuffer();
+    scene2->updateCameraBuffer();
 }
 void App::renderFrame(float deltatTime, CommandBuffer &cmdBuffer, uint32_t curentFrameIndex, uint32_t render_index) {
     // static float blend;
@@ -220,25 +223,10 @@ void App::renderFrame(float deltatTime, CommandBuffer &cmdBuffer, uint32_t curen
         "Camera pos: %f %f %f", scene2->getMainCamera()->transform.pos->x, scene2->getMainCamera()->transform.pos->y,
         scene2->getMainCamera()->transform.pos->z);
 
-    // ImGui::SliderFloat("blending factor", &blend, 0.0f, 1.0f);
-    // ImGui::ColorPicker3("KOULEUR", color);
-    // ImGui::SliderFloat("metallic", &metallic, 0.0f, 1.0f);
-    // ImGui::SliderFloat("roughness", &roughness, 0.0f, 1.0f);
-
-    ImGui::SliderFloat("near", &near, -M_PI, M_PI);
-    ImGui::SliderFloat("x_rot", &x_rot, -M_PI, M_PI);
-
-
-
-
-    ImGui::PushItemWidth(80);
-
-    ImGui::SliderFloat("scale", &scale, 0.0f, 2.0f);
-
-    ImGui::PopItemWidth();
-    ImGui::SliderInt("camid", (int *)&camid, 0, 19);
-
     // ImGui::DragFloat("const char *label", float *v)
+
+    ImGui::Text("%s", ("state: " + skeleton->getStrfromState(skeleton->state)).c_str());
+    ImGui::Text("next state: %s", skeleton->getStrfromState(skeleton->nextState).c_str());
     ImGui::End();
 
     // scene2->getMainCamera()->transform.pos->x = blend;
@@ -255,30 +243,30 @@ void App::renderFrame(float deltatTime, CommandBuffer &cmdBuffer, uint32_t curen
 
     // render from portal perspective
     RenderData rData;
-    rData.recursionLevel = 1;
+    rData.recursionLevel = 0;
     rData.cameraId = 1;
     rData.frameIndex = render_index;
     rData.renderPass = &portalARenderPasses[0];
 
-    rData.portal_pos = movementController.portalObjB->transform.pos.value;
-    rData.portal_normal = movementController.portalObjB->normal;
+    // rData.portal_pos = movementController.portalObjB->transform.pos.value;
+    // rData.portal_normal = movementController.portalObjB->normal;
 
-    portalARenderPasses[0].beginRenderPass(cmdBuffer, curentFrameIndex);
-    scene2->render(cmdBuffer, rData);
-    portalARenderPasses[0].endRenderPass(cmdBuffer);
+    // portalARenderPasses[0].beginRenderPass(cmdBuffer, curentFrameIndex);
+    // scene2->render(cmdBuffer, rData);
+    // portalARenderPasses[0].endRenderPass(cmdBuffer);
     
 
     rData.cameraId = 2;
-    rData.portal_pos = movementController.portalObjA->transform.pos.value;
-    rData.portal_normal = movementController.portalObjA->normal;
-    rData.renderPass = &portalBRenderPasses[0];
-    portalBRenderPasses[0].beginRenderPass(cmdBuffer, curentFrameIndex);
-    scene2->render(cmdBuffer, rData);
-    portalBRenderPasses[0].endRenderPass(cmdBuffer);
+    // rData.portal_pos = movementController.portalObjA->transform.pos.value;
+    // rData.portal_normal = movementController.portalObjA->normal;
+    // rData.renderPass = &portalBRenderPasses[0];
+    // portalBRenderPasses[0].beginRenderPass(cmdBuffer, curentFrameIndex);
+    // scene2->render(cmdBuffer, rData);
+    // portalBRenderPasses[0].endRenderPass(cmdBuffer);
 
     // put a sync point here to wait for the render pass to finish
-    vkCmdPipelineBarrier(cmdBuffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0,
-                         nullptr, 0, nullptr);
+    // vkCmdPipelineBarrier(cmdBuffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0,
+                        //  nullptr, 0, nullptr);
 
 rData.recursionLevel = 0;
     rData.cameraId = camid;

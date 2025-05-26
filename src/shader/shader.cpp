@@ -253,8 +253,7 @@ void addAccelerationStructureBinding(
         setBindings[set][binding.binding] = binding;
     }
 }
-}
-
+}  // namespace TTe
 
 namespace TTe {
 
@@ -350,7 +349,7 @@ void Shader::createDescriptorSetLayout(VkShaderStageFlags descriptorStage) {
     addUniformBufferBinding(res.uniform_buffers, comp, setBindings, descriptorStage);
     addStorageBufferBinding(res.storage_buffers, comp, setBindings, descriptorStage);
     addAccelerationStructureBinding(res.acceleration_structures, comp, setBindings, descriptorStage);
-    if(shaderStage == VK_SHADER_STAGE_COMPUTE_BIT) {
+    if (shaderStage == VK_SHADER_STAGE_COMPUTE_BIT) {
         computeWorkGroupSize.width = comp.get_execution_mode_argument(spv::ExecutionMode::ExecutionModeLocalSize, 0);
         computeWorkGroupSize.height = comp.get_execution_mode_argument(spv::ExecutionMode::ExecutionModeLocalSize, 1);
         computeWorkGroupSize.depth = comp.get_execution_mode_argument(spv::ExecutionMode::ExecutionModeLocalSize, 2);
@@ -363,16 +362,18 @@ void Shader::createDescriptorSetLayout(VkShaderStageFlags descriptorStage) {
 
 void Shader::createPushConstant(VkShaderStageFlags descriptorStage) {
     spirv_cross::Compiler comp(shaderCode);
-    spirv_cross::ShaderResources res = comp.get_shader_resources();
-    auto ranges = comp.get_active_buffer_ranges(res.push_constant_buffers[0].id);
+
     pushConstants = make<VkPushConstantRange>();
     pushConstants.offset = 0;
     pushConstants.stageFlags = descriptorStage;
-    for (auto &range : ranges) {
-        pushConstants.size += range.range;
+    auto ranges = comp.get_shader_resources().push_constant_buffers;
+    for (auto &res : ranges) {
+        auto &type = comp.get_type(res.base_type_id);
+        uint32_t size = comp.get_declared_struct_size(type);
+        pushConstants.size = size;
+   
     }
 }
-
 
 void Shader::createShaderInfo() {
     // listDescriptor = new VkDescriptorSetLayout[descriptorsSetLayout.size()];
@@ -419,7 +420,6 @@ void Shader::buildShader() {
     }
 }
 
-
 void Shader::buildLinkedShaders(Device *device, std::vector<Shader *> &shaders) {
     std::vector<VkShaderCreateInfoEXT> shadersCreateInfos;
     std::vector<std::vector<VkDescriptorSetLayout>> listDescriptor(shaders.size());
@@ -434,8 +434,7 @@ void Shader::buildLinkedShaders(Device *device, std::vector<Shader *> &shaders) 
     }
 
     std::vector<VkShaderEXT> shaderHandler(shaders.size());
-    VkResult result =
-        vkCreateShadersEXT(*device, shadersCreateInfos.size(), shadersCreateInfos.data(), nullptr, shaderHandler.data());
+    VkResult result = vkCreateShadersEXT(*device, shadersCreateInfos.size(), shadersCreateInfos.data(), nullptr, shaderHandler.data());
 
     if (result != VK_SUCCESS) {
         throw std::runtime_error("failed to create shader");
@@ -492,6 +491,4 @@ VkShaderStageFlagBits Shader::getShaderStageFlagsBitFromFileName(std::string sha
     }
 }
 
-
 }  // namespace TTe
-

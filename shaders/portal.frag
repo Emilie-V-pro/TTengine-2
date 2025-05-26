@@ -46,13 +46,16 @@ layout(set = 1, binding = 0) uniform sampler2D portalTextures[10];
 layout(push_constant) uniform constants {
     mat4 modelMatrix;
     mat4 normalMatrix;
+
     vec3 portal_pos;
     uint camera_id;
+
     vec3 portal_normal;
     uint portal_id;
+
     vec3 portal_color;
     uint recurs_id;
-
+    
     ivec2 screen_res;
 }
 pc;

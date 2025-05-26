@@ -8,6 +8,7 @@
 #include "device.hpp"
 #include "dynamic_renderpass.hpp"
 #include "movement_controller.hpp"
+#include "sceneV2/animatic/skeletonObj.hpp"
 #include "sceneV2/portal_controller.hpp"
 #include "sceneV2/scene.hpp"
 #include "swapchain.hpp"
@@ -35,10 +36,12 @@ class App : public IApp {
     SwapChain* swapchain;
     
     DynamicRenderPass renderPass;
-    PortalController movementController;
+    MovementController movementController;
 
     std::vector<DynamicRenderPass> portalARenderPasses;
     std::vector<DynamicRenderPass> portalBRenderPasses;
+
+    std::shared_ptr<SkeletonObj> skeleton;
 
     
     std::shared_ptr<Scene2> scene2;

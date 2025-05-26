@@ -217,43 +217,43 @@ void PortalController::moveInPlaneXZ(Window* window, float dt) {
     }
 
     // apply gravity
-    glm::vec3 move_vector = {0, 0, 0};
+    // glm::vec3 move_vector = {0, 0, 0};
 
-    move_vector.y -= 9.81f * dt;
+    // move_vector.y -= 9.81f * dt;
 
-    glm::vec3 normalized_move_vector = glm::normalize(move_vector);
-    // launche ray from camera
-    auto hit = scene->hit(scene->getMainCamera()->transform.pos, normalized_move_vector);
+    // glm::vec3 normalized_move_vector = glm::normalize(move_vector);
+    // // launche ray from camera
+    // auto hit = scene->hit(scene->getMainCamera()->transform.pos, normalized_move_vector);
 
-    if (hit.t != -1) {
-        move_vector = normalized_move_vector * glm::min(glm::length(move_vector), hit.t - 1.7f);
+    // if (hit.t != -1) {
+    //     // move_vector = normalized_move_vector * glm::min(glm::length(move_vector), hit.t - 1.7f);
 
-        glm::vec3 cam_posA = glm::inverse(portalObjA->wMatrix()) * glm::vec4(cam->transform.pos.value - glm::vec3(0, 1.7, 0), 1.0f);
-        glm::vec3 cam_posB = glm::inverse(portalObjB->wMatrix()) * glm::vec4(cam->transform.pos.value - glm::vec3(0, 1.7, 0), 1.0f);
+    //     glm::vec3 cam_posA = glm::inverse(portalObjA->wMatrix()) * glm::vec4(cam->transform.pos.value - glm::vec3(0, 1.7, 0), 1.0f);
+    //     glm::vec3 cam_posB = glm::inverse(portalObjB->wMatrix()) * glm::vec4(cam->transform.pos.value - glm::vec3(0, 1.7, 0), 1.0f);
 
         
 
-        if (sdBox(cam_posA, {0.75, 1., 0.5}) < 0 && glm::dot(cam->transform.pos - portalObjA->transform.pos.value, portalObjA->normal) > 0) {
-            cam->transform.pos = portalObjB->transform.pos + portalObjB->normal * 0.5f;
-            float pitch = std::asin(portalObjB->normal.y);
-            float yaw = std::atan2(portalObjB->normal.x, portalObjB->normal.z);
-            float roll = 0.0f;  // souvent 0 dans un cas simple sans inclinaison latéral
-                                // cam->transform.rot = portalObjB->transform.rot;
-            cam->transform.rot = glm::vec3(pitch, yaw, roll);
-        } else if (
-            sdBox(cam_posB, {0.75, 1., 0.5}) < 0 && glm::dot(cam->transform.pos - portalObjB->transform.pos.value, portalObjB->normal) > 0) {
-            cam->transform.pos = portalObjA->transform.pos + portalObjA->normal * 0.5f;
+    //     if (sdBox(cam_posA, {0.75, 1., 0.5}) < 0 && glm::dot(cam->transform.pos - portalObjA->transform.pos.value, portalObjA->normal) > 0) {
+    //         cam->transform.pos = portalObjB->transform.pos + portalObjB->normal * 0.5f;
+    //         float pitch = std::asin(portalObjB->normal.y);
+    //         float yaw = std::atan2(portalObjB->normal.x, portalObjB->normal.z);
+    //         float roll = 0.0f;  // souvent 0 dans un cas simple sans inclinaison latéral
+    //                             // cam->transform.rot = portalObjB->transform.rot;
+    //         cam->transform.rot = glm::vec3(pitch, yaw, roll);
+    //     } else if (
+    //         sdBox(cam_posB, {0.75, 1., 0.5}) < 0 && glm::dot(cam->transform.pos - portalObjB->transform.pos.value, portalObjB->normal) > 0) {
+    //         cam->transform.pos = portalObjA->transform.pos + portalObjA->normal * 0.5f;
 
-            float pitch = std::asin(portalObjA->normal.y);
-            float yaw = std::atan2(portalObjA->normal.x, portalObjA->normal.z);
-            float roll = 0.0f;  // souvent 0 dans un cas simple sans inclinaison latéral
-            cam->transform.rot = glm::vec3(pitch, yaw, roll);
+    //         float pitch = std::asin(portalObjA->normal.y);
+    //         float yaw = std::atan2(portalObjA->normal.x, portalObjA->normal.z);
+    //         float roll = 0.0f;  // souvent 0 dans un cas simple sans inclinaison latéral
+    //         cam->transform.rot = glm::vec3(pitch, yaw, roll);
 
-            // cam->transform.rot = portalObjA->transform.rot;
-        }
-    }
+    //         // cam->transform.rot = portalObjA->transform.rot;
+    //     }
+    // }
 
-    cam->transform.pos += move_vector;
+    // cam->transform.pos += move_vector;
 
     // update camera buffer
 

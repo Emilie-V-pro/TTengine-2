@@ -25,6 +25,8 @@ class SkeletonObj : public Node, public IAnimatic, public IRenderable, public IC
     class SkeletonNode : public Node {
     };
 
+    
+
     //! Cr�er un squelette ayant la m�me structure que d�finit dans le BVH c'est � dire
     //! creer le tableau de SkeletonJoint � la bonne taille, avec les parentId initials� pour chaque case
     void init(BVH bvh);
@@ -71,6 +73,11 @@ class SkeletonObj : public Node, public IAnimatic, public IRenderable, public IC
         KICK,
     };
 
+
+    State state;
+    int frameOffset = 0;
+    State nextState;
+
     struct Pose {
         State state;
         int frame;
@@ -108,6 +115,21 @@ class SkeletonObj : public Node, public IAnimatic, public IRenderable, public IC
         int frame_2;
     };
 
+
+    std::string getStrfromState(State state) {
+        switch (state) {
+            case State::IDLE:
+                return "IDLE";
+            case State::WALK:
+                return "WALK";
+            case State::RUN:
+                return "RUN";
+            case State::KICK:
+                return "KICK";
+            default:
+                return "UNKNOWN";
+        }
+    }
    private:
 
     float computePoseDistance(int frame_1, int frame_2, BVH &bvh_1, BVH &bvh_2);
@@ -135,9 +157,6 @@ class SkeletonObj : public Node, public IAnimatic, public IRenderable, public IC
 
     bool keyPressed = false;
 
-    State state;
-    int frameOffset = 0;
-    State nextState;
 
     
    

@@ -147,6 +147,7 @@ void setRequiredFeatures12(vkb::PhysicalDeviceSelector &phys_device_selector) {
     required_features12.descriptorIndexing = true;
     required_features12.scalarBlockLayout = true;
     required_features12.timelineSemaphore = true;
+    required_features12.shaderSampledImageArrayNonUniformIndexing = true;
     
     phys_device_selector.set_required_features_12(required_features12);
 }

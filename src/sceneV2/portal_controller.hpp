@@ -1,11 +1,8 @@
 #pragma once
 
 #include <GLFW/glfw3.h>
-#include <cmath>
 
 #include "device.hpp"
-#include "sceneV2/cameraV2.hpp"
-#include "sceneV2/renderable/basicMeshObj.hpp"
 #include "sceneV2/renderable/portalObj.hpp"
 #include "sceneV2/scene.hpp"
 #include "window.hpp"
