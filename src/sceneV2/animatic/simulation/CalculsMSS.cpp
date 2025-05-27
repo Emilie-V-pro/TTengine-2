@@ -32,6 +32,7 @@ Programme calculant pour chaque particule i d un MSS son etat au pas de temps su
 #include <glm/ext/quaternion_common.hpp>
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
+#include <glm/matrix.hpp>
 #include <iostream>
 #include <memory>
 
@@ -50,7 +51,7 @@ namespace TTe {
  */
 void ObjetSimuleMSS::CalculForceSpring() {
     // #pragma omp parallel for schedule(dynamic, 1)
-    #pragma omp parallel for
+    // #pragma omp parallel for
     for (auto &ressort : _SystemeMasseRessort->GetRessortList()) {
         Particule *particule1 = ressort->GetParticuleA();
         Particule *particule2 = ressort->GetParticuleB();
@@ -58,7 +59,7 @@ void ObjetSimuleMSS::CalculForceSpring() {
         glm::vec3 direction = mesh.verticies[particule2->GetId()].pos - mesh.verticies[particule1->GetId()].pos;
 
         glm::vec3 direction_norm = glm::normalize(direction);
-        glm::vec3 Fe = ressort->GetRaideur() * (glm::length(direction) - (ressort->GetLrepos())) * direction_norm;
+        glm::vec3 Fe = ressort->GetRaideur() * (glm::length(direction) - (ressort->GetLrepos() * 0.75f)) * direction_norm;
         glm::vec3 Fv =
             ressort->GetAmortissement() * glm::dot((V[particule1->GetId()] - V[particule2->GetId()]), direction_norm) * direction_norm;
         this->Force[particule1->GetId()] += Fe + Fv;
@@ -75,7 +76,7 @@ void ObjetSimuleMSS::applyForceGravity(float t, glm::vec3 g) {
     // set gravity to object space
     g = glm::inverse(wNormalMatrix()) * glm::vec4(g, 0.0);
     glm::vec3 wind = glm::inverse(wNormalMatrix()) * glm::normalize(glm::vec3(1.0, 0.0, 1.0)) * 5.f * glm::sin(t);
-    #pragma omp parallel for
+    // #pragma omp parallel for
     for (int i = 0; i < mesh.verticies.size(); ++i) {
         if (attachedNodes.find(i) != attachedNodes.end()) {
             glm::vec3 pos = attachedNodes[i]->wMatrix()[3];
@@ -92,10 +93,10 @@ void ObjetSimuleMSS::applyForceGravity(float t, glm::vec3 g) {
 }
 
 void ObjetSimuleMSS::solveExplicit(float visco, float deltaT) {
-    deltaT = min(deltaT, 0.002f);
+    deltaT = min(deltaT, 0.001f);
 
     // #pragma omp parallel for schedule(dynamic, 1)
-    #pragma omp parallel for
+    // #pragma omp parallel for
     for (int i = 0; i < mesh.verticies.size(); ++i) {
         V[i] = (V[i] + deltaT * A[i]) * visco;
         mesh.verticies[i].pos = mesh.verticies[i].pos + deltaT * V[i];
@@ -107,7 +108,7 @@ void ObjetSimuleMSS::solveExplicit(float visco, float deltaT) {
  */
 void ObjetSimuleMSS::Collision(std::vector<std::shared_ptr<ICollider>> &collisionObjects) {
     glm::mat4 wMatrix = this->wMatrix();
-    glm::mat4 wInvMatrix = this->wNormalMatrix();
+    glm::mat4 wInvMatrix = glm::inverse(this->wMatrix());
 
 	// time the execution
 	// auto start = std::chrono::high_resolution_clock::now();

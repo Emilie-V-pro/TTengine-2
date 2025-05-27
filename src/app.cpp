@@ -120,23 +120,24 @@ void App::init(Device *device, SwapChain *swapchain, Window *window) {
 
     uint32_t cape_id  = scene2->addNode(-1, std::make_shared<ObjetSimuleMSS>(device, "../data/simu/Fichier_Param.objet1"));
 
-    // scene2->addNode(-1, skeleton);
+    scene2->addNode(-1, skeleton);
 
 
     scene2->updateMaterialBuffer();
     scene2->updateDescriptorSets();
+    scene2->getMainCamera()->transform.pos = glm::vec3(0.0f, 13.0f, -8.0f);
 
     std::cout << "\% de leaf sans triangle : " << Mesh::leaf_without_triangle_count * 100.0f / Mesh::leaf_count << std::endl;
     scene2->computeBoundingBox();
     std::shared_ptr<Node> cape = scene2->getNode(cape_id);
     // cast to ObjetSimuleMSS
     std::shared_ptr<ObjetSimuleMSS> capeSim = std::dynamic_pointer_cast<ObjetSimuleMSS>(cape);
-    capeSim->transform.rot->x = (M_PI/2.0);
-    // capeSim->attachToNode(0, skeleton->getChild(0)->getChild(0)->getChild(0)->getChild(2)->getChild(0));
-    // capeSim->attachToNode(69, skeleton->getChild(0)->getChild(0)->getChild(0)->getChild(1)->getChild(0));
+    // capeSim->transform.rot= glm::vec3(M_PI/2.0, 0.0f, 0.0f);
+    capeSim->attachToNode(0, skeleton->getChild(0)->getChild(0)->getChild(0)->getChild(2)->getChild(0));
+    capeSim->attachToNode(69, skeleton->getChild(0)->getChild(0)->getChild(0)->getChild(1)->getChild(0));
 
-    // capeSim->attachToNode(25, skeleton->getChild(0)->getChild(0)->getChild(0)->getChild(2));
-    // capeSim->attachToNode(44, skeleton->getChild(0)->getChild(0)->getChild(0)->getChild(1));
+    capeSim->attachToNode(25, skeleton->getChild(0)->getChild(0)->getChild(0)->getChild(2));
+    capeSim->attachToNode(44, skeleton->getChild(0)->getChild(0)->getChild(0)->getChild(1));
     // capeSim->attachToNode(34, skeleton->getChild(0)->getChild(1)->getChild(0));
 
     std::shared_ptr<BasicMeshObj> b = std::make_shared<BasicMeshObj>();
@@ -144,7 +145,8 @@ void App::init(Device *device, SwapChain *swapchain, Window *window) {
     b->setShape(Cube);
 
     b->transform.pos = glm::vec3(3.5,-2,-1.5);
-    c->transform.scale = glm::vec3(1.08);
+    b->transform.scale = glm::vec3(2);
+    c->transform.scale = glm::vec3(1.09);
     // auto iddd = scene2->addNode(-1, b);
     // scene2->addNode(iddd, c);
 
@@ -153,12 +155,8 @@ void App::init(Device *device, SwapChain *swapchain, Window *window) {
     // add sphere for show hit
 
     scene2->computeBoundingBox();
-    std::shared_ptr<BasicMeshObj> sphere = std::make_shared<BasicMeshObj>();
-    sphere->setShape(Sphere);
-    sphere->transform.scale = glm::vec3(0.1f);
-    sphere->transform.pos = glm::vec3(0.0f, 0.0f, 0.0f);
 
-    sphere_hit_id = scene2->addNode(-1, sphere);
+
     scene2->getMainCamera()->setParent(skeleton.get());
 
     // movementController.init(device, scene2.get());
@@ -190,7 +188,7 @@ void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
     //     deltaTime = maxDT;
     // }
     time += deltaTime;
-    printf("%f \n", deltaTime);
+    // printf("%f \n", deltaTime);
 
     movementController.moveInPlaneXZ(&windowObj, deltaTime, scene2->getMainCamera());
     // scene.updateCameraBuffer();

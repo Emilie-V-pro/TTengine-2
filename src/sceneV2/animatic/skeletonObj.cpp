@@ -541,7 +541,7 @@ void SkeletonObj::render(CommandBuffer &cmd, RenderData &renderData) {
 float sdCapsule(glm::vec3 &p, glm::vec3 &a, glm::vec3 &b) {
     glm::vec3 pa = p - a, ba = b - a;
     float h = glm::clamp(glm::dot(pa, ba) / glm::dot(ba, ba), 0.0f, 1.0f);
-    return length(pa - ba * h) - 0.12f;
+    return length(pa - ba * h) - 0.19f;
 }
 
 glm::vec3 closestPointToCapsule(glm::vec3 p, glm::vec3 a, glm::vec3 b, float r) {
@@ -556,7 +556,7 @@ void SkeletonObj::collisionPos(glm::vec3 &pos, glm::vec3 &vitesse) {
         float dist = sdCapsule(pos, colider.first, colider.second);
 
         if (dist < 0) {
-            pos = closestPointToCapsule(pos, colider.first, colider.second, 0.12f);
+            pos = closestPointToCapsule(pos, colider.first, colider.second, 0.19f);
             vitesse = glm::vec3(0.f);
 
             // vitesse = (closestPointToCapsule(pos, colider.first, colider.second, 0.1f) - pos) * 1000.f;

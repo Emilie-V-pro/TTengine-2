@@ -40,14 +40,20 @@ En cas d'erreur broken pipe ou un truc comme, relancez, je sais pas d'où ça vi
 
 ### contrôles
 
-Par défaut la souris n'est pas capturer par la fenêtre. Vous pouvez donc déplacer les élement d'interface comme vous voulez.
 
 Pour switcher avec le mode de controle de la camera, il faut appuyer sur `echape`.
 
 La rotation de la caméra se fait à la souris et les déplacement avec `z q s d`
 
-Le sprint se fait avec `ctrl`
+Le sprint se fait avec `shift`
 
-Le placement des portails se fait avec clique droit et gauche de la souris
+la rotation se fait avec les flèche gauche et droite
+
+avancé reculer se fait avec les flèche haut et bas
+
+le coup de pied avec `espace`
+
+
 
 Pour fermer la fenêtre il suffit juste de fermet la fenêtre (incroyable hein ? (faut pas faire gaffe au segfault))
+

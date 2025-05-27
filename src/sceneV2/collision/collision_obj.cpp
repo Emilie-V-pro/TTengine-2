@@ -45,10 +45,12 @@ void CollisionObject::collisionPosCube(glm::vec3 &pos, glm::vec3 &vitesse){
     pos = glm::inverse(this->wMatrix()) * glm::vec4(pos, 1);
     glm::vec3 boxMin = glm::vec3(-0.5f); // cube centré à l'origine, taille 2x2x2
     glm::vec3 boxMax = glm::vec3(0.5f);
+    
 
     if (pos.x > boxMin.x && pos.x < boxMax.x &&
         pos.y > boxMin.y && pos.y < boxMax.y &&
         pos.z > boxMin.z && pos.z < boxMax.z) {
+            
         
         // Trouver l'axe avec la plus petite distance à une face
         float dx = std::min(pos.x - boxMin.x, boxMax.x - pos.x);

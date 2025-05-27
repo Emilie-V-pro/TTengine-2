@@ -79,7 +79,7 @@ void SolveurExpl::Solve(
     deltaT = std::min(0.0025f, deltaT);
 
     // #pragma omp parallel for schedule(dynamic, 1)
-    #pragma omp parallel for
+    // #pragma omp parallel for
     for (int i = 0; i < nb_som; ++i) {
         V[i] = (V[i] + deltaT * A[i]) * visco;
         P[i].pos = P[i].pos + deltaT * V[i];
