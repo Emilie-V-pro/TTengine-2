@@ -165,7 +165,6 @@ void Engine::renderLoop(Engine &engine) {
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        ImGui::ShowDemoWindow();
    
       
         engine.renderCommandBuffers[engine.renderIndex].beginCommandBuffer();
