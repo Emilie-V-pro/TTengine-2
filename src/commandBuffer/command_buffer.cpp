@@ -7,7 +7,7 @@
 #include <mutex>
 #include <thread>
 
-#include "../structs_vk.hpp"
+#include "structs_vk.hpp"
 #include "../synchronisation/fence.hpp"
 #include "synchronisation/semaphore.hpp"
 

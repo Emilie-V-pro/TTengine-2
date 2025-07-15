@@ -17,9 +17,9 @@ find_package(glfw3 REQUIRED)
 find_package(OpenMP REQUIRED)
 
 # Ajouter les sous-modules nécessaires
-add_subdirectory(volk)
-add_subdirectory(vk-bootstrap)
-add_subdirectory(SPIRV-Cross)
+add_subdirectory(external/volk)
+add_subdirectory(external/vk-bootstrap)
+add_subdirectory(external/SPIRV-Cross)
 
 # Trouver tous les fichiers sources
 file(GLOB_RECURSE TTENGINE_SOURCES CONFIGURE_DEPENDS
@@ -31,27 +31,31 @@ file(GLOB_RECURSE TTENGINE_SOURCES CONFIGURE_DEPENDS
 add_library(TTengine STATIC ${TTENGINE_SOURCES})
 
 add_library(imgui STATIC
-${PROJECT_SOURCE_DIR}/imgui/imgui.cpp
-${PROJECT_SOURCE_DIR}/imgui/imgui_demo.cpp
-${PROJECT_SOURCE_DIR}/imgui/imgui_draw.cpp
-${PROJECT_SOURCE_DIR}/imgui/imgui_tables.cpp
-${PROJECT_SOURCE_DIR}/imgui/imgui_widgets.cpp
-${PROJECT_SOURCE_DIR}/imgui/backends/imgui_impl_glfw.cpp
-${PROJECT_SOURCE_DIR}/imgui/backends/imgui_impl_vulkan.cpp
+${PROJECT_SOURCE_DIR}/external/imgui/imgui.cpp
+${PROJECT_SOURCE_DIR}/external/imgui/imgui_demo.cpp
+${PROJECT_SOURCE_DIR}/external/imgui/imgui_draw.cpp
+${PROJECT_SOURCE_DIR}/external/imgui/imgui_tables.cpp
+${PROJECT_SOURCE_DIR}/external/imgui/imgui_widgets.cpp
+${PROJECT_SOURCE_DIR}/external/imgui/backends/imgui_impl_glfw.cpp
+${PROJECT_SOURCE_DIR}/external/imgui/backends/imgui_impl_vulkan.cpp
 )
 
 target_include_directories(imgui PUBLIC
-    ${PROJECT_SOURCE_DIR}/imgui
-    ${PROJECT_SOURCE_DIR}/imgui/backends
-    ${PROJECT_SOURCE_DIR}/volk
+    ${PROJECT_SOURCE_DIR}/external/imgui
+    ${PROJECT_SOURCE_DIR}/external/imgui/backends
+    ${PROJECT_SOURCE_DIR}/external/volk
 )
 
 # Inclure les headers dans la bibliothèque
 target_include_directories(TTengine PUBLIC
     ${PROJECT_SOURCE_DIR}/src
-    ${PROJECT_SOURCE_DIR}/volk
-    ${PROJECT_SOURCE_DIR}/imgui
-    ${PROJECT_SOURCE_DIR}/imgui/backends
+    ${PROJECT_SOURCE_DIR}/external/volk
+    ${PROJECT_SOURCE_DIR}/external/imgui
+    ${PROJECT_SOURCE_DIR}/external/imgui/backends
+    ${PROJECT_SOURCE_DIR}/external/cgltf
+    ${PROJECT_SOURCE_DIR}/external/stb_image
+    ${PROJECT_SOURCE_DIR}/external/VMA
+    ${PROJECT_SOURCE_DIR}/external/struct_vk
 )
 
 

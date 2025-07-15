@@ -5,7 +5,7 @@
 #include <mutex>
 #include <vector>
 
-#include "../structs_vk.hpp"
+#include "structs_vk.hpp"
 #include "volk.h"
 
 namespace TTe {

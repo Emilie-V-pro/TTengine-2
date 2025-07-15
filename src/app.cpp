@@ -21,6 +21,7 @@
 #include "sceneV2/animatic/skeletonObj.hpp"
 #include "sceneV2/collision/collision_obj.hpp"
 #include "sceneV2/container.hpp"
+#include "sceneV2/loader/gltf_loader.hpp"
 #include "sceneV2/mesh.hpp"
 
 // #include "scene/objects/collision_obj.hpp"
@@ -47,6 +48,9 @@ void App::init(Device *device, SwapChain *swapchain, Window *window) {
     PortalObj::init(device);
     std::vector<std::vector<std::vector<Image>>> portalATextures;
     std::vector<std::vector<std::vector<Image>>> portalBTextures;
+
+    GLTFLoader gltfLoader;
+    gltfLoader.load("gltf/glTF/Sponza.gltf");
 
     for (int i = 0; i < 5; i++) {
         portalARenderPasses.push_back(

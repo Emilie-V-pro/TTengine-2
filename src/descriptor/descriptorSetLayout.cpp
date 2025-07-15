@@ -6,7 +6,7 @@
 #include <memory>
 #include <vector>
 
-#include "../structs_vk.hpp"
+#include "structs_vk.hpp"
 #include "../utils.hpp"
 
 namespace TTe {

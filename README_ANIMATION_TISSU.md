@@ -1,1 +1,0 @@
-le code spécifique au tp se trouve dans src/sceneV2, le code de la physique se trouve dans src/sceneV2/animatic/simulation

@@ -10,7 +10,7 @@
 #include <stdexcept>
 #include <vector>
 
-#include "../structs_vk.hpp"
+#include "structs_vk.hpp"
 #include "spirv.hpp"
 #include "spirv_cross.hpp"
 #include "volk.h"

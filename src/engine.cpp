@@ -82,15 +82,18 @@ void Engine::init() {
     init_info.PipelineRenderingCreateInfo.pColorAttachmentFormats = &format;
 
     auto test = vkGetInstanceProcAddr(device.getInstance(), "vkCmdBeginRendering");
+    
+    
 
-    renderPass = DynamicRenderPass(&device, {1280, 720}, {}, swapChain.getswapChainImages().size(), depthAndStencil::NONE, &swapChain, nullptr);
-        renderPass.setClearEnable(false);
+    imgui_renderPass = DynamicRenderPass(&device, window.getExtent(), {}, swapChain.getswapChainImages().size(), depthAndStencil::NONE, &swapChain, nullptr);
+        imgui_renderPass.setClearEnable(false);
     ImGui_ImplVulkan_Init(&init_info);
 
     ImGui_ImplVulkan_CreateFontsTexture();
 }
 void Engine::run() {
     // create thread for update loop
+    resize();
 
     std::cout << "DÉBUT RENDU" << std::endl;
     std::thread updateThread(&Engine::updateLoop, std::ref(*this));
@@ -127,8 +130,8 @@ void Engine::resize() {
     resizeMutex.lock();
     vkDeviceWaitIdle(device);
     swapChain.recreateSwapchain(extent);
-    renderPass.resize(extent);
-    renderPass.setClearEnable(false);
+    imgui_renderPass.resize(extent);
+    imgui_renderPass.setClearEnable(false);
     app->resize(extent.width, extent.height);
     resizeMutex.unlock();
 }
@@ -145,7 +148,9 @@ void Engine::endAndPresentFrame(Semaphore *waitRenderSemaphore) {
 
 void Engine::renderLoop(Engine &engine) {
     auto start = std::chrono::high_resolution_clock::now();
+    uint test = 0;
     while (!engine.window.shouldClose()) {
+        std::cout << "Frame : " << test++ << std::endl;
         auto newTime = std::chrono::high_resolution_clock::now();
 
         float deltatTime = std::chrono::duration<float, std::chrono::seconds::period>(newTime - start).count();
@@ -173,10 +178,10 @@ void Engine::renderLoop(Engine &engine) {
         engine.app->renderFrame(deltatTime, engine.renderCommandBuffers[engine.renderIndex], engine.currentSwapchainImage, engine.renderIndex);
     
       
-        engine.renderPass.beginRenderPass(engine.renderCommandBuffers[engine.renderIndex], engine.currentSwapchainImage);
+        engine.imgui_renderPass.beginRenderPass(engine.renderCommandBuffers[engine.renderIndex], engine.currentSwapchainImage);
         ImGui::Render();
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), engine.renderCommandBuffers[engine.renderIndex]);
-        engine.renderPass.endRenderPass(engine.renderCommandBuffers[engine.renderIndex]);
+        engine.imgui_renderPass.endRenderPass(engine.renderCommandBuffers[engine.renderIndex]);
   
       
   

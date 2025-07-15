@@ -531,11 +531,11 @@ void SkeletonObj::render(CommandBuffer &cmd, RenderData &renderData) {
             PushConstantData pc = {wMatrix, wNormalMatrix, renderData.portal_pos, renderData.cameraId, renderData.portal_normal};
             // push constant
             vkCmdPushConstants(cmd, renderData.binded_pipeline->getPipelineLayout(), renderData.binded_pipeline->getPushConstantStage(), 0, sizeof(PushConstantData), &pc);
-            vkCmdDrawIndexed(cmd, renderData.basicMeshes->at(Sphere).nbIndicies(), 1, 0, 0, 0);
+            vkCmdDrawIndexed(cmd, renderData.basicMeshes->at(Cube).nbIndicies(), 1, 0, 0, 0);
         }
     }
 
-    renderData.binded_mesh = &renderData.basicMeshes->at(Sphere);
+    
 }
 
 float sdCapsule(glm::vec3 &p, glm::vec3 &a, glm::vec3 &b) {
