@@ -136,9 +136,9 @@ VkResult SwapChain::presentFrame(uint32_t& currentSwapchainImage, Semaphore* wai
 void SwapChain::createSyncObjects() {
     imageAvailableFences.clear();
     imageAvailableSemaphores.clear();
-    imageAvailableFences.reserve(numberOfFrame);
-    imageAvailableSemaphores.reserve(numberOfFrame);
-    for (unsigned int i = 0; i < numberOfFrame; i++) {
+    imageAvailableFences.reserve(numberOfFrame - 1);
+    imageAvailableSemaphores.reserve(numberOfFrame - 1);
+    for (unsigned int i = 0; i < numberOfFrame - 1; i++) {
         imageAvailableFences.emplace_back(new Fence(device, true));
         imageAvailableSemaphores.emplace_back(device, VK_SEMAPHORE_TYPE_BINARY);
         imageAvailableSemaphores[i].signalStage = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
