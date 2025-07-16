@@ -97,7 +97,6 @@ VkResult SwapChain::acquireNextImage(uint32_t& currentSwapchainImage, int* rende
     }
 
    
-
     imageAvailableFences[*renderIndex]->resetFence();
     fence = imageAvailableFences[*renderIndex];
     
@@ -107,6 +106,7 @@ VkResult SwapChain::acquireNextImage(uint32_t& currentSwapchainImage, int* rende
         *device, vkbSwapchain.swapchain, std::numeric_limits<uint64_t>::max(),
         imageAvailableSemaphores[*renderIndex],  // must be a not signaled semaphore
         VK_NULL_HANDLE, &currentSwapchainImage);
+
     
   
     imageAvailableSemaphores[*renderIndex].signalStage = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;

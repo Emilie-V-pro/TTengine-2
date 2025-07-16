@@ -153,7 +153,6 @@ void SkeletonObj::init(std::string bvh_folder) {
                 }
             }
         }
-        std::cout << "test\n";
     }
 
     int test = 0;

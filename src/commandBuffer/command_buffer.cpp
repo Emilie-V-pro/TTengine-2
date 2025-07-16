@@ -205,9 +205,13 @@ void CommandBuffer::submitCommandBuffer(
 
     VkFence f = (fence == nullptr) ? VK_NULL_HANDLE : static_cast<VkFence>(*fence);
     mutex.lock();
+
+    
     if (vkQueueSubmit2(this->cmdBufferPool->queue(), 1, &submitInfo, f) != VK_SUCCESS) {
         throw std::runtime_error("Failed to submit commandBuffer");
     }
+  
+
     reseted = false;
     mutex.unlock();
     if (waitForExecution) {
