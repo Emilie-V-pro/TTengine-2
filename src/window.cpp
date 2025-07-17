@@ -1,4 +1,5 @@
 #include "window.hpp"
+#include <GLFW/glfw3.h>
 
 #include <cstdint>
 
@@ -28,7 +29,14 @@ Window::~Window() {
     glfwTerminate();
 }
 
-void Window::framebufferResizeCallback(GLFWwindow *window, int width, int height) {
+const VkExtent2D& Window::getExtentGLFW() {
+    int width, height;
+    glfwGetWindowSize(window, &width, &height);
+    this->size = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+    return this->size;
+}
+
+void Window::framebufferResizeCallback(GLFWwindow *window, int width , int height) {
     auto windowObj = reinterpret_cast<Window *>(glfwGetWindowUserPointer(window));
     windowObj->framebufferResized = true;
     windowObj->size = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};

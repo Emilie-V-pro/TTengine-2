@@ -31,6 +31,8 @@ class Window {
     // getter
     VkSurfaceKHR &getSurface(const vkb::Instance &vkInstance);
     const VkExtent2D &getExtent() const { return size; }
+    const VkExtent2D &getExtentGLFW();
+    
     const GLFWwindow *getGLFWwindow() const { return window; }
     bool wasWindowResized() const { return framebufferResized; }
     bool shouldClose() const { return glfwWindowShouldClose(window); }

@@ -96,6 +96,7 @@ void Engine::init() {
 }
 void Engine::run() {
     // create thread for update loop
+
     resize();
 
     std::cout << "DÉBUT RENDU" << std::endl;
@@ -125,7 +126,7 @@ bool Engine::startFrame(Semaphore *&aquireFrameSemaphore, Fence *&fence) {
 }
 
 void Engine::resize() {
-    auto extent = window.getExtent();
+    auto extent = window.getExtentGLFW();
     while (extent.width == 0 || extent.height == 0) {
         extent = window.getExtent();
         glfwWaitEvents();
