@@ -3,6 +3,7 @@
 #include <volk.h>
 
 #include <cstdint>
+#include <mutex>
 #define VK_NO_PROTOTYPES
 #include "VkBootstrap.h"
 #include "window.hpp"
@@ -35,6 +36,13 @@ class Device {
         if(queue == computeQueue) return computeQueueFamilyIndex;
         if(queue == transferQueue) return transferQueueFamilyIndex;
         return -1;
+     }
+
+    std::mutex &getMutexFromQueue(const VkQueue& queue)  { 
+        if(queue == renderQueue) return renderQueueMutex;
+        if(queue == computeQueue) return computeQueueMutex;
+        if(queue == transferQueue) return transferQueueMutex;
+        throw std::runtime_error("Invalid queue");
      }
 
     VkInstance getInstance() const { return vk_instance; }
@@ -76,6 +84,10 @@ class Device {
     uint32_t computeQueueFamilyIndex = -1;
     VkQueue transferQueue = VK_NULL_HANDLE;
     uint32_t transferQueueFamilyIndex = -1;
+
+    std::mutex renderQueueMutex;
+    std::mutex computeQueueMutex;
+    std::mutex transferQueueMutex;
 
     VkQueue presentQueue = VK_NULL_HANDLE;
 

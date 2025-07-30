@@ -1,9 +1,8 @@
 
 #include "mesh.hpp"
 
-#include <vulkan/vulkan_core.h>
-
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
@@ -24,65 +23,133 @@
 
 namespace TTe {
 
-uint32_t Mesh::leaf_count = 0;
-uint32_t Mesh::leaf_without_triangle_count = 0;
-
-float Triangle::area() const {
-    float returnValue;
-    return returnValue;
-}
-
-Mesh::Mesh(Device* device, const std::vector<unsigned int>& indicies, const std::vector<Vertex>& verticies, Buffer::BufferType type)
+Mesh::Mesh(Device* device, const std::vector<uint32_t>& indicies, const std::vector<Vertex>& verticies, Buffer::BufferType type)
     : device(device), indicies(indicies), verticies(verticies), type(type) {
     createBVH();
     uploadToGPU();
 }
 
-struct hash_tuple {
-    template <class T1, class T2, class T3>
-
-    size_t operator()(const std::tuple<T1, T2, T3>& x) const {
-        return get<0>(x) ^ get<1>(x) ^ get<2>(x);
-    }
-};
-
-Mesh::Mesh(Device* device, std::string path, Buffer::BufferType type) : device(device), type(type) {
-    MeshIOData data;
-    read_meshio_data(path.c_str(), data);
-    verticies = data.vertices;
-    indicies = data.indices;
-
+Mesh::Mesh(
+    Device* device,
+    const std::vector<uint32_t>& indicies,
+    const std::vector<Vertex>& verticies,
+    uint first_index,
+    uint first_vertex,
+    Buffer indexBuffer,
+    Buffer vertexBuffer)
+    : device(device),
+      indicies(indicies),
+      verticies(verticies),
+      first_index(first_index),
+      first_vertex(first_vertex),
+      indexBuffer(indexBuffer),
+      vertexBuffer(vertexBuffer),
+      type(vertexBuffer.getType()) {
+    createBVH();
     uploadToGPU();
 }
 
+Mesh::Mesh(const Mesh& other)
+    : device(other.device),
+      indicies(other.indicies),
+      verticies(other.verticies),
+      indexBuffer(other.indexBuffer),
+      vertexBuffer(other.vertexBuffer),
+      bvh(other.bvh),
+      name(other.name),
+      type(other.type),
+      first_index(other.first_index),
+      first_vertex(other.first_vertex) {}
+
+Mesh& Mesh::operator=(const Mesh& other) {
+    if (this != &other) {
+        this->device = other.device;
+        this->indicies = other.indicies;
+        this->verticies = other.verticies;
+        this->vertexBuffer = other.vertexBuffer;
+        this->indexBuffer = other.indexBuffer;
+        this->bvh = other.bvh;
+        this->name = other.name;
+        this->type = other.type;
+        this->first_index = other.first_index;
+        this->first_vertex = other.first_vertex;
+    }
+    return *this;
+}
+
+Mesh::Mesh(Mesh&& other)
+    : device(other.device),
+      indicies(std::move(other.indicies)),
+      verticies(std::move(other.verticies)),
+      indexBuffer(std::move(other.indexBuffer)),
+      vertexBuffer(std::move(other.vertexBuffer)),
+      bvh(std::move(other.bvh)),
+      name(std::move(other.name)),
+      type(std::move(other.type)),
+      first_index(std::move(other.first_index)),
+      first_vertex(std::move(other.first_vertex)) {
+      }
+
+Mesh &Mesh::operator=(Mesh &&other) {
+        if (this != &other) {
+            this->device = other.device;
+            this->indicies = std::move(other.indicies);
+            this->verticies = std::move(other.verticies);
+            this->vertexBuffer = std::move(other.vertexBuffer);
+            this->indexBuffer = std::move(other.indexBuffer);
+            this->bvh = std::move(other.bvh);
+            this->name = std::move(other.name);
+            this->type = std::move(other.type);
+            this->first_index = std::move(other.first_index);
+            this->first_vertex = std::move(other.first_vertex);
+        }
+        return *this;
+    }
+
+
 void Mesh::split(uint32_t index, uint32_t count, uint32_t bvh_index, uint32_t depth) {
     // compute bounding box
-    glm::vec3 pmin = verticies[indicies[index]].pos;
-    glm::vec3 pmax = verticies[indicies[index]].pos;
+    glm::vec3 pmin = verticies[indicies[index] - first_vertex].pos;
+    glm::vec3 pmax = verticies[indicies[index] - first_vertex].pos;
     for (int i = 0; i < count; i++) {
-        pmin = glm::min(pmin, verticies[indicies[index + i]].pos);
-        pmax = glm::max(pmax, verticies[indicies[index + i]].pos);
+        pmin = glm::min(pmin, verticies[indicies[index + i] - first_vertex].pos);
+        pmax = glm::max(pmax, verticies[indicies[index + i] - first_vertex].pos);
     }
     bvh[bvh_index].bbox.pmin = pmin;
     bvh[bvh_index].bbox.pmax = pmax;
-   
 
     // leaf
     if (count < (20 * 3) || depth > 32) {
         bvh[bvh_index].nbTriangle = count;
         bvh[bvh_index].index = index;
-        std::cout << "Leaf " << bvh_index << " : " << count / 3 << " triangles" << std::endl;
         if (count == 0) {
-            leaf_without_triangle_count++;
         }
-        leaf_count++;
 
         return;
     }
     // split
     else {
+        if (index == 480 && count == 120 && bvh_index == 31 && depth == 5) {
+            int a = 0;
+        }
         // find the longest axis
-        glm::vec3 size = bvh[bvh_index].bbox.pmax - bvh[bvh_index].bbox.pmin;
+
+        // find the split center based on bounding box of barycenter of triangles
+
+        glm::vec3 bary_min = bvh[bvh_index].bbox.pmax;
+        glm::vec3 bary_max = bvh[bvh_index].bbox.pmin;
+
+        for (int i = 0; i < count; i += 3) {
+            glm::vec3 center = (verticies[indicies[index + i] - first_vertex].pos + verticies[indicies[index + i + 1] - first_vertex].pos +
+                                verticies[indicies[index + i + 2] - first_vertex].pos) /
+                               3.0f;
+
+            bary_min = {std::min(bary_min.x, center.x), std::min(bary_min.y, center.y), std::min(bary_min.z, center.z)};
+            bary_max = {std::max(bary_max.x, center.x), std::max(bary_max.y, center.y), std::max(bary_max.z, center.z)};
+            ;
+        }
+
+        glm::vec3 size = bary_max - bary_min;
         int split_axis = 0;
         if (size.y > size.x) {
             split_axis = 1;
@@ -91,44 +158,31 @@ void Mesh::split(uint32_t index, uint32_t count, uint32_t bvh_index, uint32_t de
             split_axis = 2;
         }
 
-        // find the split center based on bounding box of barycenter of triangles
+        float split_center = (bary_max[split_axis] + bary_min[split_axis]) / 2.0f;
 
-        float bary_min = bvh[bvh_index].bbox.pmax[split_axis];
-        float bary_max = bvh[bvh_index].bbox.pmin[split_axis];
-
-        for (int i = 0; i < count; i += 3) {
-            glm::vec3 center =
-                (verticies[indicies[index + i]].pos + verticies[indicies[index + i + 1]].pos + verticies[indicies[index + i + 2]].pos) /
-                3.0f;
-            bary_min = std::min(bary_min, center[split_axis]);
-            bary_max = std::max(bary_max, center[split_axis]);
-        }
-        float split_center = (bary_min + bary_max) / 2.0f;
-
-        // split the indices into two groups
         std::vector<uint32_t>* left_indicies = new std::vector<uint32_t>();
         std::vector<uint32_t>* right_indicies = new std::vector<uint32_t>();
 
-        // reorder the indices of triangle based on center of the triangle
-        do {
-            for (uint32_t i = 0; i < count; i += 3) {
-                glm::vec3 center =
-                    (verticies[indicies[index + i]].pos + verticies[indicies[index + i + 1]].pos + verticies[indicies[index + i + 2]].pos) /
-                    3.0f;
-                float value = center[split_axis];
-                if (value < split_center) {
-                    left_indicies->push_back(indicies[index + i]);
-                    left_indicies->push_back(indicies[index + i + 1]);
-                    left_indicies->push_back(indicies[index + i + 2]);
-                } else {
-                    right_indicies->push_back(indicies[index + i]);
-                    right_indicies->push_back(indicies[index + i + 1]);
-                    right_indicies->push_back(indicies[index + i + 2]);
-                }
-            }
-        } while (left_indicies->size() == 0 || right_indicies->size() == 0);
+        for (uint32_t i = 0; i < count; i += 3) {
+            glm::vec3 center = (verticies[indicies[index + i] - first_vertex].pos + verticies[indicies[index + i + 1] - first_vertex].pos +
+                                verticies[indicies[index + i + 2] - first_vertex].pos) /
+                               3.0f;
+            float value = center[split_axis];
 
-        // memcpy the indicies to the indicies array
+            if (value < split_center) {
+                left_indicies->push_back(indicies[index + i]);
+                left_indicies->push_back(indicies[index + i + 1]);
+                left_indicies->push_back(indicies[index + i + 2]);
+            } else {
+                right_indicies->push_back(indicies[index + i]);
+                right_indicies->push_back(indicies[index + i + 1]);
+                right_indicies->push_back(indicies[index + i + 2]);
+            }
+        }
+        if (left_indicies->size() == 0 || right_indicies->size() == 0) {
+            assert(false && "Mesh::split: no triangles in one of the children");
+        }
+
         memcpy(indicies.data() + index, left_indicies->data(), left_indicies->size() * sizeof(uint32_t));
 
         memcpy(indicies.data() + (index + left_indicies->size()), right_indicies->data(), right_indicies->size() * sizeof(uint32_t));
@@ -137,21 +191,9 @@ void Mesh::split(uint32_t index, uint32_t count, uint32_t bvh_index, uint32_t de
         bvh[bvh_index].index = bvh.size() - 1;
         bvh.push_back(BVH_mesh());
 
-        // // set the left and right children
-
-        // // update the indicies
-        // for (int i = 0; i < left_indicies->size(); i++) {
-        //     indicies[index + i] = left_indicies[i];
-        // }
-        // for (int i = 0; i < right_indicies->size(); i++) {
-        //     indicies[index + left_indicies->size() + i] = right_indicies[i];
-        // }
-
-        // call split on the left and right children
-
         uint32_t left_indicies_size = left_indicies->size();
         uint32_t right_indicies_size = right_indicies->size();
-        // delete the left and right indicies
+
         delete left_indicies;
         delete right_indicies;
 
@@ -183,7 +225,7 @@ SceneHit Mesh::hit(glm::vec3& ro, glm::vec3& rd) {
 
         // if leaf
         if (bvh[index].nbTriangle != 0) {
-            for (uint32_t i =0; i < bvh[index].nbTriangle; i += 3) {
+            for (uint32_t i = 0; i < bvh[index].nbTriangle; i += 3) {
                 glm::vec3 p1 = verticies[indicies[bvh[index].index + i]].pos;
                 glm::vec3 p2 = verticies[indicies[bvh[index].index + i + 1]].pos;
                 glm::vec3 p3 = verticies[indicies[bvh[index].index + i + 2]].pos;
@@ -218,16 +260,16 @@ SceneHit Mesh::hit(glm::vec3& ro, glm::vec3& rd) {
 
 void Mesh::uploadToGPU(CommandBuffer* ext_cmd) {
     if ((vertexBuffer == VK_NULL_HANDLE || indexBuffer == VK_NULL_HANDLE) ||
-        (vertexBuffer.getInstancesCount() != verticies.size() || indexBuffer.getInstancesCount() != indicies.size())) {
+        (vertexBuffer.getInstancesCount() < verticies.size() || indexBuffer.getInstancesCount() < indicies.size())) {
         vertexBuffer =
             Buffer(device, sizeof(Vertex), verticies.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, type);
-        indexBuffer = Buffer(
-            device, sizeof(unsigned int), indicies.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, type);
+        indexBuffer =
+            Buffer(device, sizeof(uint32_t), indicies.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, type);
     }
 
     if (type == Buffer::BufferType::DYNAMIC) {
-        vertexBuffer.writeToBuffer(verticies.data(), verticies.size() * sizeof(Vertex));
-        indexBuffer.writeToBuffer(indicies.data(), indicies.size() * sizeof(unsigned int));
+        vertexBuffer.writeToBuffer(verticies.data(), verticies.size() * sizeof(Vertex), first_vertex * sizeof(Vertex));
+        indexBuffer.writeToBuffer(indicies.data(), indicies.size() * sizeof(uint32_t), first_index * sizeof(uint32_t));
     } else {
         CommandBuffer* cmd_buffer = ext_cmd;
         if (cmd_buffer == nullptr) {
@@ -240,14 +282,16 @@ void Mesh::uploadToGPU(CommandBuffer* ext_cmd) {
         Buffer* stagingVertexBuffer =
             new Buffer(device, sizeof(Vertex), verticies.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, Buffer::BufferType::STAGING);
         Buffer* stagingIndexBuffer =
-            new Buffer(device, sizeof(unsigned int), indicies.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, Buffer::BufferType::STAGING);
+            new Buffer(device, sizeof(uint32_t), indicies.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, Buffer::BufferType::STAGING);
 
         stagingVertexBuffer->writeToBuffer(verticies.data(), verticies.size() * sizeof(Vertex));
-        stagingIndexBuffer->writeToBuffer(indicies.data(), indicies.size() * sizeof(unsigned int));
+        stagingIndexBuffer->writeToBuffer(indicies.data(), indicies.size() * sizeof(uint32_t));
 
         // copy to device local buffer
-        Buffer::copyBuffer(device, *stagingIndexBuffer, indexBuffer, cmd_buffer);
-        Buffer::copyBuffer(device, *stagingVertexBuffer, vertexBuffer, cmd_buffer);
+        Buffer::copyBuffer(
+            device, *stagingVertexBuffer, vertexBuffer, cmd_buffer, verticies.size() * sizeof(Vertex), 0, first_vertex * sizeof(Vertex));
+        Buffer::copyBuffer(
+            device, *stagingIndexBuffer, indexBuffer, cmd_buffer, indicies.size() * sizeof(uint32_t), 0, first_index * sizeof(uint32_t));
 
         // add staging buffer to destroy list
         cmd_buffer->addRessourceToDestroy(stagingVertexBuffer);
@@ -268,7 +312,6 @@ void Mesh::bindMesh(CommandBuffer& cmd) {
     vkCmdBindIndexBuffer(cmd, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 }
 
-glm::vec3 Triangle::getNormal() const { return glm::triangleNormal(verts[0].pos, verts[1].pos, verts[2].pos); };
 // namespace TTe
 
 // https://iquilezles.org/articles/intersectors/

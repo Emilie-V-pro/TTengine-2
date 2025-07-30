@@ -49,8 +49,8 @@ void App::init(Device *device, SwapChain *swapchain, Window *window) {
     std::vector<std::vector<std::vector<Image>>> portalATextures;
     std::vector<std::vector<std::vector<Image>>> portalBTextures;
 
-    GLTFLoader gltfLoader;
-    gltfLoader.load("gltf/glTF/Sponza.gltf");
+    GLTFLoader gltfLoader(device);
+    gltfLoader.load("gltf/main_sponza/NewSponza_Main_glTF_003.gltf");
 
     for (int i = 0; i < 5; i++) {
         portalARenderPasses.push_back(
@@ -70,7 +70,7 @@ void App::init(Device *device, SwapChain *swapchain, Window *window) {
     movementController.setCursors(window);
     vkDeviceWaitIdle(*device);
 
-    scene2 = std::make_shared<Scene2>(device);
+    scene2 = std::make_shared<Scene>(device);
 
     skeleton = std::make_shared<SkeletonObj>();
     skeleton->init("../data/motionFSM");
@@ -131,7 +131,7 @@ void App::init(Device *device, SwapChain *swapchain, Window *window) {
     scene2->updateDescriptorSets();
     scene2->getMainCamera()->transform.pos = glm::vec3(0.0f, 13.0f, -8.0f);
 
-    std::cout << "\% de leaf sans triangle : " << Mesh::leaf_without_triangle_count * 100.0f / Mesh::leaf_count << std::endl;
+
     scene2->computeBoundingBox();
     std::shared_ptr<Node> cape = scene2->getNode(cape_id);
     // cast to ObjetSimuleMSS
@@ -146,7 +146,7 @@ void App::init(Device *device, SwapChain *swapchain, Window *window) {
 
     std::shared_ptr<BasicMeshObj> b = std::make_shared<BasicMeshObj>();
     std::shared_ptr<CollisionObject> c = std::make_shared<CollisionObject>(CollisionObject::cube);
-    b->setShape(Cube);
+    b->setShape(Mesh::Cube);
 
     b->transform.pos = glm::vec3(3.5,-2,-1.5);
     b->transform.scale = glm::vec3(2);

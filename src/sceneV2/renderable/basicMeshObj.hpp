@@ -40,8 +40,8 @@ class BasicMeshObj : public IRenderable, public Node {
     ~BasicMeshObj();
     
     void render(CommandBuffer &cmd, RenderData &renderData);
-    void setShape(BasicShape shape) { this->shape = shape; }
+    void setShape(Mesh::BasicShape shape) { this->shape = shape; }
     private:
-    BasicShape shape;
+    Mesh::BasicShape shape;
 };
 }

@@ -17,6 +17,7 @@
 #include "sceneV2/Ianimatic.hpp"
 #include "sceneV2/Icollider.hpp"
 #include "sceneV2/animatic/skeletonObj.hpp"
+#include "sceneV2/loader/gltf_loader.hpp"
 #include "sceneV2/mesh.hpp"
 #include "sceneV2/Irenderable.hpp"
 #include "sceneV2/cameraV2.hpp"
@@ -26,14 +27,14 @@
 #include "struct.hpp"
 
 namespace TTe {
-class Scene2 : public Node {
+class Scene : public Node {
    public:
-    Scene2(){};
-    Scene2(Device *device);
-    ~Scene2();
+    Scene(){};
+    Scene(Device *device);
+    ~Scene();
 
     //copy constructor
-    Scene2( Scene2 &&scene){
+    Scene( Scene &&scene){
         this->device = scene.device;
         this->meshes = scene.meshes;
         this->basicMeshes = scene.basicMeshes;
@@ -55,7 +56,7 @@ class Scene2 : public Node {
     };
 
     //copy assignment
-    Scene2 &operator=( Scene2 &&scene){
+    Scene &operator=( Scene &&scene){
         this->device = scene.device;
         this->meshes = scene.meshes;
         this->basicMeshes = scene.basicMeshes;
@@ -108,42 +109,51 @@ class Scene2 : public Node {
     void updateMaterialBuffer();
     void updateDescriptorSets();
    private:
-    glm::vec3 gravity{0.0f, -9.81f, 0.0f};
-    float _visco;
+   
+   
+   
+   void createPipelines();
+   void createDescriptorSets();
+   
+   std::vector<Mesh> meshes;
+   std::map<Mesh::BasicShape, Mesh> basicMeshes;
+   std::vector<Image> images;
+   std::vector<Material> materials;
+   
+   Image skyboxImage;
+   
+   DescriptorSet sceneDescriptorSet;
+   
+   Buffer cameraBuffer;
+   Buffer materialBuffer;
+   
+   std::shared_ptr<CameraV2> mainCamera;
+   std::vector<std::shared_ptr<CameraV2>> cameras;
+   std::vector<std::shared_ptr<IAnimatic>> animaticObjs;
+   std::vector<std::shared_ptr<IRenderable>> renderables;
+   std::vector<std::shared_ptr<ICollider>> collisionObjects;
+   std::vector<std::shared_ptr<IInputController>> controlledObjects;
 
-    
+   
+   std::unordered_map<uint32_t, std::shared_ptr<Node>> objects;
+   
+   std::vector<uint32_t> freeIDs;
+   int nextID = 1;
+   uint32_t getNewID();
+   
+   GraphicPipeline skyboxPipeline;
+   GraphicPipeline meshPipeline;
+   
+   Device *device = nullptr;
 
-    void createPipelines();
-    void createDescriptorSets();
+   Buffer indexBuffer;
+   Buffer vertexBuffer;
+   
+   // for physics simulation
+   glm::vec3 gravity{0.0f, -9.81f, 0.0f};
+   int _nb_iter;
+   float _visco;
 
-    std::vector<Mesh> meshes;
-    std::map<BasicShape, Mesh> basicMeshes;
-    std::vector<Image> images;
-    std::vector<Material> materials;
-
-    Image skyboxImage;
-
-    DescriptorSet sceneDescriptorSet;
-
-    Buffer cameraBuffer;
-    Buffer materialBuffer;
-
-    std::shared_ptr<CameraV2> mainCamera;
-    std::vector<std::shared_ptr<CameraV2>> cameras;
-    std::vector<std::shared_ptr<IAnimatic>> animaticObjs;
-    std::vector<std::shared_ptr<IRenderable>> renderables;
-    std::vector<std::shared_ptr<ICollider>> collisionObjects;
-    std::vector<std::shared_ptr<IInputController>> controlledObjects;
-    std::unordered_map<uint32_t, std::shared_ptr<Node>> objects;
-
-    std::vector<uint32_t> freeIDs;
-    int nextID = 1;
-    uint32_t getNewID();
-
-    GraphicPipeline skyboxPipeline;
-    GraphicPipeline meshPipeline;
-
-    Device *device = nullptr;
-    int _nb_iter;
+   friend class GLTFLoader;
 };
 }  // namespace TTe

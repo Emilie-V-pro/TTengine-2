@@ -27,7 +27,8 @@ PortalObj::PortalObj() {
 }
 
 void PortalObj::init(Device *device) {
-portalMesh = Mesh(device, "../data/mesh/portal.obj", Buffer::BufferType::GPU_ONLY);
+    //TODO : replace with gltf loader when implemented
+portalMesh = Mesh(device, Mesh::Plane, 1);
 
     GraphicPipelineCreateInfo pipelineCreateInfo;
     pipelineCreateInfo.fragmentShaderFile = "portal.frag";

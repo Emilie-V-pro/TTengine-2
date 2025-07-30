@@ -12,7 +12,7 @@ class PortalController {
    public:
     PortalController(){};
 
-    void init(Device *device, Scene2 *scene){
+    void init(Device *device, Scene *scene){
         this->device = device;
         this->scene = scene;
 
@@ -83,7 +83,7 @@ class PortalController {
 
 
     Device* device;
-    Scene2* scene;
+    Scene* scene;
     PortalObj* portalObjA;
     PortalObj* portalObjB;
 };

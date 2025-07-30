@@ -61,7 +61,7 @@ namespace TTe {
 /**
 * Lecture des parametres de l execution relatifs a la scene.
  */
-void Scene2::Param(std::string Fichier_Param)
+void Scene::Param(std::string Fichier_Param)
 {
 	/** Donnees du fichier contenant les parametres de l execution **/
 	/* Proprietes du fichier */

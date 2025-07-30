@@ -18,20 +18,10 @@
 
 namespace TTe {
 
-enum BasicShape { Triangle, Sphere, Cone, Cylinder, Cube, Plane };
-
-struct Triangle {
-    Vertex verts[3];
-    glm::vec3 getNormal() const;
-    
-    // glm::vec3 barycentric(const glm::vec3 &p) const;
-    // Hit getIntersectData(const Ray& r, const float &dist) const;
-    // glm::vec3 getRandomePoint() const;
-    float area() const;
-};
-
 class Mesh {
    public:
+    enum BasicShape { Triangle, Sphere, Cone, Cylinder, Cube, Plane };
+
     Mesh() {};
     Mesh(Device *device, Buffer::BufferType type = Buffer::BufferType::DYNAMIC) : device(device), type(type) {};
     Mesh(
@@ -39,55 +29,20 @@ class Mesh {
         const std::vector<unsigned int> &indicies,
         const std::vector<Vertex> &verticies,
         Buffer::BufferType type = Buffer::BufferType::DYNAMIC);
-    Mesh(Device *device, std::string path, Buffer::BufferType type = Buffer::BufferType::DYNAMIC);
+    
+    Mesh(Device *device, const std::vector<uint32_t> &indicies, const std::vector<Vertex> &verticies, 
+         uint first_index, uint first_vertex, Buffer indexBuffer, Buffer vertexBuffer);
+ 
 
     Mesh(Device *device, const BasicShape &b, uint resolution, Buffer::BufferType type = Buffer::BufferType::DYNAMIC);
 
-    // copy constructor
-    Mesh(const Mesh &other) {
-        this->device = other.device;
-        this->indicies = other.indicies;
-        this->verticies = other.verticies;
-        this->vertexBuffer = other.vertexBuffer;
-        this->indexBuffer = other.indexBuffer;
-        this->bvh = other.bvh;
-        this->name = other.name;
-    }
-    Mesh &operator=(const Mesh &other) {
-        if (this != &other) {
-            this->device = other.device;
-            this->indicies = other.indicies;
-            this->verticies = other.verticies;
-            this->vertexBuffer = other.vertexBuffer;
-            this->indexBuffer = other.indexBuffer;
-            this->bvh = other.bvh;
-            this->name = other.name;
-        }
-        return *this;
-    }
 
-    // move constructor
-    Mesh(Mesh &&other) {
-        this->device = other.device;
-        this->indicies = std::move(other.indicies);
-        this->verticies = std::move(other.verticies);
-        this->vertexBuffer = std::move(other.vertexBuffer);
-        this->indexBuffer = std::move(other.indexBuffer);
-        this->bvh = std::move(other.bvh);
-        this->name = std::move(other.name);
-    }
-    Mesh &operator=(Mesh &&other) {
-        if (this != &other) {
-            this->device = other.device;
-            this->indicies = std::move(other.indicies);
-            this->verticies = std::move(other.verticies);
-            this->vertexBuffer = std::move(other.vertexBuffer);
-            this->indexBuffer = std::move(other.indexBuffer);
-            this->bvh = std::move(other.bvh);
-            this->name = std::move(other.name);
-        }
-        return *this;
-    }
+    Mesh(const Mesh &other);
+    
+    Mesh &operator=(const Mesh &other);
+
+    Mesh(Mesh &&other) ;
+    Mesh &operator=(Mesh &&other);
 
     ~Mesh() {};
 
@@ -97,16 +52,12 @@ class Mesh {
 
     void bindMesh(CommandBuffer &cmd);
 
-    // Hit traceRay(Ray r, const float &distMin, const float &distMax) const;
-
     int nbTriangle() const { return indicies.size() / 3; };
     int nbVerticies() const { return verticies.size(); };
     int nbIndicies() const { return indicies.size(); };
 
     Buffer &getVertexBuffer() { return vertexBuffer; }
     Buffer &getIndexBuffer() { return indexBuffer; }
-    // Triangle operator[](const int i);
-    // Triangle operator[](const int i) const;
 
     void setMaterial(uint i) {
         for (auto &v : verticies) {
@@ -125,17 +76,14 @@ class Mesh {
 
     SceneHit hit(glm::vec3 &ro, glm::vec3 &rd);
 
-    std::vector<Vertex> verticies;
-    std::vector<uint32_t> indicies;
-
-    BoundingBox getBoundingBox() const {
-        return bvh[0].bbox;
-    }
+    BoundingBox getBoundingBox() const { return bvh[0].bbox; }
 
     static SceneHit intersectTriangle(glm::vec3 &ro, glm::vec3 &rd, Vertex &v0, Vertex &v1, Vertex &v2);
 
-    static uint32_t leaf_count;
-    static uint32_t leaf_without_triangle_count;
+
+
+    std::vector<Vertex> verticies;
+    std::vector<uint32_t> indicies;
 
    private:
     struct BVH_mesh {
@@ -149,17 +97,16 @@ class Mesh {
 
     void split(uint32_t index, uint32_t count, uint32_t bvh_index, uint32_t depth = 0);
 
-    std::string name;
+    std::string name = "";
 
     std::vector<BVH_mesh> bvh;
-    // std::unordered_map<uint32_t, ><>
-
-    // bool intersectAABBbox(Ray r) const;
 
     Buffer vertexBuffer;
     Buffer indexBuffer;
+    Buffer::BufferType type = Buffer::BufferType::GPU_ONLY;
 
-    Buffer::BufferType type;
+    uint32_t first_index = 0;
+    uint32_t first_vertex = 0;
 
     Device *device;
 };

@@ -1,7 +1,6 @@
 
 #include "buffer.hpp"
 
-#include <vulkan/vulkan_core.h>
 
 #include <fstream>
 #include <iostream>
@@ -20,11 +19,15 @@ Buffer::Buffer(
     VkBufferUsageFlags usage,
     BufferType bufferType,
     VkMemoryPropertyFlags requiredProperties)
-    : instance_size(instance_size), instance_count(instance_count), total_size(instance_count * instance_size), device(device) {
+    : instance_size(instance_size),
+      instance_count(instance_count),
+      total_size(instance_count * instance_size),
+      type(bufferType),
+      device(device) {
     refCount.store(std::make_shared<int>(1), std::memory_order_relaxed);
     bufferInfo = make<VkBufferCreateInfo>();
     bufferInfo.size = total_size;
-    bufferInfo.usage = usage | getBufferUsageFlags(bufferType) | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+    bufferInfo.usage = usage | getBufferUsageFlags(bufferType);
 
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
@@ -32,7 +35,7 @@ Buffer::Buffer(
     allocInfo.requiredFlags = requiredProperties;
     allocInfo.flags = getAllocationFlags(bufferType);
 
-    allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+    allocInfo.usage = (bufferType == BufferType::STAGING) ? VMA_MEMORY_USAGE_AUTO_PREFER_HOST: VMA_MEMORY_USAGE_AUTO;
     VmaAllocationInfo getAllocInfo;
 
     // save vmaBuildStatsString to file
@@ -83,8 +86,9 @@ Buffer::Buffer(const Buffer& other)
       total_size(instance_count * instance_size),
       allocation(other.allocation),
       vk_buffer(other.vk_buffer),
-      vk_memory(other.vk_memory),
-      device(other.device), mappedMemory(other.mappedMemory) {
+      type(other.type),
+      device(other.device),
+      mappedMemory(other.mappedMemory) {
     refCount.store(other.refCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
     (*refCount.load())++;
 }
@@ -99,7 +103,7 @@ Buffer& Buffer::operator=(const Buffer& other) {
         total_size = instance_count * instance_size;
         allocation = other.allocation;
         vk_buffer = other.vk_buffer;
-        vk_memory = other.vk_memory;
+        type = other.type;
         device = other.device;
         mappedMemory = other.mappedMemory;
         refCount.store(other.refCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
@@ -116,8 +120,9 @@ Buffer::Buffer(Buffer&& other)
       total_size(instance_count * instance_size),
       allocation(other.allocation),
       vk_buffer(other.vk_buffer),
-      vk_memory(other.vk_memory),
-      device(other.device), mappedMemory(other.mappedMemory) {
+      type(other.type),
+      device(other.device),
+      mappedMemory(other.mappedMemory) {
     refCount.store(other.refCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
     other.vk_buffer = VK_NULL_HANDLE;
     mappedMemory = nullptr;
@@ -134,12 +139,11 @@ Buffer& Buffer::operator=(Buffer&& other) {
         total_size = instance_count * instance_size;
         allocation = other.allocation;
         vk_buffer = other.vk_buffer;
-        vk_memory = other.vk_memory;
         device = other.device;
+        type = other.type;
         mappedMemory = other.mappedMemory;
 
         other.vk_buffer = VK_NULL_HANDLE;
-        other.vk_memory = VK_NULL_HANDLE;
         other.allocation = VK_NULL_HANDLE;
         other.device = nullptr;
         mappedMemory = nullptr;
@@ -151,13 +155,13 @@ Buffer& Buffer::operator=(Buffer&& other) {
 VkBufferUsageFlags Buffer::getBufferUsageFlags(BufferType bufferType) const {
     switch (bufferType) {
         case BufferType::GPU_ONLY:
-            return 0;
+            return VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         case BufferType::STAGING:
             return VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
         case BufferType::READBACK:
             return VK_BUFFER_USAGE_TRANSFER_DST_BIT;
         case BufferType::DYNAMIC:
-            return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+            return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         default:
             return 0;
     }
@@ -186,8 +190,6 @@ uint64_t Buffer::getBufferDeviceAddress(uint32_t offset) const {
 
 void Buffer::writeToBuffer(void* data, VkDeviceSize size, VkDeviceSize offset) {
     if (size > 0) {
-        // std::cout << "size : " << size << " allocator : " << device->getAllocator() << " src ptr : " << data << " dst alloc : " <<
-        // allocation << std::endl;
         vmaCopyMemoryToAllocation(device->getAllocator(), data, allocation, offset, size);
         mappedMemory = nullptr;
     }
@@ -209,8 +211,8 @@ void Buffer::copyBuffer(
     }
 
     VkBufferCopy copyRegion{};
-    copyRegion.srcOffset = src_offset;  // Optional
-    copyRegion.dstOffset = dst_offset;  // Optional
+    copyRegion.srcOffset = src_offset;
+    copyRegion.dstOffset = dst_offset;
 
     copyRegion.size = (size == VK_WHOLE_SIZE) ? src_buffer.total_size : size;
     vkCmdCopyBuffer(*cmdBuffer, src_buffer, dst_buffer, 1, &copyRegion);

@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <string>
 
 #include "sceneV2/cameraV2.hpp"
 #include "sceneV2/scene.hpp"
@@ -21,13 +22,39 @@ Node::Node() {
     transform.scale.onChanged = [this]() { setDirty(); };
 }
 
-Node::Node(int id) : id(id) {}
 
 Node::~Node() {
     for (auto &child : children) {
         child->setParent(nullptr);
     }
 }
+
+Node::Node(const Node &other) {
+        id = other.id;
+        name = other.name;
+        transform = other.transform;
+        worldMatrix = other.worldMatrix;
+        worldNormalMatrix = other.worldNormalMatrix;
+        dirty = other.dirty;
+        normalDirty = other.normalDirty;
+        parent = other.parent;
+        children = other.children;
+    };
+
+Node &Node::operator=(const Node &other) {
+        if (this != &other) {
+            id = other.id;
+            name = other.name;
+            transform = other.transform;
+            worldMatrix = other.worldMatrix;
+            worldNormalMatrix = other.worldNormalMatrix;
+            dirty = other.dirty;
+            normalDirty = other.normalDirty;
+            parent = other.parent;
+            children = other.children;
+        }
+        return *this;
+    }
 
 glm::mat4 Node::wMatrix() {
     mtx.lock();
@@ -72,6 +99,14 @@ void Node::setParent(Node *parent) { this->parent = parent; }
 int Node::getId() const { return id; }
 
 void Node::setId(int id) { this->id = id; }
+
+void Node::setName(const std::string name) {
+    this->name = name;
+}
+
+std::string& Node::getName() {
+    return this->name;
+}
 
 std::shared_ptr<Node> Node::getChild(int index) const { return children[index]; }
 

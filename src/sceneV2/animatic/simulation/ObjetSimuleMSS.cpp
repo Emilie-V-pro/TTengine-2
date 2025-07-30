@@ -32,6 +32,9 @@
 #include <fstream>
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/normal.hpp>
+
 #include <iostream>
 #include <ostream>
 #include <vector>
@@ -273,8 +276,8 @@ void ObjetSimuleMSS::setNormals() {
         b = mesh.indicies[(3 * i) + 1];
         c = mesh.indicies[(3 * i) + 2];
 
-        struct Triangle tri = {mesh.verticies[a], mesh.verticies[b], mesh.verticies[c]};
-        normale = tri.getNormal();
+        normale = glm::triangleNormal(mesh.verticies[a].pos, mesh.verticies[b].pos, mesh.verticies[c].pos);
+        
 
         // Modification des normales des sommets de la face
         // Normale du sommet a

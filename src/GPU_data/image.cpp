@@ -2,7 +2,9 @@
 #include "GPU_data/image.hpp"
 
 #include <cstdint>
+#include <fstream>
 #include <iostream>
+
 #include "commandBuffer/command_buffer.hpp"
 #define STB_IMAGE_IMPLEMENTATION
 #include <cstddef>
@@ -14,7 +16,7 @@
 #include "structs_vk.hpp"
 #include "utils.hpp"
 
-#define TEXTURE_PATH "../data/textures/"
+#define TEXTURE_PATH "../data/"
 
 namespace TTe {
 
@@ -32,11 +34,11 @@ Image::Image(Device *device, ImageCreateInfo &imageCreateInfo, CommandBuffer *ex
       device(device) {
     CommandBuffer *cmd = extcmdBuffer;
     if (cmd == nullptr) {
-        cmd  = new CommandBuffer(std::move(CommandPoolHandler::getCommandPool(device, device->getRenderQueue())->createCommandBuffer(1)[0]));
+        cmd = new CommandBuffer(std::move(CommandPoolHandler::getCommandPool(device, device->getRenderQueue())->createCommandBuffer(1)[0]));
         cmd->beginCommandBuffer();
     }
-    
-        refCount.store(std::make_shared<int>(1), std::memory_order_relaxed);
+
+    refCount.store(std::make_shared<int>(1), std::memory_order_relaxed);
     if (!this->imageCreateInfo.filename.empty()) {
         loadImageFromFile(imageCreateInfo.filename);
     }
@@ -45,17 +47,16 @@ Image::Image(Device *device, ImageCreateInfo &imageCreateInfo, CommandBuffer *ex
 
     if (this->imageCreateInfo.datas.size() > 0) {
         loadImageToGPU(cmd);
-        if(imageCreateInfo.enableMipMap){
+        if (imageCreateInfo.enableMipMap) {
             generateMipmaps(cmd);
         }
-    }else{
+    } else {
         transitionImageLayout(imageLayout, cmd);
     }
     if (extcmdBuffer == nullptr) {
         cmd->endCommandBuffer();
         cmd->addRessourceToDestroy(cmd);
-        cmd->submitCommandBuffer({}, {}, nullptr, true);
-   
+        cmd->submitCommandBuffer({}, {}, nullptr, false);
     }
 }
 
@@ -159,7 +160,6 @@ Image &Image::operator=(const Image &other) {
 
 Image &Image::operator=(Image &&other) {
     if (this != &other) {
-
         destruction();
         imageCreateInfo = other.imageCreateInfo;
         width = other.width;
@@ -184,7 +184,6 @@ Image &Image::operator=(Image &&other) {
     return *this;
 }
 
-
 void Image::writeToImage(void *data, size_t size, uint32_t offset, CommandBuffer *extCmdBuffer) {
     CommandBuffer *cmdBuffer = extCmdBuffer;
     if (cmdBuffer == nullptr) {
@@ -192,20 +191,19 @@ void Image::writeToImage(void *data, size_t size, uint32_t offset, CommandBuffer
             new CommandBuffer(std::move(CommandPoolHandler::getCommandPool(device, device->getTransferQueue())->createCommandBuffer(1)[0]));
         cmdBuffer->beginCommandBuffer();
     }
-    
+
     transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, cmdBuffer);
     Buffer *b = new Buffer(device, getPixelSizeFromFormat(imageFormat), static_cast<u_int32_t>(size), 0, Buffer::BufferType::STAGING);
     b->writeToBuffer(data, size, offset);
     b->copyToImage(device, *this, width, height, layer, cmdBuffer);
     transitionImageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, cmdBuffer);
     cmdBuffer->addRessourceToDestroy(b);
-    
+
     if (extCmdBuffer == nullptr) {
         cmdBuffer->endCommandBuffer();
         cmdBuffer->addRessourceToDestroy(cmdBuffer);
         cmdBuffer->submitCommandBuffer({}, {}, nullptr, true);
     }
-
 }
 
 void Image::transitionImageLayout(VkImageLayout newLayout, CommandBuffer *extCmdBuffer) {
@@ -297,7 +295,7 @@ void Image::transferQueueOwnership(const CommandBuffer &extCmdBuffer, uint32_t q
 }
 
 void Image::generateMipmaps(CommandBuffer *extCmdBuffer) {
-    CommandBuffer* cmd;
+    CommandBuffer *cmd;
     if (extCmdBuffer == nullptr) {
         cmd = new CommandBuffer(std::move(CommandPoolHandler::getCommandPool(device, device->getRenderQueue())->createCommandBuffer(1)[0]));
         cmd->beginCommandBuffer();
@@ -305,7 +303,6 @@ void Image::generateMipmaps(CommandBuffer *extCmdBuffer) {
         cmd = extCmdBuffer;
     }
     transitionImageLayout(actualImageLayout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 0, 1, cmd);
-
 
     for (uint32_t i = 1; i < mipLevels; i++) {
         VkImageBlit imageBlit{};
@@ -337,13 +334,17 @@ void Image::generateMipmaps(CommandBuffer *extCmdBuffer) {
 
         // Blit from previous level
         vkCmdBlitImage(
-            *cmd, this->vk_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, this->vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
-            &imageBlit, VK_FILTER_LINEAR);
+            *cmd, this->vk_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, this->vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageBlit,
+            VK_FILTER_LINEAR);
 
         // // Prepare current mip level as image blit source for next level
         transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, i, 1, cmd);
     }
-    if(extCmdBuffer == nullptr){
+    actualImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    // transitioto shader read only optimal
+    transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, cmd);
+
+    if (extCmdBuffer == nullptr) {
         cmd->endCommandBuffer();
         cmd->addRessourceToDestroy(cmd);
         cmd->submitCommandBuffer({}, {}, nullptr, true);
@@ -353,7 +354,8 @@ void Image::generateMipmaps(CommandBuffer *extCmdBuffer) {
 void Image::createImage() {
     if (imageCreateInfo.enableMipMap) {
         imageCreateInfo.usageFlags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-        mipLevels = std::min (static_cast<uint32_t>(std::floor(std::log2(std::max(imageCreateInfo.width, imageCreateInfo.width)))) + 1, uint32_t(16));
+        mipLevels = std::min(
+            static_cast<uint32_t>(std::floor(std::log2(std::max(imageCreateInfo.width, imageCreateInfo.width)))) + 1, uint32_t(8));
     }
     auto imageInfo = make<VkImageCreateInfo>();
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -372,7 +374,6 @@ void Image::createImage() {
         imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     }
 
-
     imageInfo.extent = {imageCreateInfo.width, imageCreateInfo.height, 1};
     // imageInfo.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
     if (imageCreateInfo.isCubeTexture) {
@@ -387,7 +388,21 @@ void Image::createImageWithInfo(const VkImageCreateInfo &imageInfo, VkMemoryProp
     VmaAllocationCreateInfo allocInfo = {};
     allocInfo.requiredFlags = properties;
 
-    vmaCreateImage(device->getAllocator(), &imageInfo, &allocInfo, &vk_image, &allocation, nullptr);
+    auto res = vmaCreateImage(device->getAllocator(), &imageInfo, &allocInfo, &vk_image, &allocation, nullptr);
+    if (res != VK_SUCCESS) {
+        // dump vma
+        std::ofstream file("vmaStats.json");
+        char *s;
+        vmaBuildStatsString(device->getAllocator(), &s, VK_TRUE);
+
+        file << s;
+        file.close();
+        vmaFreeStatsString(device->getAllocator(), s);
+        std::cout << "VMA stats dumped to vmaStats.json" << std::endl;
+
+        std::cerr << "Failed to create buffer: " << res << std::endl;
+        throw std::runtime_error("Failed to create buffer");
+    }
 }
 
 void Image::createImageView() {
@@ -444,7 +459,7 @@ void Image::loadImageFromFile(std::vector<std::string> &filename) {
     int width = 0, height = 0;
     std::cout << "Loading image: " << TEXTURE_PATH + filename[0] << std::endl;
     stbi_info((TEXTURE_PATH + filename[0]).c_str(), &width, &height, &nbOfchannel);
-    if(width == 0 || height == 0){
+    if (width == 0 || height == 0) {
         std::cerr << "Erreur: l'image n'a pas pu être chargée" << std::endl;
     }
     this->width = width;
@@ -455,7 +470,6 @@ void Image::loadImageFromFile(std::vector<std::string> &filename) {
     this->layer = filename.size();
     for (size_t i = 0; i < filename.size(); i++) {
         imageCreateInfo.datas.push_back(stbi_load((TEXTURE_PATH + filename[i]).c_str(), &width, &height, &nbOfchannel, 4));
-        
     }
 
     if (imageCreateInfo.format == VK_FORMAT_UNDEFINED) {
@@ -471,10 +485,10 @@ void Image::loadImageToGPU(CommandBuffer *extCmdBuffer) {
             new CommandBuffer(std::move(CommandPoolHandler::getCommandPool(device, device->getTransferQueue())->createCommandBuffer(1)[0]));
         cmdBuffer->beginCommandBuffer();
     }
-    
+
     VkDeviceSize size = width * height * getPixelSizeFromFormat(imageFormat);
     Buffer *b = new Buffer(
-        device, getPixelSizeFromFormat(imageFormat), static_cast<u_int32_t>(width * height * layer), 0, Buffer::BufferType::STAGING);
+        device, getPixelSizeFromFormat(imageFormat), static_cast<u_int32_t>(width * height * layer), 0, Buffer::BufferType::STAGING, 0);
     for (size_t i = 0; i < imageCreateInfo.datas.size(); i++) {
         b->writeToBuffer(imageCreateInfo.datas[i], size, i * size);
     }
@@ -487,10 +501,10 @@ void Image::loadImageToGPU(CommandBuffer *extCmdBuffer) {
     b->copyToImage(device, *this, width, height, layer, cmdBuffer);
     transitionImageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, cmdBuffer);
     cmdBuffer->addRessourceToDestroy(b);
-    
+
     if (extCmdBuffer == nullptr) {
         cmdBuffer->endCommandBuffer();
-        
+
         cmdBuffer->addRessourceToDestroy(cmdBuffer);
         cmdBuffer->submitCommandBuffer({}, {}, nullptr, true);
     }

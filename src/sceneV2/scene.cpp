@@ -19,34 +19,36 @@
 
 namespace TTe {
 
-Scene2::Scene2(Device *device) : device(device) {
-    basicMeshes[Sphere] = Mesh(device, Sphere, 4);
-    basicMeshes[Cube] = Mesh(device, Cube, 1);
-    basicMeshes[Plane] = Mesh(device, Plane, 1);
+Scene::Scene(Device *device) : device(device) {
+    basicMeshes[Mesh::Sphere] = Mesh(device, Mesh::Sphere, 4);
+    basicMeshes[Mesh::Cube] = Mesh(device, Mesh::Cube, 1);
+    basicMeshes[Mesh::Plane] = Mesh(device, Mesh::Plane, 1);
 
     ImageCreateInfo skyboxImageCreateInfo;
-    skyboxImageCreateInfo.filename.push_back("posx.jpg");
-    skyboxImageCreateInfo.filename.push_back("negx.jpg");
-    skyboxImageCreateInfo.filename.push_back("posy.jpg");
-    skyboxImageCreateInfo.filename.push_back("negy.jpg");
-    skyboxImageCreateInfo.filename.push_back("posz.jpg");
-    skyboxImageCreateInfo.filename.push_back("negz.jpg");
+    skyboxImageCreateInfo.filename.push_back("textures/posx.jpg");
+    skyboxImageCreateInfo.filename.push_back("textures/negx.jpg");
+    skyboxImageCreateInfo.filename.push_back("textures/posy.jpg");
+    skyboxImageCreateInfo.filename.push_back("textures/negy.jpg");
+    skyboxImageCreateInfo.filename.push_back("textures/posz.jpg");
+    skyboxImageCreateInfo.filename.push_back("textures/negz.jpg");
     skyboxImageCreateInfo.usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT;
     skyboxImageCreateInfo.isCubeTexture = true;
     skyboxImageCreateInfo.enableMipMap = true;
+    skyboxImageCreateInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     skyboxImage = Image(device, skyboxImageCreateInfo);
 
+    uint32_t whitePixel = 0xFFFFFFFF;
     ImageCreateInfo imageCreateInfo;
     imageCreateInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
     imageCreateInfo.width = 1;
     imageCreateInfo.height = 1;
     imageCreateInfo.usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     imageCreateInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageCreateInfo.datas.push_back(&whitePixel);
+    
     images.push_back(Image(device, imageCreateInfo));
 
-    uint32_t whitePixel = 0xFFFFFFFF;
-
-    images[0].writeToImage(&whitePixel, sizeof(uint32_t));
+    vkDeviceWaitIdle(*device);
 
     addNode(-1, std::make_shared<CameraV2>());
 
@@ -57,20 +59,20 @@ Scene2::Scene2(Device *device) : device(device) {
     updateDescriptorSets();
 }
 
-Scene2::~Scene2() {}
+Scene::~Scene() {}
 
-void Scene2::render(CommandBuffer &cmd, RenderData &renderData) {
+void Scene::render(CommandBuffer &cmd, RenderData &renderData) {
     skyboxPipeline.bindPipeline(cmd);
     std::vector<DescriptorSet *> descriptorSets = {&sceneDescriptorSet};
     DescriptorSet::bindDescriptorSet(cmd, descriptorSets, skyboxPipeline.getPipelineLayout(), VK_PIPELINE_BIND_POINT_GRAPHICS);
 
-    basicMeshes[Cube].bindMesh(cmd);
+    basicMeshes[Mesh::Cube].bindMesh(cmd);
     renderData.renderPass->setDepthAndStencil(cmd, false);
 
     //set push_constant for cam_id
     vkCmdPushConstants(cmd, skyboxPipeline.getPipelineLayout(), skyboxPipeline.getPushConstantStage(), 0, sizeof(uint32_t), &renderData.cameraId);
 
-    vkCmdDrawIndexed(cmd, basicMeshes[Cube].nbIndicies(), 1, 0, 0, 0);
+    vkCmdDrawIndexed(cmd, basicMeshes[Mesh::Cube].nbIndicies(), 1, 0, 0, 0);
     renderData.renderPass->setDepthAndStencil(cmd, true);
     descriptorSets = {&sceneDescriptorSet};
 
@@ -81,7 +83,7 @@ void Scene2::render(CommandBuffer &cmd, RenderData &renderData) {
     renderData.meshes = &meshes;
     renderData.default_pipeline = &meshPipeline;
     renderData.binded_pipeline = &meshPipeline;
-    renderData.binded_mesh = &basicMeshes[Cube];
+    renderData.binded_mesh = &basicMeshes[Mesh::Cube];
     renderData.descriptorSets.push(sceneDescriptorSet);
 
     for (auto &renderable : renderables) {
@@ -89,7 +91,7 @@ void Scene2::render(CommandBuffer &cmd, RenderData &renderData) {
     }
 }
 
-uint32_t Scene2::getNewID() {
+uint32_t Scene::getNewID() {
     if (!freeIDs.empty()) {
         uint32_t id = freeIDs.back();
         freeIDs.pop_back();
@@ -100,7 +102,7 @@ uint32_t Scene2::getNewID() {
     Device *device = nullptr;
 };
 
-uint32_t Scene2::addNode(uint32_t Parent_id, std::shared_ptr<Node> node) {
+uint32_t Scene::addNode(uint32_t Parent_id, std::shared_ptr<Node> node) {
     if (dynamic_cast<IRenderable *>(node.get())) {
         renderables.push_back(std::dynamic_pointer_cast<IRenderable>(node));
         // check if node is a static mesh
@@ -138,16 +140,16 @@ uint32_t Scene2::addNode(uint32_t Parent_id, std::shared_ptr<Node> node) {
     return node->getId();
 }
 
-void Scene2::removeNode(uint32_t id) {}
+void Scene::removeNode(uint32_t id) {}
 
-uint32_t Scene2::addMaterial(Material material) {
+uint32_t Scene::addMaterial(Material material) {
     materials.push_back(material);
     return materials.size() - 1;
 }
 
-void Scene2::addMesh(Mesh mesh) { meshes.push_back(mesh); }
+void Scene::addMesh(Mesh mesh) { meshes.push_back(mesh); }
 
-void Scene2::addObjectFileData(ObjectFileData &data) {
+void Scene::addObjectFileData(ObjectFileData &data) {
     for (auto &mesh : data.meshes) {
         mesh.applyMaterialOffset(materials.size());
     }
@@ -165,24 +167,24 @@ void Scene2::addObjectFileData(ObjectFileData &data) {
     }
 }
 
-uint32_t Scene2::addImage(Image image) {
+uint32_t Scene::addImage(Image image) {
     images.push_back(image);
     return images.size() - 1;
 }
 
-void Scene2::updateSim(float dt, float t, uint32_t tick) {
+void Scene::updateSim(float dt, float t, uint32_t tick) {
     for (auto &animaticObj : animaticObjs) {
         animaticObj->simulation(glm::vec3(0, -9.81, 0), 0.995, tick, dt, t, collisionObjects);
     }
 }
 
-void Scene2::updateFromInput(Window *window, float dt) {
+void Scene::updateFromInput(Window *window, float dt) {
     for (auto &controlledObject : controlledObjects) {
         controlledObject->updateFromInput(window, dt);
     }
 }
 
-void Scene2::updateCameraBuffer() {
+void Scene::updateCameraBuffer() {
     if (cameraBuffer.getInstancesCount() == 0) {
         cameraBuffer = Buffer(device, sizeof(Ubo), 20, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
     }
@@ -229,7 +231,7 @@ glm::mat4 oblic_projection(const glm::mat4 &proj, glm::vec4 &clip_plane) {
     return result;
 }
 
-void Scene2::updateCameraBuffer(float near, float x_rot) {
+void Scene::updateCameraBuffer(float near, float x_rot) {
     if (cameraBuffer.getInstancesCount() == 0) {
         cameraBuffer = Buffer(device, sizeof(Ubo), 20, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
     }
@@ -250,7 +252,7 @@ void Scene2::updateCameraBuffer(float near, float x_rot) {
     cameraBuffer.writeToBuffer(&ubo, sizeof(Ubo));
 }
 
-void Scene2::updateCameraBuffer(std::vector<Ubo> camData) {
+void Scene::updateCameraBuffer(std::vector<Ubo> camData) {
     if (cameraBuffer.getInstancesCount() == 0) {
         cameraBuffer = Buffer(device, sizeof(Ubo), 20, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
     }
@@ -258,7 +260,7 @@ void Scene2::updateCameraBuffer(std::vector<Ubo> camData) {
     cameraBuffer.writeToBuffer(&camData[0], sizeof(Ubo) * camData.size(), 0);
 }
 
-void Scene2::updateMaterialBuffer() {
+void Scene::updateMaterialBuffer() {
     if (materialBuffer.getInstancesCount() < materials.size() || materials.size() == 0) {
         if (materials.size() == 0) {
             Material mat;
@@ -287,9 +289,9 @@ void Scene2::updateMaterialBuffer() {
     materialBuffer.writeToBuffer(materialsGPU.data(), sizeof(MaterialGPU) * materialsGPU.size(), 0);
 }
 
-void Scene2::createDescriptorSets() { sceneDescriptorSet = DescriptorSet(device, meshPipeline.getDescriptorSetLayout(0)); }
+void Scene::createDescriptorSets() { sceneDescriptorSet = DescriptorSet(device, meshPipeline.getDescriptorSetLayout(0)); }
 
-void Scene2::updateDescriptorSets() {
+void Scene::updateDescriptorSets() {
     sceneDescriptorSet.writeBufferDescriptor(0, cameraBuffer);
 
     sceneDescriptorSet.writeBufferDescriptor(1, materialBuffer);
@@ -311,7 +313,7 @@ void Scene2::updateDescriptorSets() {
     sceneDescriptorSet.writeImageDescriptor(3, skyboxImage.getDescriptorImageInfo(samplerType::LINEAR));
 }
 
-void Scene2::createPipelines() {
+void Scene::createPipelines() {
     GraphicPipelineCreateInfo pipelineCreateInfo;
     pipelineCreateInfo.fragmentShaderFile = "hello_scene.frag";
     pipelineCreateInfo.vexterShaderFile = "hello_scene.vert";

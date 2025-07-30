@@ -17,7 +17,7 @@ namespace TTe {
         Pipeline* binded_pipeline;
         Mesh* binded_mesh;
         std::vector<Mesh> *meshes; 
-        std::map<BasicShape, Mesh> *basicMeshes;
+        std::map<Mesh::BasicShape, Mesh> *basicMeshes;
 
         uint recursionLevel = 0;
         uint cameraId = 0;

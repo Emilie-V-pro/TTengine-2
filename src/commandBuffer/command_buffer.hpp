@@ -41,6 +41,7 @@ class CommandBufferPool {
     VkCommandPool vk_cmdPool = VK_NULL_HANDLE;
     Device* device = nullptr;
 
+
     friend class CommandBuffer;
 };
 

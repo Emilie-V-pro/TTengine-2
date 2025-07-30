@@ -48,6 +48,8 @@ class Buffer : public vk_cmdBuffer_OBJ, public Ressource {
 
     uint32_t getInstancesCount() const { return instance_count; }
 
+    BufferType getType() const { return type; }
+
     void* mapMemory()  {
         if(mappedMemory == nullptr)
             vmaMapMemory(device->getAllocator(), allocation, &mappedMemory);
@@ -85,6 +87,7 @@ class Buffer : public vk_cmdBuffer_OBJ, public Ressource {
 
     VmaAllocationCreateInfo allocInfo = {};
     VkBufferCreateInfo bufferInfo = {};
+    BufferType type = BufferType::GPU_ONLY;
 
     VkDeviceSize instance_size = 0;
     uint32_t instance_count = 0;
@@ -92,7 +95,6 @@ class Buffer : public vk_cmdBuffer_OBJ, public Ressource {
 
     VmaAllocation allocation = VK_NULL_HANDLE;
     VkBuffer vk_buffer = VK_NULL_HANDLE;
-    VkDeviceMemory vk_memory = VK_NULL_HANDLE;
     Device* device = nullptr;
     void *mappedMemory = nullptr;
 
