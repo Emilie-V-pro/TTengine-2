@@ -1,4 +1,4 @@
-# TTengine (Tu tournes engine)
+# TTengine (Tu Tournes Engine)
 
 ## compilation
 
