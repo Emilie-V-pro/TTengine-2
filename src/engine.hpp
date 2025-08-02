@@ -1,11 +1,11 @@
 #pragma once
 
-
 #include <array>
 #include <cstdint>
 #include <mutex>
 #include <vector>
 
+#include "GPU_data/buffer.hpp"
 #include "Iapp.hpp"
 #include "commandBuffer/commandPool_handler.hpp"
 #include "commandBuffer/command_buffer.hpp"
@@ -34,37 +34,45 @@ class Engine {
     void init();
     void run();
 
-    private:
+   private:
+
+   
     void resize();
-    
+
     bool startFrame(Semaphore *&aquireFrameSemaphore, Fence *&fence);
     void endAndPresentFrame(Semaphore *waitRenderSemaphore);
-    
+
     static void renderLoop(Engine &engine);
     static void updateLoop(Engine &engine);
-    
+
     uint32_t currentSwapchainImage = 0;
     int renderIndex = 0;
-    
-    
+
     bool shouldClose = false;
-    
+
     std::mutex resizeMutex;
-    
+
     Window window{1280, 720, "mon napli"};
     Device device{window};
     SwapChain swapChain{&device, window.getExtent(), vkb::SwapchainBuilder::BufferMode::DOUBLE_BUFFERING};
-    
+
     IApp *app;
     DynamicRenderPass imgui_renderPass;
 
-
     std::vector<Semaphore> waitToPresentSemaphores;
 
-    
-    CommandBufferPool* commandBufferPool= CommandPoolHandler::getCommandPool(&device, device.getRenderQueue());
-    
+    CommandBufferPool *commandBufferPool = CommandPoolHandler::getCommandPool(&device, device.getRenderQueue());
+
     std::array<CommandBuffer, MAX_FRAMES_IN_FLIGHT> renderCommandBuffers;
     CommandBuffer updateCommandBuffer;
+
+    // RenderData
+    DynamicRenderPass deferredRenderPass;
+    DynamicRenderPass forwardRenderPass;
+
+    Buffer indirectDrawBuffer;
+    Buffer indirectDrawBufferCount;
+
+    
 };
 }  // namespace TTe

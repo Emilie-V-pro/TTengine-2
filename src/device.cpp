@@ -141,7 +141,7 @@ void setRequiredFeatures12(vkb::PhysicalDeviceSelector &phys_device_selector) {
     required_features12.descriptorBindingPartiallyBound = true;
     // required_features12.runtimeDescriptorArray = true;
     //  required_features12.descriptorBindingVariableDescriptorCount = true;
-    // required_features12.drawIndirectCount = true;
+    required_features12.drawIndirectCount = true;
     // required_features12.samplerFilterMinmax = true;
     required_features12.bufferDeviceAddress = true;
     required_features12.descriptorIndexing = true;
@@ -157,6 +157,7 @@ void setRequiredFeatures13(vkb::PhysicalDeviceSelector &phys_device_selector) {
     required_features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
     required_features13.dynamicRendering = true;
     required_features13.synchronization2 = true;
+    required_features13.shaderDemoteToHelperInvocation = true;
     phys_device_selector.set_required_features_13(required_features13);
 }
 

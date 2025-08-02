@@ -93,7 +93,7 @@ int ObjLoader::insert_texture(const char *name) {
         if (textures[i].name == name) return i;
 
     ImageCreateInfo imageCreateInfo;
-    imageCreateInfo.filename.push_back(name);
+    imageCreateInfo.filename.push_back("textures/"+std::string(name));
     imageCreateInfo.enableMipMap = true;
     imageCreateInfo.usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT ;
     imageCreateInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

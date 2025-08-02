@@ -10,3 +10,6 @@
 [submodule "imgui"]
 	path = external/imgui
 	url = https://github.com/ocornut/imgui
+[submodule "external/Hash"]
+	path = external/Hash
+	url = git@github.com:Chocobo1/Hash.git

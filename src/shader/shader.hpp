@@ -1,9 +1,12 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
+#include <filesystem>
+#include <glslang/Include/glslang_c_interface.h>
 
 #include "../descriptor/descriptorSetLayout.hpp"
 #include "../device.hpp"
@@ -13,7 +16,7 @@ class Shader {
    public:
     // Constructor
     Shader();
-    Shader(Device *device, std::string shaderFile, VkShaderStageFlags descriptorStage, VkShaderStageFlags nextShaderStage = 0);
+    Shader(Device *device, std::filesystem::path shaderFile, VkShaderStageFlags descriptorStage, VkShaderStageFlags nextShaderStage = 0);
 
     // Destructor
     ~Shader();
@@ -49,17 +52,27 @@ class Shader {
     void setPushConstant(VkPushConstantRange pushConstant) { pushConstants = pushConstant; }
     void createShaderInfo();
    private:
-    void loadShaderCode();
+    void loadShaderSPVCode();
+    void loadShaderGLSLCode();
+    void compileToSPIRV();
+    
+    std::string getShaderSourceCodeHash();
+    void saveHash();
+    std::string getSavedHash();
+
     void createDescriptorSetLayout(VkShaderStageFlags descriptorStage);
     void createPushConstant(VkShaderStageFlags descriptorStage);
 
+    glslang_stage_t getGLSLangStageFromShaderStage(VkShaderStageFlagBits shaderStage) const;
+
     std::vector<uint32_t> shaderCode;
+    std::vector<char> shaderSourceCode;
 
     std::vector<std::shared_ptr<DescriptorSetLayout>> descriptorsSetLayout;
 
     VkPushConstantRange pushConstants = {};
 
-    std::string shaderFile;
+    std::filesystem::path shaderFile;
     VkShaderStageFlags nextShaderStage = 0;
     VkShaderStageFlagBits shaderStage;
 

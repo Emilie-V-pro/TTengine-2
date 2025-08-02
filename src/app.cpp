@@ -50,7 +50,7 @@ void App::init(Device *device, SwapChain *swapchain, Window *window) {
     std::vector<std::vector<std::vector<Image>>> portalBTextures;
 
     GLTFLoader gltfLoader(device);
-    gltfLoader.load("gltf/main_sponza/NewSponza_Main_glTF_003.gltf");
+    // gltfLoader.load("gltf/main_sponza/NewSponza_Main_glTF_003.gltf");
 
     for (int i = 0; i < 5; i++) {
         portalARenderPasses.push_back(
@@ -84,14 +84,14 @@ void App::init(Device *device, SwapChain *swapchain, Window *window) {
     ImageCreateInfo imageCreateInfo;
     imageCreateInfo.enableMipMap = true;
     imageCreateInfo.usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT;
-    imageCreateInfo.filename.push_back("dt.jpg");
+    imageCreateInfo.filename.push_back("textures/dt.jpg");
 
     Image image = Image(device, imageCreateInfo);
 
-    imageCreateInfo.filename[0] = "normal.jpg";
+    imageCreateInfo.filename[0] = "textures/normal.jpg";
     Image normal = Image(device, imageCreateInfo);
 
-    imageCreateInfo.filename[0] = "mr.jpg";
+    imageCreateInfo.filename[0] = "textures/mr.jpg";
     Image mr = Image(device, imageCreateInfo);
 
     uint32_t albedo_id = scene2->addImage(image);

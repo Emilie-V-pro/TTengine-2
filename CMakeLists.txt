@@ -13,8 +13,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Trouver Vulkan et GLFW
 find_package(Vulkan REQUIRED)
+find_package(glslang REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(OpenMP REQUIRED)
+
 
 # Ajouter les sous-modules nécessaires
 add_subdirectory(external/volk)
@@ -56,6 +58,7 @@ target_include_directories(TTengine PUBLIC
     ${PROJECT_SOURCE_DIR}/external/stb_image
     ${PROJECT_SOURCE_DIR}/external/VMA
     ${PROJECT_SOURCE_DIR}/external/struct_vk
+    ${PROJECT_SOURCE_DIR}/external/Hash/src
 )
 
 
@@ -71,6 +74,8 @@ target_link_libraries(imgui PUBLIC
 target_link_libraries(TTengine PUBLIC
     glfw
     Vulkan::Vulkan
+    glslang
+    glslang-default-resource-limits
     volk
     vk-bootstrap::vk-bootstrap
     spirv-cross-cpp

@@ -3,3 +3,4 @@ build/
 textures/
 data/
 shaders/spirv/
+shaders/hash/
