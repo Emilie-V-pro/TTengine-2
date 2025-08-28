@@ -100,7 +100,7 @@ class Device {
 
     // disable validation on release build type to get full performance
 #ifdef NDEBUG
-    const bool enableValidationLayers = true;
+    const bool enableValidationLayers = false;
 #else
     const bool enableValidationLayers = true;
 #endif

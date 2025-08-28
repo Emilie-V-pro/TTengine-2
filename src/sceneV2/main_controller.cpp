@@ -1,4 +1,4 @@
-#include "movement_controller.hpp"
+#include "main_controller.hpp"
 
 #include <GLFW/glfw3.h>
 
@@ -13,17 +13,8 @@
 
 
 namespace TTe {
-
-
-
-
-void MovementController::moveInPlaneXZ(Window* window, float dt, std::shared_ptr<CameraV2> cam) {
+void MainController::moveInPlaneXZ(Window* window, float dt, std::shared_ptr<CameraV2> cam) {
     glm::vec3 rotate{0};
-
-    // if (glfwGetKey(*window, keys.lookRight) == GLFW_PRESS) rotate.y -= 1.f;
-    // if (glfwGetKey(*window, keys.lookLeft) == GLFW_PRESS) rotate.y += 1.f;
-    // if (glfwGetKey(*window, keys.lookUp) == GLFW_PRESS) rotate.x += 1.f;
-    // if (glfwGetKey(*window, keys.lookDown) == GLFW_PRESS) rotate.x -= 1.f;
 
     if (glm::dot(rotate, rotate) > std::numeric_limits<float>::epsilon()) {
         cam->transform.rot += lookSpeed * dt * glm::normalize(rotate);
@@ -62,7 +53,7 @@ void MovementController::moveInPlaneXZ(Window* window, float dt, std::shared_ptr
     
 }
 
-void MovementController::mouseMoveCallback(GLFWwindow* window, double xpos, double ypos) {
+void MainController::mouseMoveCallback(GLFWwindow* window, double xpos, double ypos) {
     Window* windowObj = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
     
     double xoffset =  windowObj->lastX - xpos ;
@@ -82,7 +73,7 @@ void MovementController::mouseMoveCallback(GLFWwindow* window, double xpos, doub
     windowObj->mouseMove += glm::vec3(yoffset, xoffset, 0);
 }
 
-void MovementController::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+void MainController::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
     Window* windowObj = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
 
     ImGuiIO& io = ImGui::GetIO();

@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <glm/fwd.hpp>
 #include <glm/trigonometric.hpp>
 #include <iostream>
 #include <iterator>
@@ -13,8 +14,8 @@
 #include "GPU_data/image.hpp"
 #include "commandBuffer/commandPool_handler.hpp"
 #include "commandBuffer/command_buffer.hpp"
-#include "math/quaternion_convertor.hpp"
 #include "math/fov.hpp"
+#include "math/quaternion_convertor.hpp"
 #include "sceneV2/cameraV2.hpp"
 #include "sceneV2/container.hpp"
 #include "sceneV2/light.hpp"
@@ -40,7 +41,7 @@ void GLTFLoader::load(const std::filesystem::path& filePath) {
             scene = new Scene(device);
             loadMesh(data);
             loadMaterial(data);
-            // loadTexture(data);
+            loadTexture(data);
             loadNode(data);
 
             for (int i = 0; i < data->scenes[0].nodes_count; i++) {
@@ -56,17 +57,18 @@ void GLTFLoader::loadMesh(cgltf_data* data) {
     // get total size of the mesh to allocate
     uint32_t total_index_size = 0;
     uint32_t total_vertex_size = 0;
-    uint32_t previous_max_index = 0;
+    // uint32_t previous_max_index = 0;
     std::vector<std::vector<uint32_t>> previous_max_indices;
     std::vector<uint32_t> global_Indices_Indices;
     std::vector<uint32_t> global_Vertex_Indices;
 
     for (int i = 0; i < data->meshes_count; i++) {
+        uint32_t local_max_vertex_index = 0;
         global_Indices_Indices.push_back(total_index_size);
         global_Vertex_Indices.push_back(total_vertex_size);
 
         cgltf_mesh* mesh = &data->meshes[i];
-        std::cout << "Mesh name: " << (mesh->name ? mesh->name : "Unnamed") << std::endl;
+        
         std::vector<uint32_t> previous_max_index;
         for (int j = 0; j < mesh->primitives_count; j++) {
             cgltf_primitive* primitive = &mesh->primitives[j];
@@ -75,12 +77,12 @@ void GLTFLoader::loadMesh(cgltf_data* data) {
                 total_index_size += primitive->indices->count;
             }
 
-            previous_max_index.push_back(total_vertex_size);
+            previous_max_index.push_back(local_max_vertex_index);
             for (int k = 0; k < primitive->attributes_count; k++) {
                 cgltf_attribute* attribute = &primitive->attributes[k];
                 if (attribute->data && attribute->type == cgltf_attribute_type_position) {
                     total_vertex_size += attribute->data->count;
-
+                    local_max_vertex_index += attribute->data->count;
                     break;
                 }
             }
@@ -102,9 +104,10 @@ void GLTFLoader::loadMesh(cgltf_data* data) {
     // measure time
     auto start = std::chrono::high_resolution_clock::now();
     std::mutex addMeshMutex;
-#pragma omp parallel for schedule(dynamic, 1)
+    #pragma omp parallel for schedule(dynamic, 1)
     for (int i = 0; i < data->meshes_count; i++) {
         cgltf_mesh* mesh = &data->meshes[i];
+        std::cout << "Mesh name: " << (mesh->name ? mesh->name : "Unnamed") << std::endl;
 
         std::vector<Vertex> vertices;
         std::vector<uint32_t> indices;
@@ -163,15 +166,20 @@ void GLTFLoader::loadMesh(cgltf_data* data) {
                 vertices.push_back(vertex);
             }
 
-            previous_max_index += (pos_buffer.size() / 3);
+            // previous_max_index += (pos_buffer.size() / 3);
         }
+     
+            Mesh m = Mesh(
+                device, indices, vertices, global_Indices_Indices[i], global_Vertex_Indices[i], scene->indexBuffer, scene->vertexBuffer);
+            addMeshMutex.lock();
 
-        Mesh m =
-            Mesh(device, indices, vertices, global_Indices_Indices[i], global_Vertex_Indices[i], scene->indexBuffer, scene->vertexBuffer);
-        addMeshMutex.lock();
-        scene->addMesh(m);
-        addMeshMutex.unlock();
+            scene->meshes[i] = std::move(m);
+            // scene->addStaticMesh(m);
+            addMeshMutex.unlock();
     }
+    scene->firstIndexAvailable = scene->indexBuffer.getInstancesCount();
+    scene->firstVertexAvailable = scene->vertexBuffer.getInstancesCount();
+    scene->nb_meshes = data->meshes_count;
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
     std::cout << "Mesh loading took: " << elapsed.count() << " seconds" << std::endl;
@@ -212,8 +220,8 @@ void GLTFLoader::loadMaterial(cgltf_data* data) {
 
 void GLTFLoader::loadTexture(cgltf_data* data) {
     auto start = std::chrono::high_resolution_clock::now();
-
-#pragma omp parallel for schedule(dynamic, 1)
+    scene->images.resize(data->images_count);
+    #pragma omp parallel for schedule(dynamic, 1)
     for (int i = 0; i < data->images_count; i++) {
         cgltf_image* image = &data->images[i];
         // std::cout << dataPath.parent_path() / image->uri << std::endl;
@@ -246,7 +254,7 @@ void GLTFLoader::loadTexture(cgltf_data* data) {
         if (imageCreateInfo.datas.size() > 0) {
             stbi_image_free(imageCreateInfo.datas[0]);
         }
-        scene->addImage(imageObj);
+        scene->images[i] = std::move(imageObj);
     }
 
     auto end = std::chrono::high_resolution_clock::now();
@@ -263,7 +271,7 @@ void GLTFLoader::loadNode(cgltf_data* data) {
         nodeStack.push(data->scene->nodes[i]);
     }
 
-    nodeMap[nullptr] = nullptr; // Handle the root node case
+    nodeMap[nullptr] = nullptr;  // Handle the root node case
 
     while (!nodeStack.empty()) {
         cgltf_node* node = nodeStack.top();
@@ -273,42 +281,42 @@ void GLTFLoader::loadNode(cgltf_data* data) {
         if (node->children_count > 0 || node->mesh || node->camera || node->light) {
             if (node->mesh) {
                 std::shared_ptr<StaticMeshObj> mesh_node = std::make_shared<StaticMeshObj>();
-                mesh_node->setMeshId(std::distance(data->meshes, node->mesh));
+                mesh_node->setMesh(&scene->meshes[std::distance(data->meshes, node->mesh)]);
                 engin_node = mesh_node;
             }
 
             if (node->camera) {
                 std::shared_ptr<CameraV2> cam_node = std::make_shared<CameraV2>();
-                cam_node->fov = yFOV_to_FOV(glm::degrees(node->camera->data.perspective.yfov), node->camera->data.perspective.aspect_ratio);
+                cam_node->fov = yFOV_to_FOV(
+                    glm::degrees(node->camera->data.perspective.yfov),
+                    (node->camera->data.perspective.aspect_ratio == 0) ? 1 : node->camera->data.perspective.aspect_ratio);
                 cam_node->near = node->camera->data.perspective.znear;
                 cam_node->far = node->camera->data.perspective.zfar;
                 engin_node = cam_node;
             }
 
-            if(node->light){
+            if (node->light) {
                 std::shared_ptr<Light> light_node = std::make_shared<Light>();
                 light_node->color = glm::vec3(node->light->color[0], node->light->color[1], node->light->color[2]);
                 light_node->intensity = node->light->intensity;
-                if(node->light->type == cgltf_light_type_directional) {
+                if (node->light->type == cgltf_light_type_directional) {
                     light_node->type = Light::LightType::DIRECTIONAL;
                     engin_node = light_node;
                 } else if (node->light->type == cgltf_light_type_point) {
                     light_node->type = Light::LightType::POINT;
                     engin_node = light_node;
                 }
-                
             }
 
-
-            if(engin_node == nullptr){
+            if (engin_node == nullptr) {
                 engin_node = std::make_shared<Container>();
             }
 
             if (node->has_rotation) {
-                engin_node->transform.rot = quatToEulerZXY({node->rotation[0], node->rotation[1], node->rotation[2], node->rotation[3]});
+                engin_node->transform.rot =  glm::vec3(0); //quatToEulerZXY({node->rotation[0], node->rotation[1], node->rotation[2], node->rotation[3]});
             }
             if (node->has_translation) {
-                engin_node->transform.pos = glm::vec3(node->translation[0], node->translation[1], node->translation[2]);
+                engin_node->transform.pos = glm::vec3(node->translation[0] , node->translation[1], node->translation[2]);
             }
             if (node->has_scale) {
                 engin_node->transform.scale = glm::vec3(node->scale[0], node->scale[1], node->scale[2]);
@@ -317,12 +325,10 @@ void GLTFLoader::loadNode(cgltf_data* data) {
             engin_node->setName(node->name ? node->name : "Unnamed");
             nodeMap[node] = engin_node;
 
-
-
-            if(node->parent) {
+            if (node->parent) {
                 scene->addNode(nodeMap[node->parent]->getId(), engin_node);
             } else {
-                scene->addNode(-1, engin_node );
+                scene->addNode(-1, engin_node);
             }
 
             for (int i = node->children_count - 1; i >= 0; i--) {

@@ -25,8 +25,9 @@ SwapChain::SwapChain(Device *device, VkExtent2D windowExtent, vkb::SwapchainBuil
     vkb::SwapchainBuilder swapchain_builder{device->getVkbDevice()};
     swapchain_builder.set_desired_min_image_count(bufferingMode + 1);
     swapchain_builder.set_desired_extent(windowExtent.width, windowExtent.height);
-    swapchain_builder.set_desired_format({VK_FORMAT_B8G8R8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR});
+    swapchain_builder.set_desired_format({VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR});
     swapchain_builder.set_image_usage_flags(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+   
 
     swapchain_builder.set_desired_present_mode(VK_PRESENT_MODE_MAILBOX_KHR);
     auto swap_ret = swapchain_builder.build();
@@ -69,8 +70,9 @@ void SwapChain::recreateSwapchain(VkExtent2D windowExtent) {
     swapchain_builder.set_old_swapchain(vkbSwapchain);
     swapchain_builder.set_desired_extent(windowExtent.width, windowExtent.height);
     swapchain_builder.set_desired_min_image_count(bufferingMode + 1);
-    swapchain_builder.set_desired_format({VK_FORMAT_B8G8R8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR});
-    swapchain_builder.set_image_usage_flags(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    swapchain_builder.set_desired_format({VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR});
+
+    swapchain_builder.set_image_usage_flags(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
 
     auto swap_ret = swapchain_builder.build();
     if (!swap_ret) {
@@ -109,7 +111,7 @@ VkResult SwapChain::acquireNextImage(uint32_t& currentSwapchainImage, int* rende
 
     
   
-    imageAvailableSemaphores[*renderIndex].signalStage = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
+    imageAvailableSemaphores[*renderIndex].stage = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
     aquireFrameSemaphore = &imageAvailableSemaphores[*renderIndex];
 
     return result;
@@ -141,7 +143,7 @@ void SwapChain::createSyncObjects() {
     for (unsigned int i = 0; i < numberOfFrame - 1; i++) {
         imageAvailableFences.emplace_back(new Fence(device, true));
         imageAvailableSemaphores.emplace_back(device, VK_SEMAPHORE_TYPE_BINARY);
-        imageAvailableSemaphores[i].signalStage = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+        imageAvailableSemaphores[i].stage = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
     }
 }
 }  // namespace TTe

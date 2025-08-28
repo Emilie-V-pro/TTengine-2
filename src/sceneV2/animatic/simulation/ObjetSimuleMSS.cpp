@@ -357,21 +357,21 @@ void ObjetSimuleMSS::simulation(
 
 void ObjetSimuleMSS::render(CommandBuffer &cmd, RenderData &renderData) {
 
-    if(renderData.binded_pipeline != renderData.default_pipeline){
-        renderData.binded_pipeline->bindPipeline(cmd);
-        renderData.binded_pipeline = renderData.default_pipeline;
-    }
+//     if(renderData.binded_pipeline != renderData.default_pipeline){
+//         renderData.binded_pipeline->bindPipeline(cmd);
+//         renderData.binded_pipeline = renderData.default_pipeline;
+//     }
 
-    mesh.bindMesh(cmd);
-    renderData.binded_mesh = &mesh;
+//     mesh.bindMesh(cmd);
+//     renderData.binded_mesh = &mesh;
 
-    // push constant
-        PushConstantData pc = {wMatrix(), wNormalMatrix(), renderData.portal_pos, renderData.cameraId, renderData.portal_normal};
+//     // push constant
+//         PushConstantData pc = {wMatrix(), wNormalMatrix(), renderData.portal_pos, renderData.cameraId, renderData.portal_normal};
 
-    vkCmdPushConstants(
-        cmd, renderData.binded_pipeline->getPipelineLayout(), renderData.binded_pipeline->getPushConstantStage(), 0, sizeof(PushConstantData), &pc);
+//     vkCmdPushConstants(
+//         cmd, renderData.binded_pipeline->getPipelineLayout(), renderData.binded_pipeline->getPushConstantStage(), 0, sizeof(PushConstantData), &pc);
 
-   vkCmdDrawIndexed(cmd, mesh.nbIndicies(), 1, 0, 0, 0);
+//    vkCmdDrawIndexed(cmd, mesh.nbIndicies(), 1, 0, 0, 0);
 }
 
 void ObjetSimuleMSS::attachToNode(uint32_t i, std::shared_ptr<Node> node) {

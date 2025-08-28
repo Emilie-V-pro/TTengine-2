@@ -11,8 +11,10 @@
 #include "GPU_data/image.hpp"
 #include "commandBuffer/commandPool_handler.hpp"
 #include "device.hpp"
+#include "dynamic_renderpass.hpp"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
+#include "utils.hpp"
 
 #define IMGUI_IMPL_VULKAN_USE_VOLK
 #include "imgui_impl_vulkan.h"
@@ -23,59 +25,44 @@ Engine::~Engine() {
     vkDeviceWaitIdle(device);
     delete app;
     Image::destroySamplers(&device);
-    // CommandPoolHandler::destroyCommandPools();
+    ImGui_ImplVulkan_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+    CommandPoolHandler::destroyCommandPools();
 }
 
 void Engine::init() {
     Image::createsamplers(&device);
-    app->init(&device, &swapChain, &window);
-
-    // device wait idle
-    vkDeviceWaitIdle(device);
+    
+    
 
     for (unsigned int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        renderCommandBuffers[i] = std::move(commandBufferPool->createCommandBuffer(1)[0]);
+        defferedRenderCommandBuffers[i] = std::move(commandBufferPool->createCommandBuffer(1)[0]);
+        shadingRenderCommandBuffers[i] = std::move(commandBufferPool->createCommandBuffer(1)[0]);
+        deferredRenderSemaphores[i] = Semaphore(&device, VK_SEMAPHORE_TYPE_BINARY);
+        deferredRenderSemaphores[i].stage = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
     }
 
     for (unsigned int i = 0; i < swapChain.getswapChainImages().size(); i++) {
         waitToPresentSemaphores.emplace_back(&device, VK_SEMAPHORE_TYPE_BINARY);
     }
     updateCommandBuffer = std::move(CommandPoolHandler::getCommandPool(&device, device.getComputeQueue())->createCommandBuffer(1)[0]);
-
-    VkDescriptorPoolSize pool_sizes[] = {
-        {VK_DESCRIPTOR_TYPE_SAMPLER, 1000},
-        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000},
-        {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000},
-        {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000},
-        {VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000},
-        {VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000},
-        {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000},
-        {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000},
-        {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000},
-        {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000},
-        {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000}};
-
-    VkDescriptorPoolCreateInfo pool_info = {};
-    pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-    pool_info.maxSets = 1000;
-    pool_info.poolSizeCount = std::size(pool_sizes);
-    pool_info.pPoolSizes = pool_sizes;
-
-    VkDescriptorPool imguiPool;
-    vkCreateDescriptorPool(device, &pool_info, nullptr, &imguiPool);
+    
+    
+        
 
     ImGui::CreateContext();
 
     ImGui_ImplGlfw_InitForVulkan(window, true);
-
+    
     VkFormat format = swapChain.getSwapChainImage(0).getFormat();
     ImGui_ImplVulkan_InitInfo init_info = {};
     init_info.Instance = device.getInstance();
     init_info.PhysicalDevice = device.getVkbDevice().physical_device;
     init_info.Device = device;
     init_info.Queue = device.getRenderQueue();
-    init_info.DescriptorPool = imguiPool;
+    // init_info.DescriptorPool = imguiPool;
+    init_info.DescriptorPoolSize = 1000;
     init_info.MinImageCount = 3;
     init_info.ImageCount = 3;
     init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
@@ -84,15 +71,31 @@ void Engine::init() {
     init_info.PipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
     init_info.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
     init_info.PipelineRenderingCreateInfo.pColorAttachmentFormats = &format;
-
+    
     auto test = vkGetInstanceProcAddr(device.getInstance(), "vkCmdBeginRendering");
-
-    imgui_renderPass = DynamicRenderPass(
-        &device, window.getExtent(), {}, swapChain.getswapChainImages().size(), depthAndStencil::NONE, &swapChain, nullptr);
-    imgui_renderPass.setClearEnable(false);
+    
     ImGui_ImplVulkan_Init(&init_info);
-
+    
     ImGui_ImplVulkan_CreateFontsTexture();
+   
+
+    // create renderPass
+
+    deferredRenderPass = DynamicRenderPass(
+        &device, window.getExtent(), {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM}, swapChain.getswapChainImages().size(), DEPTH, nullptr, nullptr);
+
+ 
+    shadingRenderPass = DynamicRenderPass(
+        &device, window.getExtent(), {}, swapChain.getswapChainImages().size(), depthAndStencil::DEPTH, &swapChain, deferredRenderPass.getDepthAndStencilPtr());
+
+    shadingRenderPass.setClearEnable(false);
+    app->init(&device, &deferredRenderPass, &shadingRenderPass, &window);
+ 
+
+    swapChain.getSwapChainImage(0).transitionImageLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    // device wait idle
+    vkDeviceWaitIdle(device);
 }
 void Engine::run() {
     // create thread for update loop
@@ -134,8 +137,9 @@ void Engine::resize() {
     resizeMutex.lock();
     vkDeviceWaitIdle(device);
     swapChain.recreateSwapchain(extent);
-    imgui_renderPass.resize(extent);
-    imgui_renderPass.setClearEnable(false);
+    deferredRenderPass.resize(extent);
+    shadingRenderPass.resize(extent);
+    shadingRenderPass.setClearEnable(false);
     app->resize(extent.width, extent.height);
     resizeMutex.unlock();
 }
@@ -152,9 +156,8 @@ void Engine::endAndPresentFrame(Semaphore *waitRenderSemaphore) {
 
 void Engine::renderLoop(Engine &engine) {
     auto start = std::chrono::high_resolution_clock::now();
-  
+
     while (!engine.window.shouldClose()) {
-    
         auto newTime = std::chrono::high_resolution_clock::now();
 
         float deltatTime = std::chrono::duration<float, std::chrono::seconds::period>(newTime - start).count();
@@ -172,33 +175,48 @@ void Engine::renderLoop(Engine &engine) {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        engine.renderCommandBuffers[engine.renderIndex].beginCommandBuffer();
+        // DEFERRED RENDERING
 
-        engine.app->renderFrame(
-            deltatTime, engine.renderCommandBuffers[engine.renderIndex], engine.currentSwapchainImage, engine.renderIndex);
+        engine.defferedRenderCommandBuffers[engine.renderIndex].beginCommandBuffer();
 
-        engine.imgui_renderPass.beginRenderPass(engine.renderCommandBuffers[engine.renderIndex], engine.currentSwapchainImage);
-        ImGui::Render();
-        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), engine.renderCommandBuffers[engine.renderIndex]);
-        engine.imgui_renderPass.endRenderPass(engine.renderCommandBuffers[engine.renderIndex]);
+        engine.app->renderDeferredFrame(
+            deltatTime, engine.defferedRenderCommandBuffers[engine.renderIndex], engine.renderIndex, engine.currentSwapchainImage);
+
+        engine.defferedRenderCommandBuffers[engine.renderIndex].endCommandBuffer();
+
+        engine.defferedRenderCommandBuffers[engine.renderIndex].submitCommandBuffer(
+            {}, {engine.deferredRenderSemaphores[engine.renderIndex].getSemaphoreSubmitSignalInfo()});
+
+        // SHADING RENDERING
+        engine.shadingRenderCommandBuffers[engine.renderIndex].beginCommandBuffer();
 
         engine.swapChain.getSwapChainImage(engine.currentSwapchainImage)
-            .transitionImageLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, &engine.renderCommandBuffers[engine.renderIndex]);
+            .transitionImageLayout(VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, &engine.shadingRenderCommandBuffers[engine.renderIndex]);
 
-        engine.renderCommandBuffers[engine.renderIndex].endCommandBuffer();
 
-        engine.renderCommandBuffers[engine.renderIndex].submitCommandBuffer(
-            {aquireFrameSemaphore->getSemaphoreSubmitWaittInfo()},
+        engine.app->renderShadedFrame(
+            deltatTime, engine.shadingRenderCommandBuffers[engine.renderIndex], engine.renderIndex, engine.currentSwapchainImage);
+
+        // UI RENDERING
+
+        engine.shadingRenderPass.beginRenderPass(engine.shadingRenderCommandBuffers[engine.renderIndex], engine.currentSwapchainImage);
+        ImGui::Render();
+        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), engine.shadingRenderCommandBuffers[engine.renderIndex]);
+        engine.shadingRenderPass.endRenderPass(engine.shadingRenderCommandBuffers[engine.renderIndex]);
+
+        engine.swapChain.getSwapChainImage(engine.currentSwapchainImage)
+            .transitionImageLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, &engine.shadingRenderCommandBuffers[engine.renderIndex]);
+
+        engine.shadingRenderCommandBuffers[engine.renderIndex].endCommandBuffer();
+
+        engine.shadingRenderCommandBuffers[engine.renderIndex].submitCommandBuffer(
+            {aquireFrameSemaphore->getSemaphoreSubmitWaittInfo(), engine.deferredRenderSemaphores[engine.renderIndex].getSemaphoreSubmitSignalInfo()},
             {engine.waitToPresentSemaphores[engine.currentSwapchainImage].getSemaphoreSubmitSignalInfo()}, fence, false);
 
         engine.endAndPresentFrame(&engine.waitToPresentSemaphores[engine.currentSwapchainImage]);
 
         float timeEndAndPresentFrame = std::chrono::duration<float, std::chrono::seconds::period>(cE - cS).count();
 
-        // std::cout << "timeStartFrame : " << timeStartFrame << " ImGuiTime : " << ImGuiTime << " timeBeginCommandBuffer : " <<
-        // timeBeginCommandBuffer << " timeRenderFrame : " << timeRenderFrame << " timeEndRenderPass : " << timeEndRenderPass << "
-        // timeTransitionImageLayout : " << timeTransitionImageLayout << " timeEndCommandBuffer : " << timeEndCommandBuffer << "
-        // timeSubmitCommandBuffer : " << timeSubmitCommandBuffer << " timeEndAndPresentFrame : " << timeEndAndPresentFrame << "\n";
     }
 }
 

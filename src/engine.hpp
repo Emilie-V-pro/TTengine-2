@@ -57,21 +57,25 @@ class Engine {
     SwapChain swapChain{&device, window.getExtent(), vkb::SwapchainBuilder::BufferMode::DOUBLE_BUFFERING};
 
     IApp *app;
-    DynamicRenderPass imgui_renderPass;
-
+    
     std::vector<Semaphore> waitToPresentSemaphores;
-
+    
     CommandBufferPool *commandBufferPool = CommandPoolHandler::getCommandPool(&device, device.getRenderQueue());
-
-    std::array<CommandBuffer, MAX_FRAMES_IN_FLIGHT> renderCommandBuffers;
+    
     CommandBuffer updateCommandBuffer;
-
+    
     // RenderData
+    std::array<Semaphore, MAX_FRAMES_IN_FLIGHT>  deferredRenderSemaphores;
+    std::array<CommandBuffer, MAX_FRAMES_IN_FLIGHT> defferedRenderCommandBuffers;
+    std::array<CommandBuffer, MAX_FRAMES_IN_FLIGHT> shadingRenderCommandBuffers;
+    
     DynamicRenderPass deferredRenderPass;
-    DynamicRenderPass forwardRenderPass;
+    DynamicRenderPass shadingRenderPass;
 
     Buffer indirectDrawBuffer;
     Buffer indirectDrawBufferCount;
+
+
 
     
 };

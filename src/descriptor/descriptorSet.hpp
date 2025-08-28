@@ -18,17 +18,17 @@ struct DescriptorInfo {
 class DescriptorSet {
    public:
     // Constructor
-    DescriptorSet() {};
+    DescriptorSet() = default;
     DescriptorSet(Device *device, std::shared_ptr<DescriptorSetLayout> descriptorSetLayout);
 
     // Destructor
-    ~DescriptorSet();
+    ~DescriptorSet() = default;
 
     // Copy and move constructors
-    DescriptorSet(const DescriptorSet &other);
-    DescriptorSet &operator=(const DescriptorSet &other);
-    DescriptorSet(DescriptorSet &&other);
-    DescriptorSet &operator=(DescriptorSet &&other);
+    DescriptorSet(const DescriptorSet &other) = default;
+    DescriptorSet &operator=(const DescriptorSet &other) = default;
+    DescriptorSet(DescriptorSet &&other) = default;
+    DescriptorSet &operator=(DescriptorSet &&other) = default;
 
 
     // Functions
@@ -55,6 +55,6 @@ class DescriptorSet {
     std::shared_ptr<DescriptorSetLayout> descriptorSetLayout = nullptr;
     VkDescriptorGetInfoEXT descriptorInfo = {};
 
-    Device *device;
+    Device *device = nullptr;
 };
 }  // namespace TTe

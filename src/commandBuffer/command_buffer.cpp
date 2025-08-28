@@ -1,14 +1,16 @@
 
 #include "command_buffer.hpp"
 
+#include <vulkan/vulkan_core.h>
 
 #include <cstdint>
 #include <iostream>
 #include <mutex>
 #include <thread>
 
-#include "structs_vk.hpp"
 #include "../synchronisation/fence.hpp"
+#include "commandBuffer/commandPool_handler.hpp"
+#include "structs_vk.hpp"
 #include "synchronisation/semaphore.hpp"
 
 // CommandBufferPool
@@ -19,7 +21,6 @@ CommandBufferPool::CommandBufferPool(Device* device, const VkQueue& vk_queue) : 
     createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
     createInfo.queueFamilyIndex = device->getRenderQueueFamilyIndexFromQueu(vk_queue);
     queueFamilyIndex = createInfo.queueFamilyIndex;
-
 
     if (vkCreateCommandPool(*device, &createInfo, nullptr, &vk_cmdPool) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create command pool");
@@ -39,7 +40,7 @@ CommandBufferPool::CommandBufferPool(CommandBufferPool&& cmdPool) {
     vk_queue = cmdPool.vk_queue;
     device = cmdPool.device;
     vk_cmdPool = cmdPool.vk_cmdPool;
-    nbCommandBuffers = cmdPool.nbCommandBuffers;
+    cmdBufferCount = std::move(cmdBufferCount);
 
     cmdPool.vk_cmdPool = VK_NULL_HANDLE;
 }
@@ -69,7 +70,7 @@ CommandBufferPool& CommandBufferPool::operator=(const CommandBufferPool& cmdPool
 CommandBufferPool& CommandBufferPool::operator=(CommandBufferPool&& cmdPoolHandler) {
     if (this != &cmdPoolHandler) {
         this->~CommandBufferPool();
-        nbCommandBuffers = cmdPoolHandler.nbCommandBuffers;
+        cmdBufferCount = std::move(cmdPoolHandler.cmdBufferCount);
         vk_queue = cmdPoolHandler.vk_queue;
         device = cmdPoolHandler.device;
         vk_cmdPool = cmdPoolHandler.vk_cmdPool;
@@ -93,7 +94,6 @@ std::vector<CommandBuffer> CommandBufferPool::createCommandBuffer(unsigned int c
     for (unsigned int i = 0; i < commandBufferCount; i++) {
         returnValue[i] = CommandBuffer(device, this, commandBuffers[i]);
     }
-    nbCommandBuffers += commandBufferCount;
     return returnValue;
 }
 
@@ -125,26 +125,29 @@ CommandBuffer::CommandBuffer(CommandBuffer&& cmdBuffer) {
 
 CommandBuffer::~CommandBuffer() {
     if (vk_cmdBuffer != VK_NULL_HANDLE) {
-        vkFreeCommandBuffers(*device, cmdBufferPool->operator()(), 1, &vk_cmdBuffer);
-        cmdBufferPool->nbCommandBuffers--;
-        // if (cmdBufferPool->nbCommandBuffers == 0) {
-        //     CommandPoolHandler::cleanUnusedPools();
-        // }
+        for (auto c : CommandPoolHandler::commandPools) {
+            if (c.second == this->cmdBufferPool) {
+                vkFreeCommandBuffers(*device, cmdBufferPool->operator()(), 1, &vk_cmdBuffer);
+
+        
+            }
+            break;
+        }
     }
 }
 
-CommandBuffer& CommandBuffer::operator=(CommandBuffer&& cmdPoolHandler) {
-    if (this != &cmdPoolHandler) {
+CommandBuffer& CommandBuffer::operator=(CommandBuffer&& cmdBuffer) {
+    if (this != &cmdBuffer) {
         this->~CommandBuffer();
 
-        ressourcesToDestroy = std::move(cmdPoolHandler.ressourcesToDestroy);
-        cmdBufferPool = cmdPoolHandler.cmdBufferPool;
-        vk_cmdBuffer = cmdPoolHandler.vk_cmdBuffer;
-        device = cmdPoolHandler.device;
-        fini = cmdPoolHandler.fini;
-        reseted = cmdPoolHandler.reseted;
+        ressourcesToDestroy = std::move(cmdBuffer.ressourcesToDestroy);
+        cmdBufferPool = cmdBuffer.cmdBufferPool;
+        vk_cmdBuffer = cmdBuffer.vk_cmdBuffer;
+        device = cmdBuffer.device;
+        fini = cmdBuffer.fini;
+        reseted = cmdBuffer.reseted;
 
-        cmdPoolHandler.vk_cmdBuffer = VK_NULL_HANDLE;
+        cmdBuffer.vk_cmdBuffer = VK_NULL_HANDLE;
     }
     return *this;
 }
@@ -189,7 +192,7 @@ void CommandBuffer::submitCommandBuffer(
     Semaphore* S = nullptr;
 
     S = new Semaphore(device, VK_SEMAPHORE_TYPE_TIMELINE);
-    S->signalStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    S->stage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     signalSemaphores.push_back(S->getSemaphoreSubmitSignalInfo());
 
     auto cmdInfo = make<VkCommandBufferSubmitInfo>();
@@ -211,7 +214,6 @@ void CommandBuffer::submitCommandBuffer(
         throw std::runtime_error("Failed to submit commandBuffer");
     }
     device->getMutexFromQueue(this->cmdBufferPool->queue()).unlock();
-  
 
     reseted = false;
     mutex.unlock();
@@ -229,7 +231,6 @@ void CommandBuffer::waitAndDestroy(CommandBuffer* cmdBuffer, Semaphore* S, uint3
         // vkResetCommandBuffer(cmdBuffer->vk_cmdBuffer, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
         cmdBuffer->reseted = true;
     }
-    
 
     cmdBuffer->fini = true;
     bool autoCmdBufferDestroy = false;
@@ -252,9 +253,6 @@ void CommandBuffer::waitAndDestroy(CommandBuffer* cmdBuffer, Semaphore* S, uint3
     cmdBuffer->mutex.unlock();
 }
 
-void CommandBuffer::addRessourceToDestroy(vk_cmdBuffer_OBJ* ressource) { 
-    
-    ressourcesToDestroy.push_back(ressource); 
-}
+void CommandBuffer::addRessourceToDestroy(vk_cmdBuffer_OBJ* ressource) { ressourcesToDestroy.push_back(ressource); }
 
 }  // namespace TTe

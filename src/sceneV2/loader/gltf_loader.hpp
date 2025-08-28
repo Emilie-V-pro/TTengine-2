@@ -10,6 +10,7 @@ class GLTFLoader {
     public:
     GLTFLoader(Device *device) : device(device) {}
     void load(const std::filesystem::path &filePath);
+    Scene* getScene() const {return scene;}
     
     private:
     void loadMesh(cgltf_data* data);

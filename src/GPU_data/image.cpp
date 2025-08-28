@@ -193,7 +193,7 @@ void Image::writeToImage(void *data, size_t size, uint32_t offset, CommandBuffer
     }
 
     transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, cmdBuffer);
-    Buffer *b = new Buffer(device, getPixelSizeFromFormat(imageFormat), static_cast<u_int32_t>(size), 0, Buffer::BufferType::STAGING);
+    Buffer *b = new Buffer(device, getPixelSizeFromFormat(imageFormat), static_cast<u_int32_t>(size), 0, Buffer::BufferType::STAGING, 0);
     b->writeToBuffer(data, size, offset);
     b->copyToImage(device, *this, width, height, layer, cmdBuffer);
     transitionImageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, cmdBuffer);
@@ -355,7 +355,7 @@ void Image::createImage() {
     if (imageCreateInfo.enableMipMap) {
         imageCreateInfo.usageFlags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
         mipLevels = std::min(
-            static_cast<uint32_t>(std::floor(std::log2(std::max(imageCreateInfo.width, imageCreateInfo.width)))) + 1, uint32_t(8));
+            static_cast<uint32_t>(std::floor(std::log2(std::max(imageCreateInfo.width, imageCreateInfo.width)))) + 1, uint32_t(2));
     }
     auto imageInfo = make<VkImageCreateInfo>();
     imageInfo.imageType = VK_IMAGE_TYPE_2D;

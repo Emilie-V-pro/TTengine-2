@@ -1,4 +1,8 @@
 #version 450
+#extension GL_EXT_buffer_reference : require
+#extension GL_EXT_buffer_reference2 : require
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
+
 
 const float M_PI = 3.1415926538;
 
@@ -12,31 +16,38 @@ struct Camera_data {
     mat4 invView;
 };
 
-layout(set = 0, binding = 0) uniform UBO {
-    Camera_data cameras[20];
-} ubo;
-
 struct Material {
     vec3 color;
     float metallic;
+
     float roughness;
     int albedo_tex_id;
     int metallic_roughness_tex_id;
     int normal_tex_id;
 };
-layout(set = 0, binding = 1) uniform Mat {
-    Material[1000] materials;
-}
-m;
 
-layout(set = 0, binding = 2) uniform sampler2D textures[1000];
+struct Object_data {
+    mat4 world_matrix;
+    mat4 normal_matrix;
+    uint material_offset;
+    vec3 padding;
+};
 
-layout(set = 0, binding = 3) uniform samplerCube samplerCubeMap;
+layout(buffer_reference, std430) readonly buffer ObjectBuffer { Object_data data[]; };
+layout(buffer_reference, std430) readonly buffer MaterialBuffer { Material data[]; };
+layout(buffer_reference, std430) readonly buffer CameraBuffer { Camera_data data[]; };
+
+layout(set = 0, binding = 0) uniform sampler2D textures[1000];
+
+layout(set = 0, binding = 1) uniform samplerCube samplerCubeMap;
 
 layout(push_constant) uniform constants {
+    ObjectBuffer objBuffer;
+    MaterialBuffer matBuffer;
+    CameraBuffer camBuffer;
     uint camera_id;
-}
-pc;
+}pc;
+
 void main() {
     outColor = texture(samplerCubeMap, inUVW);
     // outColor = vec4(inUVW, 1.0);

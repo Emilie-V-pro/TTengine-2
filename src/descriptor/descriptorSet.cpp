@@ -22,43 +22,7 @@ DescriptorSet::DescriptorSet(Device *device, std::shared_ptr<DescriptorSetLayout
     descriptor_buffer_address = descriptor_buffer.getBufferDeviceAddress();
 }
 
-DescriptorSet::~DescriptorSet() {}
 
-DescriptorSet::DescriptorSet(const DescriptorSet &other)
-    : descriptor_buffer(other.descriptor_buffer),
-      descriptor_buffer_address(descriptor_buffer.getBufferDeviceAddress()),
-      descriptorSetLayout(other.descriptorSetLayout),
-      descriptorInfo(other.descriptorInfo),
-      device(other.device) {}
-
-DescriptorSet::DescriptorSet(DescriptorSet &&other)
-    : descriptor_buffer(std::move(other.descriptor_buffer)),
-      descriptor_buffer_address(other.descriptor_buffer_address),
-      descriptorSetLayout(std::move(other.descriptorSetLayout)),
-      descriptorInfo(other.descriptorInfo),
-      device(other.device) {}
-
-DescriptorSet &DescriptorSet::operator=(const DescriptorSet &other) {
-    if (this != &other) {
-        descriptor_buffer = other.descriptor_buffer;
-        descriptor_buffer_address = descriptor_buffer.getBufferDeviceAddress();
-        descriptorSetLayout = other.descriptorSetLayout;
-        descriptorInfo = other.descriptorInfo;
-        device = other.device;
-    }
-    return *this;
-}
-
-DescriptorSet &DescriptorSet::operator=(DescriptorSet &&other) {
-    if (this != &other) {
-        descriptor_buffer = std::move(other.descriptor_buffer);
-        descriptor_buffer_address = other.descriptor_buffer_address;
-        descriptorSetLayout = std::move(other.descriptorSetLayout);
-        descriptorInfo = other.descriptorInfo;
-        device = other.device;
-    }
-    return *this;
-}
 
 void DescriptorSet::writeSamplerDescriptor(uint32_t binding, const VkSampler &sampler) {
     auto descriptorGetInfo = make<VkDescriptorGetInfoEXT>();
@@ -153,15 +117,13 @@ void DescriptorSet::bindDescriptorSet(
     std::vector<uint32_t> indices(descriptorSets.size());
     std::vector<VkDeviceSize> offsets(descriptorSets.size());
 
-    VkDeviceSize offset = 0;
     for (size_t i = 0; i < descriptorSets.size(); i++) {
         bindingInfos[i].sType = VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT;
         bindingInfos[i].pNext = nullptr;
         bindingInfos[i].address = descriptorSets[i]->descriptor_buffer_address;
         bindingInfos[i].usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
         indices[i] = i;
-        offsets[i] = offset;
-        offset += descriptorSets[i]->descriptorSetLayout->getLayoutSize();
+        offsets[i] = 0;
     }
     vkCmdBindDescriptorBuffersEXT(cmdBuffer, bindingInfos.size(), bindingInfos.data());
 

@@ -15,22 +15,17 @@ void BasicMeshObj::render(CommandBuffer &cmd, RenderData &renderData) {
         renderData.binded_pipeline = renderData.default_pipeline;
     }
     
-    Mesh &mesh = (*(renderData.basicMeshes))[shape];
+    Mesh *mesh = renderData.basicMeshes[shape];
+    
+    VkDrawIndexedIndirectCommand drawCmd;
+    drawCmd.firstIndex = mesh->getFirstIndex();
+    drawCmd.vertexOffset = mesh->getFirstVertex();
+    drawCmd.indexCount = mesh->nbIndicies();
+    drawCmd.instanceCount = 1;
+    drawCmd.firstInstance = this->id;
 
-    if(renderData.binded_mesh != &mesh){
-        renderData.binded_mesh = &mesh;
-        renderData.binded_mesh->bindMesh(cmd);
-    }
-    mesh.bindMesh(cmd);
-
-
-    PushConstantData pc = {wMatrix(), wNormalMatrix(), renderData.portal_pos, renderData.cameraId, renderData.portal_normal};
-
-    vkCmdPushConstants(
-        cmd, renderData.binded_pipeline->getPipelineLayout(), renderData.binded_pipeline->getPushConstantStage(), 0, sizeof(PushConstantData), &pc);
-
-    vkCmdDrawIndexed(cmd, mesh.nbIndicies(), 1, 0, 0, 0);
-}
+    renderData.drawCommands.push_back(drawCmd);
+ }
 
 
 

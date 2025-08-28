@@ -10,7 +10,7 @@ namespace TTe {
 class Fence : public vk_cmdBuffer_OBJ {
    public:
     // Constructors
-    Fence() {};
+    Fence() = default;
     Fence(const Device *device, bool signaled = false);
 
     // Destructor

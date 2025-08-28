@@ -6,9 +6,9 @@
 #include "window.hpp"
 
 namespace TTe {
-class MovementController {
+class MainController {
    public:
-   MovementController(){};
+   MainController(){};
 
    void setCursors(Window* window) {
        glfwSetCursorPosCallback(*window, mouseMoveCallback);

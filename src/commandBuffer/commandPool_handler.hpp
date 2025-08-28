@@ -21,7 +21,7 @@ class CommandPoolHandler {
     static void cleanUnusedPools(){
         std::vector<std::pair<std::thread::id, VkQueue>> toDelete;
         for (auto &it : commandPools) {
-            if( it.second->getNBCmBuffers() == 0){
+            if( it.second->cmdBufferCount == 0){
                 delete it.second;
                 toDelete.push_back(it.first);
             }
@@ -33,13 +33,13 @@ class CommandPoolHandler {
 
     static void destroyCommandPools() {
         for (auto &it : commandPools) {
+            
             delete it.second;
+            
         }
         commandPools.clear();
     }
-
-   private:
-    struct PairHash {
+     struct PairHash {
         template <typename T1, typename T2>
         std::size_t operator()(const std::pair<T1, T2> &pair) const {
             auto hash1 = std::hash<T1>{}(pair.first);
@@ -49,5 +49,7 @@ class CommandPoolHandler {
         }
     };
     static std::unordered_map<std::pair<std::thread::id, VkQueue>, CommandBufferPool *, PairHash> commandPools;
+   private:
+   
 };
 }  // namespace TTe

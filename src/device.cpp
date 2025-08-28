@@ -171,6 +171,7 @@ void Device::setRequiredFeatures(vkb::PhysicalDeviceSelector &phys_device_select
 void Device::setRequiredExtensions(vkb::PhysicalDeviceSelector &phys_device_selector) {
     phys_device_selector.add_required_extension("VK_EXT_shader_object");
     phys_device_selector.add_required_extension("VK_EXT_descriptor_buffer");
+    phys_device_selector.add_required_extension("VK_KHR_swapchain_mutable_format");
 }
 
 void Device::queryPhysicalDeviceProperties() {

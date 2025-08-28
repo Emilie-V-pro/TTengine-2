@@ -34,7 +34,7 @@ class DynamicRenderPass  {
 
 
    public:
-   DynamicRenderPass() {};
+   DynamicRenderPass() = default;
     DynamicRenderPass(
         Device *device,
         VkExtent2D frameSize,
@@ -61,6 +61,8 @@ class DynamicRenderPass  {
     void setClearColor(glm::vec3 rgb);
     void setClearEnable(bool enable);
     void setDepthAndStencil(CommandBuffer &cmdbuffer, bool enable);
+    void transitionAttachment(uint32_t frameIndex, VkImageLayout newLayout, CommandBuffer &commandBuffer);
+    void transitionDepthAttachment(uint32_t frameIndex, VkImageLayout newLayout, CommandBuffer &commandBuffer);
     void transitionColorAttachment(uint32_t frameIndex, VkImageLayout newLayout, CommandBuffer &commandBuffer);
 
 

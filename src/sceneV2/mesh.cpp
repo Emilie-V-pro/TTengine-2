@@ -15,7 +15,6 @@
 #include "commandBuffer/commandPool_handler.hpp"
 #include "commandBuffer/command_buffer.hpp"
 #include "device.hpp"
-#include "mesh_io.h"
 #include "struct.hpp"
 
 #define GLM_ENABLE_EXPERIMENTAL
@@ -49,71 +48,14 @@ Mesh::Mesh(
     uploadToGPU();
 }
 
-Mesh::Mesh(const Mesh& other)
-    : device(other.device),
-      indicies(other.indicies),
-      verticies(other.verticies),
-      indexBuffer(other.indexBuffer),
-      vertexBuffer(other.vertexBuffer),
-      bvh(other.bvh),
-      name(other.name),
-      type(other.type),
-      first_index(other.first_index),
-      first_vertex(other.first_vertex) {}
-
-Mesh& Mesh::operator=(const Mesh& other) {
-    if (this != &other) {
-        this->device = other.device;
-        this->indicies = other.indicies;
-        this->verticies = other.verticies;
-        this->vertexBuffer = other.vertexBuffer;
-        this->indexBuffer = other.indexBuffer;
-        this->bvh = other.bvh;
-        this->name = other.name;
-        this->type = other.type;
-        this->first_index = other.first_index;
-        this->first_vertex = other.first_vertex;
-    }
-    return *this;
-}
-
-Mesh::Mesh(Mesh&& other)
-    : device(other.device),
-      indicies(std::move(other.indicies)),
-      verticies(std::move(other.verticies)),
-      indexBuffer(std::move(other.indexBuffer)),
-      vertexBuffer(std::move(other.vertexBuffer)),
-      bvh(std::move(other.bvh)),
-      name(std::move(other.name)),
-      type(std::move(other.type)),
-      first_index(std::move(other.first_index)),
-      first_vertex(std::move(other.first_vertex)) {
-      }
-
-Mesh &Mesh::operator=(Mesh &&other) {
-        if (this != &other) {
-            this->device = other.device;
-            this->indicies = std::move(other.indicies);
-            this->verticies = std::move(other.verticies);
-            this->vertexBuffer = std::move(other.vertexBuffer);
-            this->indexBuffer = std::move(other.indexBuffer);
-            this->bvh = std::move(other.bvh);
-            this->name = std::move(other.name);
-            this->type = std::move(other.type);
-            this->first_index = std::move(other.first_index);
-            this->first_vertex = std::move(other.first_vertex);
-        }
-        return *this;
-    }
-
 
 void Mesh::split(uint32_t index, uint32_t count, uint32_t bvh_index, uint32_t depth) {
     // compute bounding box
-    glm::vec3 pmin = verticies[indicies[index] - first_vertex].pos;
-    glm::vec3 pmax = verticies[indicies[index] - first_vertex].pos;
+    glm::vec3 pmin = verticies[indicies[index] ].pos;
+    glm::vec3 pmax = verticies[indicies[index] ].pos;
     for (int i = 0; i < count; i++) {
-        pmin = glm::min(pmin, verticies[indicies[index + i] - first_vertex].pos);
-        pmax = glm::max(pmax, verticies[indicies[index + i] - first_vertex].pos);
+        pmin = glm::min(pmin, verticies[indicies[index + i] ].pos);
+        pmax = glm::max(pmax, verticies[indicies[index + i] ].pos);
     }
     bvh[bvh_index].bbox.pmin = pmin;
     bvh[bvh_index].bbox.pmax = pmax;
@@ -140,8 +82,8 @@ void Mesh::split(uint32_t index, uint32_t count, uint32_t bvh_index, uint32_t de
         glm::vec3 bary_max = bvh[bvh_index].bbox.pmin;
 
         for (int i = 0; i < count; i += 3) {
-            glm::vec3 center = (verticies[indicies[index + i] - first_vertex].pos + verticies[indicies[index + i + 1] - first_vertex].pos +
-                                verticies[indicies[index + i + 2] - first_vertex].pos) /
+            glm::vec3 center = (verticies[indicies[index + i] ].pos + verticies[indicies[index + i + 1] ].pos +
+                                verticies[indicies[index + i + 2] ].pos) /
                                3.0f;
 
             bary_min = {std::min(bary_min.x, center.x), std::min(bary_min.y, center.y), std::min(bary_min.z, center.z)};
@@ -164,8 +106,8 @@ void Mesh::split(uint32_t index, uint32_t count, uint32_t bvh_index, uint32_t de
         std::vector<uint32_t>* right_indicies = new std::vector<uint32_t>();
 
         for (uint32_t i = 0; i < count; i += 3) {
-            glm::vec3 center = (verticies[indicies[index + i] - first_vertex].pos + verticies[indicies[index + i + 1] - first_vertex].pos +
-                                verticies[indicies[index + i + 2] - first_vertex].pos) /
+            glm::vec3 center = (verticies[indicies[index + i] ].pos + verticies[indicies[index + i + 1] ].pos +
+                                verticies[indicies[index + i + 2] ].pos) /
                                3.0f;
             float value = center[split_axis];
 
@@ -180,7 +122,12 @@ void Mesh::split(uint32_t index, uint32_t count, uint32_t bvh_index, uint32_t de
             }
         }
         if (left_indicies->size() == 0 || right_indicies->size() == 0) {
-            assert(false && "Mesh::split: no triangles in one of the children");
+            bvh[bvh_index].nbTriangle = count;
+            bvh[bvh_index].index = index;
+
+            delete left_indicies;
+            delete right_indicies;
+            return;
         }
 
         memcpy(indicies.data() + index, left_indicies->data(), left_indicies->size() * sizeof(uint32_t));
@@ -280,9 +227,9 @@ void Mesh::uploadToGPU(CommandBuffer* ext_cmd) {
 
         // create staging buffer
         Buffer* stagingVertexBuffer =
-            new Buffer(device, sizeof(Vertex), verticies.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, Buffer::BufferType::STAGING);
+            new Buffer(device, sizeof(Vertex), verticies.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, Buffer::BufferType::STAGING,0);
         Buffer* stagingIndexBuffer =
-            new Buffer(device, sizeof(uint32_t), indicies.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, Buffer::BufferType::STAGING);
+            new Buffer(device, sizeof(uint32_t), indicies.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, Buffer::BufferType::STAGING,0);
 
         stagingVertexBuffer->writeToBuffer(verticies.data(), verticies.size() * sizeof(Vertex));
         stagingIndexBuffer->writeToBuffer(indicies.data(), indicies.size() * sizeof(uint32_t));
@@ -311,6 +258,21 @@ void Mesh::bindMesh(CommandBuffer& cmd) {
     vkCmdBindVertexBuffers(cmd, 0, 1, vbuffers, offsets);
     vkCmdBindIndexBuffer(cmd, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 }
+
+void Mesh::setVertexAndIndexBuffer(uint first_index, uint first_vertex, Buffer indexBuffer, Buffer vertexBuffer) {
+
+
+    this->first_index = first_index;
+    this->first_vertex = first_vertex;
+    this->vertexBuffer = vertexBuffer;
+    this->indexBuffer = indexBuffer;
+}
+
+void Mesh::setVertexAndIndexBuffer(Buffer indexBuffer, Buffer vertexBuffer) {
+    this->vertexBuffer = vertexBuffer;
+    this->indexBuffer = indexBuffer;
+}
+
 
 // namespace TTe
 

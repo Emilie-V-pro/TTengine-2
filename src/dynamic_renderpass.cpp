@@ -77,15 +77,6 @@ void DynamicRenderPass::beginRenderPass(
     CommandBuffer &commandBuffer, unsigned imageIndex, renderPassModeEnum renderPassMode, VkRenderingFlags optionalRenderingFlag) {
     renderingInfos[imageIndex].flags = optionalRenderingFlag;
 
-    auto externaldepthAttachmentInfo = make<VkRenderingAttachmentInfo>();
-    if (externalDepthImages != nullptr) {
-        externaldepthAttachmentInfo.imageView = externalDepthImages->at(imageIndex);
-        externaldepthAttachmentInfo.imageLayout = externalDepthImages->at(imageIndex);
-        externaldepthAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-        externaldepthAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        externaldepthAttachmentInfo.clearValue.depthStencil = {1.0, 0};
-        renderingInfos[imageIndex].pDepthAttachment = &externaldepthAttachmentInfo;
-    }
 
     vkCmdBeginRendering(commandBuffer, &renderingInfos[imageIndex]);
 
@@ -167,7 +158,9 @@ void DynamicRenderPass::createRessources() {
             imageCreateInfo.format = imageFormat;
             imageAttachement[i].emplace_back(device, imageCreateInfo);  // construction de l'image
         }
-        if (enableDepthAndStencil == DEPTH || enableDepthAndStencil == DEPTH_AND_STENCIL) {
+
+
+        if ((enableDepthAndStencil == DEPTH || enableDepthAndStencil == DEPTH_AND_STENCIL) && !externalDepthImages) {
             ImageCreateInfo imageCreateInfo{};
             imageCreateInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
             imageCreateInfo.usageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -190,6 +183,8 @@ void DynamicRenderPass::createAttachmentInfo() {
         assert(
             externalDepthImages->size() == numberOfFrame &&
             "number of external depthImage must be the same as number of image of the renderpass");
+
+            
     }
     for (int i = 0; i < this->numberOfFrame; i++) {
         AttachementStruct frameAttachement;
@@ -211,6 +206,16 @@ void DynamicRenderPass::createAttachmentInfo() {
             depthAttachmentInfo.clearValue.depthStencil = {1.0, 0};
             frameAttachement.depthAttachment = depthAttachmentInfo;
         }
+        else if(externalDepthImages){
+            auto depthAttachmentInfo = make<VkRenderingAttachmentInfo>();
+            depthAttachmentInfo.imageView = externalDepthImages->at(i);
+            depthAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            depthAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+            depthAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+            depthAttachmentInfo.clearValue.depthStencil = {1.0, 0};
+            frameAttachement.depthAttachment = depthAttachmentInfo;
+        }
+
         attachments.push_back(frameAttachement);
     }
 }
@@ -256,10 +261,21 @@ void DynamicRenderPass::setDepthAndStencil(CommandBuffer &cmdBuffer, bool enable
     }
 }
 
+void DynamicRenderPass::transitionAttachment(uint32_t frameIndex, VkImageLayout newLayout, CommandBuffer &commandBuffer) {
+    for (auto &img : imageAttachement[frameIndex]) {
+        img.transitionImageLayout(newLayout, &commandBuffer);
+    }
+    depthAndStencilAttachement[frameIndex].transitionImageLayout(newLayout, &commandBuffer);
+}
+
 void DynamicRenderPass::transitionColorAttachment(uint32_t frameIndex, VkImageLayout newLayout, CommandBuffer &commandBuffer) {
     for (auto &img : imageAttachement[frameIndex]) {
         img.transitionImageLayout(newLayout, &commandBuffer);
     }
+}
+
+void DynamicRenderPass::transitionDepthAttachment(uint32_t frameIndex, VkImageLayout newLayout, CommandBuffer &commandBuffer) {
+    depthAndStencilAttachement[frameIndex].transitionImageLayout(newLayout, &commandBuffer);
 }
 
 }  // namespace TTe

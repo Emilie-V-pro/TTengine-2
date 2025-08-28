@@ -422,57 +422,57 @@ void SkeletonObj::simulation(
 
 void SkeletonObj::render(CommandBuffer &cmd, RenderData &renderData) {
     // bind sphere
-    renderData.basicMeshes->at(Mesh::Sphere).bindMesh(cmd);
-    if (renderData.binded_pipeline != renderData.default_pipeline) {
-        renderData.binded_pipeline->bindPipeline(cmd);
-        renderData.binded_pipeline = renderData.default_pipeline;
-    }
-    for (int i = 0; i < m_joints_final.size(); i++) {
-        PushConstantData pc = {m_joints_final[i]->wMatrix() * glm::scale(glm::vec3(1.3f)), m_joints_final[i]->wNormalMatrix(), renderData.portal_pos, renderData.cameraId, renderData.portal_normal};
+    // renderData.basicMeshes->at(Mesh::Sphere).bindMesh(cmd);
+    // if (renderData.binded_pipeline != renderData.default_pipeline) {
+    //     renderData.binded_pipeline->bindPipeline(cmd);
+    //     renderData.binded_pipeline = renderData.default_pipeline;
+    // }
+    // for (int i = 0; i < m_joints_final.size(); i++) {
+    //     PushConstantData pc = {m_joints_final[i]->wMatrix() * glm::scale(glm::vec3(1.3f)), m_joints_final[i]->wNormalMatrix(), renderData.portal_pos, renderData.cameraId, renderData.portal_normal};
 
-        vkCmdPushConstants(cmd, renderData.binded_pipeline->getPipelineLayout(), renderData.binded_pipeline->getPushConstantStage(), 0, sizeof(PushConstantData), &pc);
+    //     vkCmdPushConstants(cmd, renderData.binded_pipeline->getPipelineLayout(), renderData.binded_pipeline->getPushConstantStage(), 0, sizeof(PushConstantData), &pc);
 
-        vkCmdDrawIndexed(cmd, renderData.basicMeshes->at(Mesh::Sphere).nbIndicies(), 1, 0, 0, 0);
-    }
+    //     vkCmdDrawIndexed(cmd, renderData.basicMeshes->at(Mesh::Sphere).nbIndicies(), 1, 0, 0, 0);
+    // }
 
-    renderData.basicMeshes->at(Mesh::Cube).bindMesh(cmd);
-    for (auto &joint : m_joints_final) {
-        // draw cube as line between joints
-        glm::mat4 wPoint = joint->wMatrix();
+    // renderData.basicMeshes->at(Mesh::Cube).bindMesh(cmd);
+    // for (auto &joint : m_joints_final) {
+    //     // draw cube as line between joints
+    //     glm::mat4 wPoint = joint->wMatrix();
 
-        for (auto &child : joint->getChildren()) {
-            glm::mat4 wPointChild = child->wMatrix();
+    //     for (auto &child : joint->getChildren()) {
+    //         glm::mat4 wPointChild = child->wMatrix();
 
-            glm::vec3 pos = wPoint[3];
-            glm::vec3 childPos = wPointChild[3];
+    //         glm::vec3 pos = wPoint[3];
+    //         glm::vec3 childPos = wPointChild[3];
 
-            glm::vec3 position = (pos + childPos) * 0.5f;
+    //         glm::vec3 position = (pos + childPos) * 0.5f;
 
-            glm::vec3 dir = glm::normalize(childPos - pos);
+    //         glm::vec3 dir = glm::normalize(childPos - pos);
 
-            float length = glm::length(childPos - pos);
-            glm::vec3 baseDir = glm::vec3(0.0f, 0.0f, 1.0f);
-            // Direction de base du cube
-            if (glm::length(glm::cross(baseDir, dir)) < 0.0001f) {
-                // Si dir est parallèle à baseDir, éviter NaN (cas particulier)
-                baseDir = glm::vec3(0.0f, 1.0f, 0.0f);
-            }
+    //         float length = glm::length(childPos - pos);
+    //         glm::vec3 baseDir = glm::vec3(0.0f, 0.0f, 1.0f);
+    //         // Direction de base du cube
+    //         if (glm::length(glm::cross(baseDir, dir)) < 0.0001f) {
+    //             // Si dir est parallèle à baseDir, éviter NaN (cas particulier)
+    //             baseDir = glm::vec3(0.0f, 1.0f, 0.0f);
+    //         }
 
-            glm::vec3 axis = glm::normalize(glm::cross(baseDir, dir));
-            float angle = acos(glm::dot(baseDir, dir));
+    //         glm::vec3 axis = glm::normalize(glm::cross(baseDir, dir));
+    //         float angle = acos(glm::dot(baseDir, dir));
 
-            glm::quat rotation = glm::angleAxis(angle, axis);
+    //         glm::quat rotation = glm::angleAxis(angle, axis);
 
-            // Calculer la matrice de transformation
-            glm::mat4 wMatrix = glm::translate(glm::mat4(1.0f), position) * glm::toMat4(rotation) *
-                                glm::scale(glm::mat4(1.0f), glm::vec3(0.14f, 0.14f, length));
-            glm::mat4 wNormalMatrix = glm::inverseTranspose(glm::mat3(wMatrix));
-            PushConstantData pc = {wMatrix, wNormalMatrix, renderData.portal_pos, renderData.cameraId, renderData.portal_normal};
-            // push constant
-            vkCmdPushConstants(cmd, renderData.binded_pipeline->getPipelineLayout(), renderData.binded_pipeline->getPushConstantStage(), 0, sizeof(PushConstantData), &pc);
-            vkCmdDrawIndexed(cmd, renderData.basicMeshes->at(Mesh::Cube).nbIndicies(), 1, 0, 0, 0);
-        }
-    }
+    //         // Calculer la matrice de transformation
+    //         glm::mat4 wMatrix = glm::translate(glm::mat4(1.0f), position) * glm::toMat4(rotation) *
+    //                             glm::scale(glm::mat4(1.0f), glm::vec3(0.14f, 0.14f, length));
+    //         glm::mat4 wNormalMatrix = glm::inverseTranspose(glm::mat3(wMatrix));
+    //         PushConstantData pc = {wMatrix, wNormalMatrix, renderData.portal_pos, renderData.cameraId, renderData.portal_normal};
+    //         // push constant
+    //         vkCmdPushConstants(cmd, renderData.binded_pipeline->getPipelineLayout(), renderData.binded_pipeline->getPushConstantStage(), 0, sizeof(PushConstantData), &pc);
+    //         vkCmdDrawIndexed(cmd, renderData.basicMeshes->at(Mesh::Cube).nbIndicies(), 1, 0, 0, 0);
+    //     }
+    // }
 
     
 }

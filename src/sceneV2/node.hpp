@@ -25,8 +25,8 @@ class Node {
     TransformComponent transform;
 
     bool dirty = true;
-
     bool normalDirty = true;
+    bool uploadedToGPU = false;
 
     glm::mat4 wMatrix();
     glm::mat3 wNormalMatrix();

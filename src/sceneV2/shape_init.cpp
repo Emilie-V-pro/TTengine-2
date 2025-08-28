@@ -8,10 +8,15 @@
 #include "IRessource.hpp"
 #include "device.hpp"
 #include "mesh.hpp"
+#include "struct.hpp"
 #include "utils.hpp"
 
 namespace TTe {
 
+struct IndexVertex {
+    std::vector<uint32_t> indices;
+    std::vector<Vertex> vertices;
+};
 
 // from https://winter.dev/projects/mesh/icosphere
 static const float Z = (1.0f + sqrt(5.0f)) / 2.0f;           // Golden ratio
@@ -60,7 +65,7 @@ static const int IcoIndex[] = {2, 6,  4,  // Top
                                0, 1,  3,  // Bottom
                                3, 5,  7, 7,  9,  11, 11, 13, 15, 15, 17, 19};
 
-Mesh init_sphere(Device *d, uint res, Buffer::BufferType type) {
+IndexVertex init_sphere(Device *d, uint res, Buffer::BufferType type) {
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
 
@@ -150,10 +155,10 @@ Mesh init_sphere(Device *d, uint res, Buffer::BufferType type) {
         vert.normal = vert.pos;
     }
 
-    return Mesh(d, indices, vertices);
+    return {indices, vertices};
 }
 
-Mesh init_cone(Device *d, uint res, Buffer::BufferType type) {
+IndexVertex init_cone(Device *d, uint res, Buffer::BufferType type) {
     const int div = 25;
     float step = 2.0 * M_PI / div;
     std::vector<Vertex> vertices;
@@ -186,10 +191,10 @@ Mesh init_cone(Device *d, uint res, Buffer::BufferType type) {
         indices.push_back(index2);
     }
 
-    return Mesh(d, indices, vertices);
+    return {indices, vertices};
 }
 
-Mesh init_cylinder(Device *d, uint res, Buffer::BufferType type) {
+IndexVertex init_cylinder(Device *d, uint res, Buffer::BufferType type) {
     const int div = 25;
     float step = 2.0 * M_PI / div;
     std::vector<Vertex> vertices;
@@ -222,10 +227,10 @@ Mesh init_cylinder(Device *d, uint res, Buffer::BufferType type) {
         indices.push_back(index2);
     }
 
-    return Mesh(d, indices, vertices);
+    return {indices, vertices};
 }
 
-Mesh init_cube(Device *d, uint res, Buffer::BufferType type) {
+IndexVertex init_cube(Device *d, uint res, Buffer::BufferType type) {
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
 
@@ -309,10 +314,10 @@ Mesh init_cube(Device *d, uint res, Buffer::BufferType type) {
 
     // Génération des sommets et indices pour le cube
 
-    return Mesh(d, indices, vertices);
+    return {indices, vertices};
 }
 
-Mesh init_plane(Device *d, uint res, Buffer::BufferType type){
+IndexVertex init_plane(Device *d, uint res, Buffer::BufferType type) {
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
 
@@ -329,25 +334,50 @@ Mesh init_plane(Device *d, uint res, Buffer::BufferType type){
     indices.push_back(2);
     indices.push_back(3);
 
-
-    return Mesh(d, indices, vertices);
+    return {indices, vertices};
 }
 
-Mesh::Mesh(Device *d, const BasicShape &b, uint res, Buffer::BufferType type) : device(d), type(type) {
+Mesh::Mesh(Device *device, const BasicShape &b, uint resolution, Buffer::BufferType type) : device(device), type(type) {
+    IndexVertex IV;
     switch (b) {
         case BasicShape::Sphere:
-            *this = init_sphere(d, res, type);
+            IV = init_sphere(device, resolution, type);
             break;
         case BasicShape::Cube:
-            *this = init_cube(d, res, type);
+            IV = init_cube(device, resolution, type);
             break;
         case BasicShape::Plane:
-            *this = init_plane(d, res, type);
+            IV = init_plane(device, resolution, type);
             break;
         default:
             assert("Invalid shape");
             break;
     }
+    *this = Mesh(device, IV.indices, IV.vertices, type);
+}
+
+Mesh::Mesh(
+    Device *device, const BasicShape &b, uint resolution) {
+    IndexVertex IV;
+    switch (b) {
+        case BasicShape::Sphere:
+            IV = init_sphere(device, resolution, type);
+            break;
+        case BasicShape::Cube:
+            IV = init_cube(device, resolution, type);
+            break;
+        case BasicShape::Plane:
+            IV = init_plane(device, resolution, type);
+            break;
+        default:
+            assert("Invalid shape");
+            break;
+    }
+    this->verticies = IV.vertices;
+    this->indicies = IV.indices;
+
+    this->device = device;
+    this->createBVH();
 }
 
 }  // namespace TTe

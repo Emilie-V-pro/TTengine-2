@@ -6,13 +6,10 @@
 #include <glm/fwd.hpp>
 #include <glm/glm.hpp>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
-#include "../utils.hpp"
 #include "GPU_data/buffer.hpp"
 #include "device.hpp"
-#include "sceneV2/animatic/skeleton/BVH.h"
 #include "struct.hpp"
 // #include "object.hpp"
 
@@ -34,15 +31,15 @@ class Mesh {
          uint first_index, uint first_vertex, Buffer indexBuffer, Buffer vertexBuffer);
  
 
-    Mesh(Device *device, const BasicShape &b, uint resolution, Buffer::BufferType type = Buffer::BufferType::DYNAMIC);
+    Mesh(Device *device, const BasicShape &b, uint resolution, Buffer::BufferType type);
+
+    Mesh(Device *device, const BasicShape &b, uint resolution);
 
 
-    Mesh(const Mesh &other);
-    
-    Mesh &operator=(const Mesh &other);
-
-    Mesh(Mesh &&other) ;
-    Mesh &operator=(Mesh &&other);
+    Mesh(const Mesh &other) = default;
+    Mesh &operator=(const Mesh &other) = default;
+    Mesh(Mesh &&other) = default;
+    Mesh &operator=(Mesh &&other) = default;
 
     ~Mesh() {};
 
@@ -52,9 +49,16 @@ class Mesh {
 
     void bindMesh(CommandBuffer &cmd);
 
+    void setVertexAndIndexBuffer(uint first_index, uint first_vertex, Buffer indexBuffer, Buffer vertexBuffer);
+    void setVertexAndIndexBuffer(Buffer indexBuffer, Buffer vertexBuffer);
+
+
     int nbTriangle() const { return indicies.size() / 3; };
     int nbVerticies() const { return verticies.size(); };
     int nbIndicies() const { return indicies.size(); };
+
+    uint32_t getFirstIndex() const {return first_index;}
+    uint32_t getFirstVertex() const {return first_vertex;}
 
     Buffer &getVertexBuffer() { return vertexBuffer; }
     Buffer &getIndexBuffer() { return indexBuffer; }

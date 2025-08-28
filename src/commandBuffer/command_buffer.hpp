@@ -28,14 +28,14 @@ class CommandBufferPool {
 
     const VkCommandPool& operator()() const { return vk_cmdPool; }
     VkQueue queue() const { return vk_queue; }
-    unsigned int getNBCmBuffers() const { return nbCommandBuffers; }
     uint32_t getQueueFamilyIndex() const { return queueFamilyIndex; }
 
     std::vector<CommandBuffer> createCommandBuffer(unsigned int commandBufferCount);
     void resetPool();
 
+    uint32_t cmdBufferCount = 0;
+
    private:
-    unsigned int nbCommandBuffers = 0;
     VkQueue vk_queue = VK_NULL_HANDLE;
     uint32_t queueFamilyIndex = 0;
     VkCommandPool vk_cmdPool = VK_NULL_HANDLE;
@@ -82,6 +82,7 @@ class CommandBuffer : public vk_cmdBuffer_OBJ {
     std::vector<vk_cmdBuffer_OBJ> ressources;
     
     CommandBufferPool* cmdBufferPool = nullptr;
+
     VkCommandBuffer vk_cmdBuffer = VK_NULL_HANDLE;
     bool reseted = true;
     uint32_t index = 0;

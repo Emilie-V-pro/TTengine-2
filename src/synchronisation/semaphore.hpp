@@ -12,7 +12,7 @@ namespace TTe {
 class Semaphore : public vk_cmdBuffer_OBJ {
    public:
     // Constructor
-    Semaphore() {};
+    Semaphore() = default;
     Semaphore(Device *device, VkSemaphoreType vkSemaphoreType);
 
     // Destructor
@@ -36,8 +36,7 @@ class Semaphore : public vk_cmdBuffer_OBJ {
 
     static VkResult waitTimeLineSemaphores(
         const Device *device, std::vector<const Semaphore *> semaphores, std::vector<uint64_t> waitValues, bool waitForFirstSemaphore);
-    VkPipelineStageFlags2 waitStage = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
-    VkPipelineStageFlags2 signalStage = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
+    VkPipelineStageFlags2 stage = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
 
    private:
 
@@ -45,7 +44,7 @@ class Semaphore : public vk_cmdBuffer_OBJ {
     
     VkSemaphore vksemaphore = VK_NULL_HANDLE;
     uint32_t timelineValue = 0;
-    const VkSemaphoreType vkSemaphoreType = VK_SEMAPHORE_TYPE_BINARY;
+    VkSemaphoreType vkSemaphoreType = VK_SEMAPHORE_TYPE_BINARY;
     const Device *device = nullptr;
 };
 

@@ -14,6 +14,7 @@
 #include "descriptor/descriptorSet.hpp"
 #include "device.hpp"
 
+#include "dynamic_renderpass.hpp"
 #include "sceneV2/Ianimatic.hpp"
 #include "sceneV2/Icollider.hpp"
 #include "sceneV2/animatic/skeletonObj.hpp"
@@ -21,10 +22,11 @@
 #include "sceneV2/mesh.hpp"
 #include "sceneV2/Irenderable.hpp"
 #include "sceneV2/cameraV2.hpp"
-#include "sceneV2/i_object_file_loader.hpp"
 #include "sceneV2/node.hpp"
+#include "shader/pipeline/compute_pipeline.hpp"
 #include "shader/pipeline/graphic_pipeline.hpp"
 #include "struct.hpp"
+#include "utils.hpp"
 
 namespace TTe {
 class Scene : public Node {
@@ -80,7 +82,8 @@ class Scene : public Node {
 
     void Param(std::string Fichier_Param);
 
-    void render(CommandBuffer &cmd, RenderData &renderData);
+    void renderDeffered(CommandBuffer &cmd, RenderData &renderData);
+    void renderShading(CommandBuffer &cmd, RenderData &renderData);
     
 
     void updateSim(float dt, float t,  uint32_t tick);
@@ -91,11 +94,10 @@ class Scene : public Node {
 
     uint32_t addMaterial(Material material);
 
-    void addMesh(Mesh mesh);
+    void addStaticMesh(Mesh &mesh);
 
-    uint32_t addImage(Image image);
+    uint32_t addImage(Image &image);
 
-    void addObjectFileData(ObjectFileData &data);
 
     std::shared_ptr<CameraV2> getMainCamera() { return mainCamera; }
 
@@ -104,31 +106,45 @@ class Scene : public Node {
     std::vector<Material>& getMaterials() { return materials; }
 
     void updateCameraBuffer();
-    void updateCameraBuffer(float near, float x_rot);
-    void updateCameraBuffer(std::vector<Ubo> camData);
     void updateMaterialBuffer();
+    void updateObjectBuffer();
     void updateDescriptorSets();
+    void updateRenderPassDescriptorSets();
+    void initSceneData(DynamicRenderPass* defferedRenderpass, DynamicRenderPass* shadingRenderPass);
+    
+    uint32_t firstIndexAvailable = 0;
+    uint32_t firstVertexAvailable = 0;
+    std::map<uint32_t, Mesh> meshes {};
+    uint32_t nb_meshes = 0;
+    std::vector<Image> images {};
    private:
    
    
-   
+   void createDrawIndirectBuffers();
    void createPipelines();
    void createDescriptorSets();
    
-   std::vector<Mesh> meshes;
-   std::map<Mesh::BasicShape, Mesh> basicMeshes;
-   std::vector<Image> images;
-   std::vector<Material> materials;
+   std::map<Mesh::BasicShape, Mesh*> basicMeshes {};
+   std::vector<Material> materials{};
    
    Image skyboxImage;
    
    DescriptorSet sceneDescriptorSet;
+   std::vector<DescriptorSet> deferreDescriptorSet;
+
+   DynamicRenderPass* defferedRenderpass;
+   DynamicRenderPass* shadingRenderPass;
    
    Buffer cameraBuffer;
    Buffer materialBuffer;
+   Buffer objectBuffer;
+
+
+   std::array<Buffer, MAX_FRAMES_IN_FLIGHT> drawIndirectBuffers;
+    std::array<Buffer, MAX_FRAMES_IN_FLIGHT> countIndirectBuffers;
    
    std::shared_ptr<CameraV2> mainCamera;
-   std::vector<std::shared_ptr<CameraV2>> cameras;
+   std::vector<std::shared_ptr<CameraV2>> cameras{};
    std::vector<std::shared_ptr<IAnimatic>> animaticObjs;
    std::vector<std::shared_ptr<IRenderable>> renderables;
    std::vector<std::shared_ptr<ICollider>> collisionObjects;
@@ -142,12 +158,16 @@ class Scene : public Node {
    uint32_t getNewID();
    
    GraphicPipeline skyboxPipeline;
+   ComputePipeline shadingPipeline;
    GraphicPipeline meshPipeline;
    
    Device *device = nullptr;
 
    Buffer indexBuffer;
    Buffer vertexBuffer;
+
+
+   Buffer testBuffer;
    
    // for physics simulation
    glm::vec3 gravity{0.0f, -9.81f, 0.0f};

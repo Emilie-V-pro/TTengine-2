@@ -85,6 +85,7 @@ void Node::setDirty() {
     if (mtx.try_lock()) {
         dirty = true;
         normalDirty = true;
+        uploadedToGPU = false;
         for (auto &child : children) {
             child->setDirty();
         }

@@ -9,31 +9,25 @@ StaticMeshObj::StaticMeshObj() {}
 StaticMeshObj::~StaticMeshObj() {}
 
 void StaticMeshObj::render(CommandBuffer &cmd, RenderData &renderData) {
-    if(renderData.binded_pipeline != renderData.default_pipeline){
-        renderData.binded_pipeline->bindPipeline(cmd);
-        renderData.binded_pipeline = renderData.default_pipeline;
-    }
-
-    Mesh &mesh = renderData.meshes->at(meshId);
-
-    if(renderData.binded_mesh != &mesh){
-        renderData.binded_mesh = &mesh;
-        renderData.binded_mesh->bindMesh(cmd);
-    }
-    mesh.bindMesh(cmd);
 
 
-    PushConstantData pc = {wMatrix(), wNormalMatrix(), renderData.portal_pos, renderData.cameraId, renderData.portal_normal};
+    
 
-    vkCmdPushConstants(
-        cmd, renderData.binded_pipeline->getPipelineLayout(), renderData.binded_pipeline->getPushConstantStage(), 0, sizeof(PushConstantData), &pc);
+    VkDrawIndexedIndirectCommand drawCmd;
+    drawCmd.firstIndex = mesh->getFirstIndex();
+    drawCmd.vertexOffset = mesh->getFirstVertex();
+    drawCmd.indexCount = mesh->nbIndicies();
+    drawCmd.instanceCount = 1;
+    drawCmd.firstInstance = this->id;
 
-    vkCmdDrawIndexed(cmd, mesh.nbIndicies(), 1, 0, 0, 0);
+    renderData.drawCommands.push_back(drawCmd);
+
+    
 }
 
 BoundingBox StaticMeshObj::computeBoundingBox() {
     BoundingBox tmp;
-    bbox = meshList->at(meshId).getBoundingBox();
+    bbox = mesh->getBoundingBox();
 
     // apply transformation to bounding box
     tmp.pmin = glm::vec3(wMatrix() * glm::vec4(bbox.pmin, 1.0f));
@@ -65,6 +59,6 @@ SceneHit StaticMeshObj::hit(glm::vec3 &ro, glm::vec3 &rd) {
     glm::vec3 localRo = glm::inverse(wMatrix()) * glm::vec4(ro, 1.0f);
     glm::vec3 localRd = glm::normalize(glm::inverse(wMatrix()) * glm::vec4(rd, 0.0f));
     
-    return meshList->at(meshId).hit(localRo, localRd);
+    return mesh->hit(localRo, localRd);
 }
 }  // namespace TTe

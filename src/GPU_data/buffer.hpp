@@ -44,7 +44,7 @@ class Buffer : public vk_cmdBuffer_OBJ, public Ressource {
         return addressInfo;
     }
     
-    uint64_t getBufferDeviceAddress(uint32_t offset = 0) const;
+    VkDeviceAddress getBufferDeviceAddress(uint32_t offset = 0) const;
 
     uint32_t getInstancesCount() const { return instance_count; }
 

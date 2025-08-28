@@ -2,14 +2,25 @@
 #extension GL_EXT_buffer_reference : require
 #extension GL_EXT_buffer_reference2 : require
 #extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
-#extension GL_EXT_debug_printf : require
-
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 normal;
 layout(location = 2) in vec2 uv;
 layout(location = 3) in uint material;
 
-layout(location = 0) out vec3 outUVW;
+
+struct Material {
+    vec3 color;
+    float metallic;
+    float roughness;
+    int albedo_tex_id;
+    int metallic_roughness_tex_id;
+    int normal_tex_id;
+};
+
+layout(location = 0) out vec3 fragPosWorld;
+layout(location = 1) out vec3 fragNormalWorld;
+layout(location = 2) out vec2 fraguv;
+layout(location = 3) out flat Material fragmaterial;
 
 struct Camera_data {
     mat4 projection;
@@ -17,21 +28,11 @@ struct Camera_data {
     mat4 invView;
 };
 
-struct Material {
-    vec3 color;
-    float metallic;
-
-    float roughness;
-    int albedo_tex_id;
-    int metallic_roughness_tex_id;
-    int normal_tex_id;
-};
-
 struct Object_data {
     mat4 world_matrix;
     mat4 normal_matrix;
-    uint material_offset;
     vec3 padding;
+    uint material_offset;
 };
 
 layout(buffer_reference, std430) readonly buffer ObjectBuffer { Object_data data[]; };
@@ -49,14 +50,13 @@ layout(push_constant) uniform constants {
     uint camera_id;
 }pc;
 
-
 void main() {
-    outUVW = normalize(position * 10);
+    vec4 positionWorld = pc.objBuffer.data[gl_InstanceIndex].world_matrix * vec4(position, 1.0);
     Camera_data c = pc.camBuffer.data[pc.camera_id];
-    mat4 viewMat = mat4(mat3(c.view));
-    gl_Position = c.projection * viewMat * vec4(position.xyz, 1.0);
-    // if(gl_VertexIndex == 0){
-        // debugPrintfEXT("pos : %f %f %f | normal : %f %f %f | uv : %f %f | mat %i", position.x, position.y, position.z, normal.x, normal.y, normal.z, uv.x, uv.y, material);
-    // }
-    debugPrintfEXT("re");
+    gl_Position = c.projection * c.view * positionWorld;
+    fragNormalWorld = normalize(mat3(pc.objBuffer.data[gl_InstanceIndex].normal_matrix) * normal);
+    
+    fragPosWorld =  positionWorld.xyz ;
+    fragmaterial = pc.matBuffer.data[material];
+    fraguv = uv;
 }

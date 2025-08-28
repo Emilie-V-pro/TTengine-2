@@ -62,7 +62,9 @@ Buffer::Buffer(
     }
 }
 
-Buffer::Buffer() {}
+Buffer::Buffer() {
+    refCount.store(std::make_shared<int>(1), std::memory_order_relaxed);
+}
 
 void Buffer::destruction() {
     if (vk_buffer != VK_NULL_HANDLE) {
@@ -182,7 +184,7 @@ VmaAllocationCreateFlags Buffer::getAllocationFlags(BufferType bufferType) const
     }
 }
 
-uint64_t Buffer::getBufferDeviceAddress(uint32_t offset) const {
+VkDeviceAddress Buffer::getBufferDeviceAddress(uint32_t offset) const {
     auto bufferDeviceAI = make<VkBufferDeviceAddressInfo>();
     bufferDeviceAI.buffer = vk_buffer;
     return vkGetBufferDeviceAddress(*device, &bufferDeviceAI) + offset;

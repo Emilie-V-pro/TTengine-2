@@ -38,6 +38,10 @@ Semaphore& Semaphore::operator=(Semaphore&& semaphore) {
         this->~Semaphore();
         vksemaphore = semaphore.vksemaphore;
         timelineValue = semaphore.timelineValue;
+        vkSemaphoreType = semaphore.vkSemaphoreType;
+        device = semaphore.device;
+        
+        
         semaphore.vksemaphore = VK_NULL_HANDLE;
     }
     return *this;
@@ -55,7 +59,7 @@ uint64_t Semaphore::getTimeLineSemaphoreCountValue() const {
 VkSemaphoreSubmitInfo Semaphore::getSemaphoreSubmitSignalInfo() {
     auto submitInfo = make<VkSemaphoreSubmitInfo>();
     submitInfo.semaphore = vksemaphore;
-    submitInfo.stageMask = signalStage;
+    submitInfo.stageMask = stage;
     submitInfo.value = timelineValue+1;
     timelineValue++;
     return submitInfo;
@@ -64,7 +68,7 @@ VkSemaphoreSubmitInfo Semaphore::getSemaphoreSubmitSignalInfo() {
 VkSemaphoreSubmitInfo Semaphore::getSemaphoreSubmitWaittInfo() const {
     auto submitInfo = make<VkSemaphoreSubmitInfo>();
     submitInfo.semaphore = vksemaphore;
-    submitInfo.stageMask = waitStage;
+    submitInfo.stageMask = stage;
     submitInfo.value = timelineValue;
     return submitInfo;
 }

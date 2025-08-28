@@ -1,4 +1,7 @@
 #version 450
+#extension GL_EXT_buffer_reference : require
+#extension GL_EXT_buffer_reference2 : require
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
 #extension GL_EXT_nonuniform_qualifier : require
 const float M_PI = 3.1415926538;
 
@@ -11,64 +14,42 @@ struct Material {
     int normal_tex_id;
 };
 
-layout(location = 0) in vec3 fragPosWorld;
-layout(location = 1) in vec3 fragNormalWorld;
-layout(location = 2) in vec2 fraguv;
-layout(location = 3) in flat Material fragmaterial;
-
-layout(location = 0) out vec4 outColor;
-
 struct Camera_data {
-     mat4 projection;
+    mat4 projection;
     mat4 view;
     mat4 invView;
 };
 
-layout(set = 0, binding = 0) uniform UBO {
-    Camera_data cameras[20];
-}ubo;
+struct Object_data {
+    mat4 world_matrix;
+    mat4 normal_matrix;
+    uint material_offset;
+    vec3 padding;
+};
 
-layout(set = 0, binding = 1) uniform Mat { Material[1000] materials; }
-m;
+layout(buffer_reference, std430) readonly buffer ObjectBuffer { Object_data data[]; };
+layout(buffer_reference, std430) readonly buffer MaterialBuffer { Material data[]; };
+layout(buffer_reference, std430) readonly buffer CameraBuffer { Camera_data data[]; };
 
-layout(set = 0, binding = 2) uniform sampler2D textures[1000];
+// layout(set = 0, binding = 0) uniform sampler2D textures[1000];
 
-layout(set = 0 , binding = 3) uniform samplerCube samplerCubeMap;
+// layout(set = 0, binding = 1) uniform samplerCube samplerCubeMap;
 
-// layout(buffer_reference, scalar) readonly buffer InstanceBuffer2 { ObjectInfo objInfo[]; };
+layout(set = 0, binding = 0) uniform sampler2D albedo_mettalic_texture;
+layout(set = 0, binding = 1) uniform sampler2D normal_roughness_texture;
+layout(set = 0, binding = 2) uniform sampler2D depth_texture;
+
+layout(set = 0, binding = 3, rgba8) uniform writeonly image2D output_texture;
+
 layout(push_constant) uniform constants {
-    mat4 modelMatrix;
-    mat4 normalMatrix;
-    vec3 portal_pos;
+    ObjectBuffer objBuffer;
+    MaterialBuffer matBuffer;
+    CameraBuffer camBuffer;
     uint camera_id;
-    vec3 portal_normal;
 }
 pc;
 
 // http://www.thetenthplanet.de/archives/1180
-mat3 cotangent_frame(vec3 N, vec3 p, vec2 uv) {
-    vec3 dp1 = dFdx(p);
-    vec3 dp2 = dFdy(p);
-    vec2 duv1 = dFdx(uv);
-    vec2 duv2 = dFdy(uv);
-
-    vec3 dp2perp = cross(dp2, N);
-    vec3 dp1perp = cross(N, dp1);
-    vec3 T = dp2perp * duv1.x + dp1perp * duv2.x;
-    vec3 B = dp2perp * duv1.y + dp1perp * duv2.y;
-
-    float invmax = inversesqrt(max(dot(T, T), dot(B, B)));
-    return mat3(T * invmax, B * invmax, N);
-}
-
-vec3 perturb_normal(vec3 N, vec3 V, int texId, vec2 texcoord) {
-    // N, la normale interpolée et
-    // V, le vecteur vue (vertex dirigé vers l'œil)
-    vec3 map = textureLod(textures[texId], fraguv, 0).xyz;
-    map = map * 255. / 127. - 128. / 127.;
-    mat3 TBN = cotangent_frame(N, -V, texcoord);
-    return normalize(TBN * map);
-}
 
 float dotClamp(vec3 v1, vec3 v2) { return clamp(dot(v1, v2), 0.0, 1.0); }
 
@@ -212,72 +193,57 @@ vec3 LearnOpenGLBRDF(vec3 baseColor, float metallic, float roughness, vec3 N, ve
 // hemisphere sampling
 //////////////////////////////////////////////////////////////////////////
 
+// Converts a color from linear light gamma to sRGB gamma
+vec4 fromLinear(vec4 linearRGB)
+{
+    bvec3 cutoff = lessThan(linearRGB.rgb, vec3(0.0031308));
+    vec3 higher = vec3(1.055)*pow(linearRGB.rgb, vec3(1.0/2.4)) - vec3(0.055);
+    vec3 lower = linearRGB.rgb * vec3(12.92);
+
+    return vec4(mix(higher, lower, cutoff), linearRGB.a);
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Main
 //////////////////////////////////////////////////////////////////////////
 
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
 void main() {
-    // if (false) {
-    //     mat4 test = PushConstants.instances.objInfo[0].modelMatrix;
-    // }
+    ivec2 pixel_pos = ivec2(gl_GlobalInvocationID.xy);
+
+    vec4 albedo_metalic = texelFetch(albedo_mettalic_texture, pixel_pos, 0);
+    vec4 normal_roughness = texelFetch(normal_roughness_texture, pixel_pos, 0);
+    float depth = texelFetch(depth_texture, pixel_pos, 0).r;
+
+    vec3 albedo = albedo_metalic.rgb;
+    vec3 normal = normal_roughness.rgb;
+    vec2 metal_roughness = vec2(albedo_metalic.w, normal_roughness.w);
+    // vec3 albedo = vec3(1,1,1);
+    // if(depth == 1.0) return;
 
 
 
-    vec4 textColor;
-    vec2 metalRoughness;
-    // vec3 ambiant = vec3(0.01);
-    vec3 pos = ubo.cameras[pc.camera_id].invView[3].xyz;
-    vec3 view = normalize(pos - fragPosWorld);
+    // vec3 color = vec3(0.0);
+    imageStore(output_texture, pixel_pos, fromLinear(vec4(albedo, 1)));
 
+    // // metalRoughness.g = max(0.01, metalRoughness.g); ;
 
-    vec3 dir = pc.portal_pos - fragPosWorld;
-    if(dot(dir, pc.portal_normal) < 0.0 && pc.camera_id != 0) {
-        // discard;
-    }
-    // vec3 sun = normalize(vec3(-1, 1, -1));
-    // int texId = m.materials[fragmaterial].albedo_tex_id;
-    // // vec3 H = normalize(sun + view);
-    // debugPrintfEXT("%i \n", fragmaterial.albedo_tex_id);
+    // vec3 diffuse_lightDir = surfaceNormal;
+    // vec3 reflect_lightDir = surfaceNormal;
 
-    textColor = texture(textures[nonuniformEXT(fragmaterial.albedo_tex_id)], fraguv) * vec4(fragmaterial.color,1);
+    // vec4 diffuse_cubeMapColor =
+    //     textureLod(samplerCubeMap, diffuse_lightDir, pow(textureQueryLevels(samplerCubeMap), max(metalRoughness.g + 0.2, 1.f)));
+    // vec4 reflect_cubeMapColor = textureLod(samplerCubeMap, reflect_lightDir, pow(textureQueryLevels(samplerCubeMap), metalRoughness.g));
+    // // BRDFResults res = DisneyBRDF(textColor.rgb, metalRoughness.r, metalRoughness.g, surfaceNormal, view, lightDir);
+    // // color += ((res.diffuse + res.specular) * cubeMapColor.rgb);
 
-    vec3 surfaceNormal = normalize(fragNormalWorld);
-    if (!gl_FrontFacing) {
-        surfaceNormal = -surfaceNormal;
-    }
+    // vec3 color_difuse =
+    //     LearnOpenGLBRDF(textColor.rgb, metalRoughness.r, metalRoughness.g, surfaceNormal, view, diffuse_lightDir,
+    //     diffuse_cubeMapColor.rgb);
+    // vec3 color_reflect = LearnOpenGLBRDF(textColor.rgb, metalRoughness.r, metalRoughness.g, surfaceNormal, view, reflect_lightDir,
+    // reflect_cubeMapColor.rgb );
 
-    if (nonuniformEXT(fragmaterial.normal_tex_id) != -1) {
-        surfaceNormal = perturb_normal(surfaceNormal, view, nonuniformEXT(fragmaterial.normal_tex_id), fraguv);
-    }
-
-    metalRoughness =
-        textureLod(textures[nonuniformEXT(fragmaterial.metallic_roughness_tex_id)], fraguv, 0).rg * vec2(fragmaterial.metallic, fragmaterial.roughness);
-
-    // if (textColor.a < 0.3) {
-    //     discard;
-    // }
-
-    // // vec3 sunDirection = vec3(0.744015, 0.666869, 0.0415573);
-    vec3 color = vec3(0.0);
-
-    // metalRoughness.g = max(0.01, metalRoughness.g); ;
-
-    vec3 diffuse_lightDir = surfaceNormal;
-    vec3 reflect_lightDir = surfaceNormal;
-
-    vec4 diffuse_cubeMapColor =
-        textureLod(samplerCubeMap, diffuse_lightDir, pow(textureQueryLevels(samplerCubeMap), max(metalRoughness.g + 0.2, 1.f)));
-    vec4 reflect_cubeMapColor = textureLod(samplerCubeMap, reflect_lightDir, pow(textureQueryLevels(samplerCubeMap), metalRoughness.g));
-    // BRDFResults res = DisneyBRDF(textColor.rgb, metalRoughness.r, metalRoughness.g, surfaceNormal, view, lightDir);
-    // color += ((res.diffuse + res.specular) * cubeMapColor.rgb);
-
-    vec3 color_difuse =
-        LearnOpenGLBRDF(textColor.rgb, metalRoughness.r, metalRoughness.g, surfaceNormal, view, diffuse_lightDir, diffuse_cubeMapColor.rgb);
-    vec3 color_reflect = LearnOpenGLBRDF(textColor.rgb, metalRoughness.r, metalRoughness.g, surfaceNormal, view, reflect_lightDir,
-    reflect_cubeMapColor.rgb );
-
-    color += vec3(0.03) * textColor.rgb;
-    color += mix(color_reflect, color_difuse , metalRoughness.r);
-
-    outColor = vec4(color, 0);
+    // color += vec3(0.03) * textColor.rgb;
+    // color += mix(color_reflect, color_difuse , metalRoughness.r);
 }
