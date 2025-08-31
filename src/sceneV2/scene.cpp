@@ -149,7 +149,7 @@ void Scene::renderShading(CommandBuffer &cmd, RenderData &renderData) {
     testPush tp{objectBuffer.getBufferDeviceAddress(), materialBuffer.getBufferDeviceAddress(), cameraBuffer.getBufferDeviceAddress(), 0};
 
     // // set push_constant for cam_id
-    vkCmdPushConstants(cmd, skyboxPipeline.getPipelineLayout(), skyboxPipeline.getPushConstantStage(), 0, sizeof(testPush), &tp);
+    vkCmdPushConstants(cmd, shadingPipeline.getPipelineLayout(), shadingPipeline.getPushConstantStage(), 0, sizeof(testPush), &tp);
 
     shadingPipeline.dispatch(cmd, renderData.renderPass->getFrameSize().width, renderData.renderPass->getFrameSize().height);
 
@@ -338,12 +338,7 @@ void Scene::updateMaterialBuffer() {
             {material.color, material.metallic, material.roughness, material.albedo_tex_id, material.metallic_roughness_tex_id,
              material.normal_tex_id});
 
-        if (material.albedo_tex_id == -1) {
-            materialsGPU.back().albedo_tex_id = 0;
-        }
-        if (material.metallic_roughness_tex_id == -1) {
-            materialsGPU.back().metallic_roughness_tex_id = 0;
-        }
+
     }
     materialBuffer.writeToBuffer(materialsGPU.data(), sizeof(MaterialGPU) * materialsGPU.size(), 0);
 }

@@ -144,7 +144,7 @@ void GLTFLoader::loadMesh(cgltf_data* data) {
                     cgltf_accessor_unpack_floats(attribute->data, normal_buffer.data(), normal_buffer.size());
                 }
 
-                if (attribute->type == cgltf_attribute_type_texcoord) {
+                if (attribute->type == cgltf_attribute_type_texcoord && attribute->index == 0) {
                     assert(attribute->data->type == cgltf_type_vec2);
 
                     uv_buffer.resize(cgltf_accessor_unpack_floats(attribute->data, nullptr, 0));
@@ -160,13 +160,11 @@ void GLTFLoader::loadMesh(cgltf_data* data) {
                     vertex.normal = glm::vec3(normal_buffer[k * 3], normal_buffer[k * 3 + 1], normal_buffer[k * 3 + 2]);
                 }
                 if (!uv_buffer.empty()) {
-                    vertex.uv = glm::vec2(uv_buffer[k * 2], uv_buffer[k * 2 + 1]);
+                    vertex.uv = glm::vec2(uv_buffer[k * 2], 1-uv_buffer[k * 2 + 1]);
                 }
                 vertex.material_id = material;
                 vertices.push_back(vertex);
             }
-
-            // previous_max_index += (pos_buffer.size() / 3);
         }
      
             Mesh m = Mesh(
@@ -290,8 +288,8 @@ void GLTFLoader::loadNode(cgltf_data* data) {
                 cam_node->fov = yFOV_to_FOV(
                     glm::degrees(node->camera->data.perspective.yfov),
                     (node->camera->data.perspective.aspect_ratio == 0) ? 1 : node->camera->data.perspective.aspect_ratio);
-                cam_node->near = node->camera->data.perspective.znear;
-                cam_node->far = node->camera->data.perspective.zfar;
+                cam_node->near = 0.1f;// node->camera->data.perspective.znear;
+                cam_node->far = 10.f;// node->camera->data.perspective.zfar;
                 engin_node = cam_node;
             }
 
@@ -313,7 +311,7 @@ void GLTFLoader::loadNode(cgltf_data* data) {
             }
 
             if (node->has_rotation) {
-                engin_node->transform.rot =  glm::vec3(0); //quatToEulerZXY({node->rotation[0], node->rotation[1], node->rotation[2], node->rotation[3]});
+                engin_node->transform.rot = quatToEulerZXY({node->rotation[3], node->rotation[0], node->rotation[1], node->rotation[2]});
             }
             if (node->has_translation) {
                 engin_node->transform.pos = glm::vec3(node->translation[0] , node->translation[1], node->translation[2]);

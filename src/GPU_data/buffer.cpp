@@ -1,7 +1,6 @@
 
 #include "buffer.hpp"
 
-
 #include <fstream>
 #include <iostream>
 
@@ -35,7 +34,7 @@ Buffer::Buffer(
     allocInfo.requiredFlags = requiredProperties;
     allocInfo.flags = getAllocationFlags(bufferType);
 
-    allocInfo.usage = (bufferType == BufferType::STAGING) ? VMA_MEMORY_USAGE_AUTO_PREFER_HOST: VMA_MEMORY_USAGE_AUTO;
+    allocInfo.usage = (bufferType == BufferType::STAGING) ? VMA_MEMORY_USAGE_AUTO_PREFER_HOST : VMA_MEMORY_USAGE_AUTO;
     VmaAllocationInfo getAllocInfo;
 
     // save vmaBuildStatsString to file
@@ -62,9 +61,7 @@ Buffer::Buffer(
     }
 }
 
-Buffer::Buffer() {
-    refCount.store(std::make_shared<int>(1), std::memory_order_relaxed);
-}
+Buffer::Buffer() { refCount.store(std::make_shared<int>(1), std::memory_order_relaxed); }
 
 void Buffer::destruction() {
     if (vk_buffer != VK_NULL_HANDLE) {
@@ -196,6 +193,12 @@ void Buffer::writeToBuffer(void* data, VkDeviceSize size, VkDeviceSize offset) {
         mappedMemory = nullptr;
     }
 }
+void Buffer::readFromBuffer(void* data, VkDeviceSize size, VkDeviceSize offset) {
+    if (size > 0) {
+        vmaCopyAllocationToMemory(device->getAllocator(), allocation, offset, data, size);
+        mappedMemory = nullptr;
+    }
+}
 
 void Buffer::copyBuffer(
     Device* device,
@@ -278,6 +281,35 @@ void Buffer::copyToImage(Device* device, VkImage image, uint32_t width, uint32_t
     region.imageExtent = {width, height, 1};
 
     vkCmdCopyBufferToImage(*cmdBuffer, *this, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+    if (extCmdBuffer == nullptr) {
+        cmdBuffer->endCommandBuffer();
+        cmdBuffer->addRessourceToDestroy(cmdBuffer);
+        cmdBuffer->submitCommandBuffer({}, {}, nullptr, false);
+    }
+}
+
+void Buffer::copyFromImage(Device* device, VkImage image, uint32_t width, uint32_t height, uint32_t layer, VkImageAspectFlags aspectMask, CommandBuffer* extCmdBuffer) {
+    CommandBuffer* cmdBuffer = extCmdBuffer;
+    if (cmdBuffer == nullptr) {
+        cmdBuffer =
+            new CommandBuffer(std::move(CommandPoolHandler::getCommandPool(device, device->getTransferQueue())->createCommandBuffer(1)[0]));
+        cmdBuffer->beginCommandBuffer();
+    }
+    VkBufferImageCopy region{};
+    region.bufferOffset = 0;
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+
+    region.imageSubresource.aspectMask = aspectMask;
+    region.imageSubresource.mipLevel = 0;
+    region.imageSubresource.baseArrayLayer = 0;
+    region.imageSubresource.layerCount = layer;
+
+    region.imageOffset = {0, 0, 0};
+    region.imageExtent = {width, height, 1};
+
+    vkCmdCopyImageToBuffer(*cmdBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, *this, 1, &region);
 
     if (extCmdBuffer == nullptr) {
         cmdBuffer->endCommandBuffer();

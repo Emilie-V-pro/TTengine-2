@@ -1,9 +1,12 @@
 
 #include "GPU_data/image.hpp"
 
+#include <vulkan/vulkan_core.h>
+
 #include <cstdint>
 #include <fstream>
 #include <iostream>
+#include <vector>
 
 #include "commandBuffer/command_buffer.hpp"
 #define STB_IMAGE_IMPLEMENTATION
@@ -13,6 +16,7 @@
 #include "commandBuffer/commandPool_handler.hpp"
 #include "device.hpp"
 #include "stb_image.h"
+#include "lodepng.h"
 #include "structs_vk.hpp"
 #include "utils.hpp"
 
@@ -39,17 +43,21 @@ Image::Image(Device *device, ImageCreateInfo &imageCreateInfo, CommandBuffer *ex
     }
 
     refCount.store(std::make_shared<int>(1), std::memory_order_relaxed);
+
     if (!this->imageCreateInfo.filename.empty()) {
         loadImageFromFile(imageCreateInfo.filename);
     }
+
     createImage();
     createImageView();
 
     if (this->imageCreateInfo.datas.size() > 0) {
         loadImageToGPU(cmd);
+
         if (imageCreateInfo.enableMipMap) {
             generateMipmaps(cmd);
         }
+
     } else {
         transitionImageLayout(imageLayout, cmd);
     }
@@ -206,6 +214,80 @@ void Image::writeToImage(void *data, size_t size, uint32_t offset, CommandBuffer
     }
 }
 
+uint16_t toUint16(float depth) {
+    // Clamp entre 0 et 1, puis mise à l’échelle
+    depth = std::min(std::max(depth, 0.0f), 1.0f);
+    return static_cast<uint16_t>(depth * 65535.0f + 0.5f);
+}
+
+
+
+unsigned encodeDepthPNG(const char *filename, const std::vector<unsigned char> &image, unsigned width, unsigned height) {
+    LodePNGColorType colorType = LCT_GREY;
+    unsigned bitdepth = 16;
+
+    unsigned error = lodepng::encode(filename, image.data(), width, height, colorType, bitdepth);
+    return error;
+}
+
+void Image::saveImageToFile() {
+    CommandBuffer *cmdBuffer =
+
+        new CommandBuffer(std::move(CommandPoolHandler::getCommandPool(device, device->getRenderQueue())->createCommandBuffer(1)[0]));
+    cmdBuffer->beginCommandBuffer();
+
+    Buffer *b = new Buffer(
+        device, getPixelSizeFromFormat(imageFormat), static_cast<u_int32_t>(width * height * layer), 0, Buffer::BufferType::READBACK, 0);
+
+    VkImageLayout oldLayout = actualImageLayout;
+    transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, cmdBuffer);
+    b->copyFromImage(device, *this, width, height, 1, (imageFormat == VK_FORMAT_D32_SFLOAT) ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT,cmdBuffer);
+    transitionImageLayout(oldLayout, cmdBuffer);
+
+    cmdBuffer->endCommandBuffer();
+    cmdBuffer->submitCommandBuffer({}, {}, nullptr, true);
+
+    delete cmdBuffer;
+
+    switch (imageFormat) {
+        case VK_FORMAT_R8G8B8A8_SRGB:
+        case VK_FORMAT_R8G8B8A8_UNORM:
+        case VK_FORMAT_R8G8B8A8_SNORM: {
+            std::vector<unsigned char> imageData(width * height * 4);
+
+            b->readFromBuffer(imageData.data(), width * height * layer * 4);
+
+            unsigned error = lodepng::encode(name + ".png", imageData, width, height);
+            if (error) {
+                std::cout << "Error encoding PNG: " << lodepng_error_text(error) << std::endl;
+            }
+            break;
+        }
+        case VK_FORMAT_R32_SFLOAT:
+        case VK_FORMAT_D32_SFLOAT: {
+            std::vector<float> imageData(width * height);
+            b->readFromBuffer(imageData.data(), width * height * layer * 4);
+            std::vector<unsigned char> depthData(width * height * 2);
+
+            for (size_t i = 0; i < width * height; i++) {
+                uint16_t v = toUint16(imageData[i]);
+                depthData[2 * i + 0] = (v >> 8) & 0xFF;  // MSB
+                depthData[2 * i + 1] = v & 0xFF;         // LSB
+            }
+            unsigned error = encodeDepthPNG((name + ".png").c_str(), depthData, width, height);
+            if (error) {
+                std::cout << "Error encoding PNG: " << lodepng_error_text(error) << std::endl;
+            }
+            break;
+        }
+        default:
+            std::cerr << "Format not supported for saving image" << std::endl;
+            break;
+    }
+
+    delete b;
+}
+
 void Image::transitionImageLayout(VkImageLayout newLayout, CommandBuffer *extCmdBuffer) {
     transitionImageLayout(actualImageLayout, newLayout, 0, this->mipLevels, extCmdBuffer);
     actualImageLayout = newLayout;
@@ -355,7 +437,7 @@ void Image::createImage() {
     if (imageCreateInfo.enableMipMap) {
         imageCreateInfo.usageFlags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
         mipLevels = std::min(
-            static_cast<uint32_t>(std::floor(std::log2(std::max(imageCreateInfo.width, imageCreateInfo.width)))) + 1, uint32_t(2));
+            static_cast<uint32_t>(std::floor(std::log2(std::max(imageCreateInfo.width, imageCreateInfo.width)))) + 1, uint32_t(16));
     }
     auto imageInfo = make<VkImageCreateInfo>();
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -379,6 +461,7 @@ void Image::createImage() {
     if (imageCreateInfo.isCubeTexture) {
         imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
     }
+    imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
     createImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     actualImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -436,21 +519,6 @@ void Image::createImageView() {
     if (result != VK_SUCCESS) {
         std::cerr << "Erreur: vkCreateImageView a échoué avec le code " << result << std::endl;
     }
-}
-
-#include <linux/limits.h>
-#include <stdio.h>
-#include <unistd.h>
-
-int test() {
-    char cwd[PATH_MAX];
-    if (getcwd(cwd, sizeof(cwd)) != NULL) {
-        printf("Current working dir: %s\n", cwd);
-    } else {
-        perror("getcwd() error");
-        return 1;
-    }
-    return 0;
 }
 
 void Image::loadImageFromFile(std::vector<std::string> &filename) {

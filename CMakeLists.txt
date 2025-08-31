@@ -27,6 +27,7 @@ add_subdirectory(external/SPIRV-Cross)
 file(GLOB_RECURSE TTENGINE_SOURCES CONFIGURE_DEPENDS
     ${PROJECT_SOURCE_DIR}/src/*.cpp
     ${PROJECT_SOURCE_DIR}/src/*.c
+    ${PROJECT_SOURCE_DIR}/external/lodePNG/lodepng.cpp
 )
 
 # Définition de la bibliothèque statique TTengine
@@ -59,6 +60,7 @@ target_include_directories(TTengine PUBLIC
     ${PROJECT_SOURCE_DIR}/external/VMA
     ${PROJECT_SOURCE_DIR}/external/struct_vk
     ${PROJECT_SOURCE_DIR}/external/Hash/src
+    ${PROJECT_SOURCE_DIR}/external/lodePNG
 )
 
 

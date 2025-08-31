@@ -60,6 +60,7 @@ void SwapChain::generateSwapchainImages() {
 
     for (uint32_t i = 0; i < vkbSwapchain.image_count; i++) {
         swapChainImage.emplace_back(device, vkImages[i], swapChainImageView[i], vkbSwapchain.image_format, vkbSwapchain.extent);
+        swapChainImage.back().name = "SC_" + std::to_string(i);
     }
 }
 

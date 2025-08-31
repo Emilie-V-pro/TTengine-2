@@ -6,7 +6,6 @@
 #include "engine.hpp"
 
 int main() {
-    printf("AAAAAAAAAAAAAAAAAAAAAAA");
     fflush(stdout);
     TTe::App *app = new TTe::App();
     TTe::Engine engine{app};

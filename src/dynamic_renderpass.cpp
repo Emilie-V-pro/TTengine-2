@@ -5,6 +5,8 @@
 
 #include <cassert>
 #include <glm/fwd.hpp>
+#include <iterator>
+#include <string>
 #include <vector>
 
 #include "commandBuffer/command_buffer.hpp"
@@ -154,9 +156,13 @@ void DynamicRenderPass::createRessources() {
         imageCreateInfo.height = frameSize.height;
         imageCreateInfo.width = frameSize.width;
         imageCreateInfo.usageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+
+        int index = 0;
         for (auto &imageFormat : imageFormats) {
             imageCreateInfo.format = imageFormat;
             imageAttachement[i].emplace_back(device, imageCreateInfo);  // construction de l'image
+            imageAttachement[i].back().name = ("DR_" + std::to_string(i) + "_c_att_" + std::to_string(index));
+            index++;
         }
 
 
@@ -170,8 +176,8 @@ void DynamicRenderPass::createRessources() {
             ;
             imageCreateInfo.width = frameSize.width;
             imageCreateInfo.height = frameSize.height;
-
             depthAndStencilAttachement.emplace_back(device, imageCreateInfo);
+            depthAndStencilAttachement.back().name = ("DR_" + std::to_string(i) + "_d_att");
         }
 
         // imageAttachement.push_back(colorImages);
@@ -278,4 +284,12 @@ void DynamicRenderPass::transitionDepthAttachment(uint32_t frameIndex, VkImageLa
     depthAndStencilAttachement[frameIndex].transitionImageLayout(newLayout, &commandBuffer);
 }
 
+void DynamicRenderPass::savedRenderPass(unsigned imageIndex) {
+    for(auto &a : imageAttachement[imageIndex]){
+        a.saveImageToFile();
+    }
+    if(enableDepthAndStencil == DEPTH || enableDepthAndStencil == DEPTH_AND_STENCIL){
+        depthAndStencilAttachement[imageIndex].saveImageToFile();
+    }
+}
 }  // namespace TTe

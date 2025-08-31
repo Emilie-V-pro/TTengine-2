@@ -57,6 +57,7 @@ class DynamicRenderPass  {
     void beginRenderPass(CommandBuffer & commandBuffer, unsigned imageIndex, renderPassModeEnum renderPassMode = DEFAULT, VkRenderingFlags optionalRenderingFlag = 0);
     void endRenderPass(CommandBuffer & commandBuffer);
 
+    void savedRenderPass(unsigned imageIndex);
     void resize(VkExtent2D frameSize);
     void setClearColor(glm::vec3 rgb);
     void setClearEnable(bool enable);

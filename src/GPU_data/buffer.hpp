@@ -1,6 +1,7 @@
 #pragma once
 
 #include <volk.h>
+#include <vulkan/vulkan_core.h>
 
 #include <atomic>
 #include <cstdint>
@@ -63,9 +64,13 @@ class Buffer : public vk_cmdBuffer_OBJ, public Ressource {
 
 
     void writeToBuffer(void* data, VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+    void readFromBuffer(void* data, VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
 
     void copyToImage(
         Device* device, VkImage image, uint32_t width, uint32_t height, uint32_t layer = 1, CommandBuffer* extCmdBuffer = nullptr);
+    
+    void copyFromImage(
+        Device* device, VkImage image, uint32_t width, uint32_t height, uint32_t layer = 1, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, CommandBuffer* extCmdBuffer = nullptr);
 
     static void copyBuffer(
         Device* device,

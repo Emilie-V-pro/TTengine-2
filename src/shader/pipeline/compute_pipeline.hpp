@@ -12,7 +12,7 @@
 
 namespace TTe {
 
-class ComputePipeline : Pipeline {
+class ComputePipeline : public Pipeline {
    public:
    ComputePipeline() {};
     // Constructor

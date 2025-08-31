@@ -45,6 +45,8 @@ class Engine {
     static void renderLoop(Engine &engine);
     static void updateLoop(Engine &engine);
 
+    void saveDeferredRenderPass();
+
     uint32_t currentSwapchainImage = 0;
     int renderIndex = 0;
 

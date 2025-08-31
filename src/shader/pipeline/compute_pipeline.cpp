@@ -20,6 +20,7 @@ ComputePipeline::ComputePipeline(ComputePipeline&& other) {
     computeShader = std::move(other.computeShader);
     pipelineLayout = other.pipelineLayout;
     device = other.device;
+    pushConstantInfo = other.pushConstantInfo;
     other.pipelineLayout = VK_NULL_HANDLE;
 }
 
@@ -31,6 +32,7 @@ ComputePipeline& ComputePipeline::operator=(ComputePipeline&& other) {
         computeShader = std::move(other.computeShader);
         pipelineLayout = other.pipelineLayout;
         device = other.device;
+        pushConstantInfo = other.pushConstantInfo;
         other.pipelineLayout = VK_NULL_HANDLE;
     }
     return *this;
@@ -57,6 +59,8 @@ void ComputePipeline::dispatch(const CommandBuffer& cmdBuffer, uint32_t nbOfinvo
 void ComputePipeline::createShaders(std::string& computeShaderName) {
     computeShader = Shader(device, computeShaderName, VK_SHADER_STAGE_COMPUTE_BIT);
     computeShader.buildShader();
+
+    pushConstantInfo = computeShader.getPushConstants();
 }
 
 void ComputePipeline::createPipelineLayout() {

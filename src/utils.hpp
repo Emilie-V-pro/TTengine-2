@@ -518,6 +518,7 @@ inline unsigned int getPixelSizeFromFormat(VkFormat format) {
         case VK_FORMAT_R32_SFLOAT:
         case VK_FORMAT_B10G11R11_UFLOAT_PACK32:
         case VK_FORMAT_E5B9G9R9_UFLOAT_PACK32:
+        case VK_FORMAT_D32_SFLOAT:
             return 4;
             break;
 

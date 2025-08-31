@@ -54,34 +54,16 @@ pc;
 float dotClamp(vec3 v1, vec3 v2) { return clamp(dot(v1, v2), 0.0, 1.0); }
 
 //////////////////////////////////////////////////////////////////////////
-// Disney BRDF
-// based on Acerola implementation (https://github.com/GarrettGunnell/Disney-PBR/blob/main/Assets/Shaders/DisneyBRDF.shader)
-// and schuttejoe https://schuttejoe.github.io/post/disneybsdf/
+// BRDF from LearnOpenGL
 //////////////////////////////////////////////////////////////////////////
-
-float luminance(vec3 color) { return dot(color, vec3(0.299f, 0.587f, 0.114f)); }
-
-float SchlickFresnel(float x) {
-    x = clamp((1.0f - x), 0.0, 1.0);
-    float x2 = x * x;
-
-    return x2 * x2 * x;  // While this is equivalent to pow(1 - x, 5) it is two less mult instructions
-}
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0) { return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0); }
 
-float rcp(float x) { return 1.0f / x; }
-
-float GTR1(float ndoth, float a) {
-    float a2 = a * a;
-    float t = 1.0f + (a2 - 1.0f) * ndoth * ndoth;
-    return (a2 - 1.0f) / (M_PI * log(a2) * t);
-}
-
-float DistributionGGX(float ndoth, float roughness) {
+float DistributionGGX(vec3 N, vec3 H, float roughness) {
     float a = roughness * roughness;
     float a2 = a * a;
-    float NdotH2 = ndoth * ndoth;
+    float NdotH = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH * NdotH;
 
     float num = a2;
     float denom = (NdotH2 * (a2 - 1.0) + 1.0);
@@ -99,108 +81,75 @@ float GeometrySchlickGGX(float NdotV, float roughness) {
 
     return num / denom;
 }
-float GeometrySmith(float ndotl, float ndotv, float roughness) {
-    float ggx2 = GeometrySchlickGGX(ndotv, roughness);
-    float ggx1 = GeometrySchlickGGX(ndotl, roughness);
+float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float ggx2 = GeometrySchlickGGX(NdotV, roughness);
+    float ggx1 = GeometrySchlickGGX(NdotL, roughness);
+
     return ggx1 * ggx2;
 }
 
-struct BRDFResults {
-    vec3 diffuse;
-    vec3 specular;
-    vec3 clearcoat;
-};
-
-BRDFResults DisneyBRDF(vec3 baseColor, float metallic, float roughness, vec3 N, vec3 V, vec3 L) {
-    BRDFResults result;
-    result.diffuse = vec3(0.0f);
-    result.specular = vec3(0.0f);
-    result.clearcoat = vec3(0.0f);
-
-    vec3 H = normalize(L + V);
-
-    float ndotl = dotClamp(N, L);
-    float ndotv = dotClamp(N, V);
-    float ndoth = dotClamp(N, H);
-    float ldoth = dotClamp(L, H);
-
-    float Cdlum = luminance(baseColor);
-    float _Specular = 0.5f;
-    vec3 Ctint = (Cdlum > 0.0f) ? (baseColor / Cdlum) : vec3(1.0f);
-    vec3 Cspec0 = mix(_Specular * 0.08f * mix(vec3(1.0f), Ctint, 1.0), baseColor, metallic);
-    //         float3 Csheen = lerp(1.0f, Ctint, _SheenTint);
-
-    // Disney Diffuse
-    float FL = SchlickFresnel(ndotl);
-    float FV = SchlickFresnel(ndotv);
-
-    float Fss90 = ldoth * ldoth * roughness;
-    float Fd90 = 0.5f + 2.0f * Fss90;
-
-    float Fd = mix(1.0f, Fd90, FL) * mix(1.0f, Fd90, FV);
-
-    // Subsurface Diffuse (Hanrahan-Krueger brdf approximation)
-
-    float Fss = mix(1.0f, Fss90, FL) * mix(1.0f, Fss90, FV);
-    float ss = 1.25f * (Fss * (rcp(ndotl + ndotv) - 0.5f) + 0.5f);
-
-    // Specular
-    float NDF = DistributionGGX(ndoth, roughness);
-    float G = GeometrySmith(ndotl, ndotv, roughness);
-
-    float FH = SchlickFresnel(ldoth);
-    vec3 F = mix(Cspec0, vec3(1.0f), FH);
-
-    result.diffuse = (1.0f / M_PI) * (mix(Fd, ss, 0) * baseColor + 0) * (1 - metallic);
-    result.specular = F * G * NDF / (4 * ndotl * ndotv);
-    return result;
-}
-
-vec3 LearnOpenGLBRDF(vec3 baseColor, float metallic, float roughness, vec3 N, vec3 V, vec3 L, vec3 radiance) {
-    BRDFResults result;
-    result.diffuse = vec3(0.0f);
-    result.specular = vec3(0.0f);
-    result.clearcoat = vec3(0.0f);
-
-    vec3 H = normalize(L + V);
-
-    float ndoth = dotClamp(N, H);
-    float ndotl = dotClamp(N, L);
-    float ndotv = dotClamp(N, V);
-
+vec3 LearnOpenGLBRDF(vec3 albedo, vec2 metal_roughnss, vec3 N, vec3 V, vec3 L, vec3 lightColor) {
     vec3 F0 = vec3(0.04);
-    F0 = mix(F0, baseColor, metallic);
-    vec3 F = fresnelSchlick(max(ndotv, 0.0), F0);
+    F0 = mix(F0, albedo, metal_roughnss.r);
+    vec3 H = normalize(V + L);
 
-    float NDF = DistributionGGX(ndoth, roughness);
-    float G = GeometrySmith(ndotl, ndotv, roughness);
-    vec3 numerator = NDF * G * F;
-
-    float denominator = 4.0 * ndotv * ndotl + 0.0001;
-    vec3 specular = numerator / denominator;
+    float NDF = DistributionGGX(N, H, metal_roughnss.g);
+    float G = GeometrySmith(N, V, L, metal_roughnss.g);
+    vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
 
     vec3 kS = F;
     vec3 kD = vec3(1.0) - kS;
+    kD *= 1.0 - metal_roughnss.r;
 
-    kD *= 1.0 - metallic;
+    vec3 numerator = NDF * G * F;
+    float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
+    vec3 specular = numerator / denominator;
 
+    // add to outgoing radiance Lo
     float NdotL = max(dot(N, L), 0.0);
 
-    return (kD * baseColor / M_PI + specular) * radiance * ndotl;
+    return (kD * albedo / M_PI + specular) * lightColor * NdotL;
 }
-
 //////////////////////////////////////////////////////////////////////////
 // hemisphere sampling
 //////////////////////////////////////////////////////////////////////////
 
 // Converts a color from linear light gamma to sRGB gamma
-vec4 fromLinear(vec4 linearRGB)
-{
+vec4 fromLinear(vec4 linearRGB) {
     bvec3 cutoff = lessThan(linearRGB.rgb, vec3(0.0031308));
-    vec3 higher = vec3(1.055)*pow(linearRGB.rgb, vec3(1.0/2.4)) - vec3(0.055);
+    vec3 higher = vec3(1.055) * pow(linearRGB.rgb, vec3(1.0 / 2.4)) - vec3(0.055);
     vec3 lower = linearRGB.rgb * vec3(12.92);
 
     return vec4(mix(higher, lower, cutoff), linearRGB.a);
+}
+
+const float z_near = 0.1f;
+const float z_far = 10.0f;
+
+float unprojectDepth(float depth, float near, float far) { return near * far / (far - depth * (far - near)); }
+
+vec3 reconstructWorldPos(vec2 fragCoord, float depth, mat4 projection, mat4 view) {
+    // 0..1 → -1..1
+    vec2 ndc;
+    ndc.x = fragCoord.x * 2.0 - 1.0;
+    ndc.y = fragCoord.y * 2.0 - 1.0;
+    ndc.y *= -1.0;  // Invert Y for Vulkan
+
+    float z_ndc = depth;
+
+    // Position en clip space
+    vec4 clip = vec4(ndc, z_ndc, 1.0);
+
+    // Inverse VP
+    mat4 invVP = inverse(projection * view);
+
+    // Homogeneous → World
+    vec4 world = invVP * clip;
+    world /= world.w;
+
+    return world.xyz;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -211,21 +160,26 @@ layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 void main() {
     ivec2 pixel_pos = ivec2(gl_GlobalInvocationID.xy);
-
+    // t *= 2;
     vec4 albedo_metalic = texelFetch(albedo_mettalic_texture, pixel_pos, 0);
     vec4 normal_roughness = texelFetch(normal_roughness_texture, pixel_pos, 0);
     float depth = texelFetch(depth_texture, pixel_pos, 0).r;
 
+    Camera_data cam = pc.camBuffer.data[0];
+    vec2 sample_uv = (vec2(pixel_pos) + vec2(0.5)) / vec2(imageSize(output_texture));
+    vec3 wpos = reconstructWorldPos(sample_uv, depth, cam.projection, cam.view);
+
     vec3 albedo = albedo_metalic.rgb;
-    vec3 normal = normal_roughness.rgb;
+    vec3 normal = normalize(normal_roughness.rgb);
     vec2 metal_roughness = vec2(albedo_metalic.w, normal_roughness.w);
     // vec3 albedo = vec3(1,1,1);
     // if(depth == 1.0) return;
+    vec3 cameraPos = cam.invView[3].xyz;
+    vec3 view = normalize(cameraPos - wpos);
 
-
+    vec3 lightDir = normalize(vec3(1., 1, 1));
 
     // vec3 color = vec3(0.0);
-    imageStore(output_texture, pixel_pos, fromLinear(vec4(albedo, 1)));
 
     // // metalRoughness.g = max(0.01, metalRoughness.g); ;
 
@@ -235,6 +189,18 @@ void main() {
     // vec4 diffuse_cubeMapColor =
     //     textureLod(samplerCubeMap, diffuse_lightDir, pow(textureQueryLevels(samplerCubeMap), max(metalRoughness.g + 0.2, 1.f)));
     // vec4 reflect_cubeMapColor = textureLod(samplerCubeMap, reflect_lightDir, pow(textureQueryLevels(samplerCubeMap), metalRoughness.g));
+
+    // vec3 color_difuse = LearnOpenGLBRDF(albedo, metal_roughness.r, metal_roughness.g, normal, view, lightDir, vec3(2, 2, 2));
+    vec3 color_difuse = vec3(0);
+    color_difuse += LearnOpenGLBRDF(albedo, metal_roughness, normal, view, lightDir, vec3(2, 2, 2));
+    vec3 final_color;
+    if (depth != 1.0) {
+        final_color = color_difuse + vec3(0.03) * albedo;
+    } else {
+        final_color = albedo;
+    }
+
+    imageStore(output_texture, pixel_pos, fromLinear(vec4(final_color, 1)));
     // // BRDFResults res = DisneyBRDF(textColor.rgb, metalRoughness.r, metalRoughness.g, surfaceNormal, view, lightDir);
     // // color += ((res.diffuse + res.specular) * cubeMapColor.rgb);
 

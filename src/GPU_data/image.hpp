@@ -95,6 +95,8 @@ class Image : public vk_cmdBuffer_OBJ {
 
     std::string name;
 
+    void saveImageToFile();
+
    private:
     void createImage();
     void createImageWithInfo(const VkImageCreateInfo &imageInfo, VkMemoryPropertyFlags properties);
