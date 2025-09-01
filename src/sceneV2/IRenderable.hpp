@@ -9,13 +9,7 @@
 #include "shader/pipeline/graphic_pipeline.hpp"
 namespace TTe {
 
-    struct PushConstantData{
-        glm::mat4 modelMatrix;
-        glm::mat4 normalMatrix;
-        glm::vec3 portal_pos;
-        uint32_t camera_id;
-        glm::vec3 portal_normal;
-    };
+
 
 class IRenderable {
    public:

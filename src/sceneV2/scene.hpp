@@ -15,12 +15,13 @@
 #include "device.hpp"
 
 #include "dynamic_renderpass.hpp"
+#include "sceneV2/IIndirectRenderable.hpp"
 #include "sceneV2/Ianimatic.hpp"
 #include "sceneV2/Icollider.hpp"
 #include "sceneV2/animatic/skeletonObj.hpp"
 #include "sceneV2/loader/gltf_loader.hpp"
 #include "sceneV2/mesh.hpp"
-#include "sceneV2/Irenderable.hpp"
+#include "sceneV2/IRenderable.hpp"
 #include "sceneV2/cameraV2.hpp"
 #include "sceneV2/node.hpp"
 #include "shader/pipeline/compute_pipeline.hpp"
@@ -147,6 +148,7 @@ class Scene : public Node {
    std::vector<std::shared_ptr<CameraV2>> cameras{};
    std::vector<std::shared_ptr<IAnimatic>> animaticObjs;
    std::vector<std::shared_ptr<IRenderable>> renderables;
+   std::vector<std::shared_ptr<IIndirectRenderable>> indirectRenderables;
    std::vector<std::shared_ptr<ICollider>> collisionObjects;
    std::vector<std::shared_ptr<IInputController>> controlledObjects;
 

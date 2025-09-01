@@ -7,7 +7,7 @@
 #include <string>
 
 #include "math/quaternion_convertor.hpp"
-#include "sceneV2/Irenderable.hpp"
+#include "sceneV2/IIndirectRenderable.hpp"
 #include "sceneV2/animatic/skeleton/BVHAxis.h"
 #include "sceneV2/animatic/skeleton/BVHChannel.h"
 

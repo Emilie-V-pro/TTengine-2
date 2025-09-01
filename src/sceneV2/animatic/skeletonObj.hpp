@@ -11,7 +11,7 @@
 
 #include "sceneV2/Ianimatic.hpp"
 #include "sceneV2/Icollider.hpp"
-#include "sceneV2/Irenderable.hpp"
+#include "sceneV2/IIndirectRenderable.hpp"
 #include "sceneV2/animatic/skeleton/BVH.h"
 #include "sceneV2/collision/collision_obj.hpp"
 #include "IinputController.hpp"
@@ -20,7 +20,7 @@
 
 
 namespace TTe {
-class SkeletonObj : public Node, public IAnimatic, public IRenderable, public ICollider, public IInputController {
+class SkeletonObj : public Node, public IAnimatic, public IIndirectRenderable, public ICollider, public IInputController {
    public:
     class SkeletonNode : public Node {
     };

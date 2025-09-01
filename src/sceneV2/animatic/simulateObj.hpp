@@ -6,11 +6,11 @@
 #include "device.hpp"
 #include "sceneV2/Ianimatic.hpp"
 #include "sceneV2/Icollider.hpp"
-#include "sceneV2/Irenderable.hpp"
+#include "sceneV2/IIndirectRenderable.hpp"
 #include "sceneV2/mesh.hpp"
 #include "sceneV2/node.hpp"
 namespace TTe {
-class SimulateObj : public Node, public IRenderable, public IAnimatic {
+class SimulateObj : public Node, public IIndirectRenderable, public IAnimatic {
    public:
 
 
@@ -22,7 +22,7 @@ class SimulateObj : public Node, public IRenderable, public IAnimatic {
     }
 
     // copy move
-    SimulateObj(const SimulateObj &other) : Node(other), IRenderable(other), IAnimatic(other) {
+    SimulateObj(const SimulateObj &other) : Node(other), IIndirectRenderable(other), IAnimatic(other) {
         this->_Fich_Masses = other._Fich_Masses;
         this->_Fich_Points = other._Fich_Points;
         this->_Interaction = other._Interaction;
@@ -38,7 +38,7 @@ class SimulateObj : public Node, public IRenderable, public IAnimatic {
     SimulateObj &operator=(const SimulateObj &other) {
         if (this != &other) {
             Node::operator=(other);
-            IRenderable::operator=(other);
+            IIndirectRenderable::operator=(other);
             IAnimatic::operator=(other);
             this->_Fich_Masses = other._Fich_Masses;
             this->_Fich_Points = other._Fich_Points;
@@ -57,7 +57,7 @@ class SimulateObj : public Node, public IRenderable, public IAnimatic {
     SimulateObj &operator=(SimulateObj &&other) {
         if (this != &other) {
             Node::operator=(other);
-            IRenderable::operator=(other);
+            IIndirectRenderable::operator=(other);
             IAnimatic::operator=(other);
             this->_Fich_Masses = other._Fich_Masses;
             this->_Fich_Points = other._Fich_Points;
@@ -73,7 +73,7 @@ class SimulateObj : public Node, public IRenderable, public IAnimatic {
         return *this;
     }
 
-    SimulateObj(SimulateObj &&other) : Node(other), IRenderable(other), IAnimatic(other) {
+    SimulateObj(SimulateObj &&other) : Node(other), IIndirectRenderable(other), IAnimatic(other) {
         this->_Fich_Masses = other._Fich_Masses;
         this->_Fich_Points = other._Fich_Points;
         this->_Interaction = other._Interaction;

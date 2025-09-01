@@ -1,10 +1,10 @@
 #pragma once
 
 #include "sceneV2/mesh.hpp"
-#include "sceneV2/Irenderable.hpp"
+#include "sceneV2/IIndirectRenderable.hpp"
 #include "sceneV2/node.hpp"
 namespace TTe {
-class BasicMeshObj : public IRenderable, public Node {
+class BasicMeshObj : public IIndirectRenderable, public Node {
 
    public:
     BasicMeshObj();

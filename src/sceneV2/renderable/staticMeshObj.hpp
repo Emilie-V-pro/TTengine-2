@@ -3,10 +3,10 @@
 #include <cstdint>
 #include <vector>
 #include "sceneV2/mesh.hpp"
-#include "sceneV2/Irenderable.hpp"
+#include "sceneV2/IIndirectRenderable.hpp"
 #include "sceneV2/node.hpp"
 namespace TTe {
-class StaticMeshObj : public IRenderable, public Node {
+class StaticMeshObj : public IIndirectRenderable, public Node {
 
    public:
     StaticMeshObj();

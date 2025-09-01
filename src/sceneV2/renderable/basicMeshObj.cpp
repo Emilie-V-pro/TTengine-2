@@ -1,6 +1,5 @@
 
 #include "basicMeshObj.hpp"
-#include "sceneV2/Irenderable.hpp"
 
 namespace TTe {
 

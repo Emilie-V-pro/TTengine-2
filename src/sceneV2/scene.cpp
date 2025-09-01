@@ -15,12 +15,12 @@
 #include "commandBuffer/command_buffer.hpp"
 #include "descriptor/descriptorSet.hpp"
 #include "device.hpp"
+#include "sceneV2/IIndirectRenderable.hpp"
 #include "sceneV2/Icollider.hpp"
-#include "sceneV2/Irenderable.hpp"
+#include "sceneV2/IRenderable.hpp"
 #include "sceneV2/animatic/skeletonObj.hpp"
 #include "sceneV2/cameraV2.hpp"
 #include "sceneV2/mesh.hpp"
-#include "sceneV2/renderable/staticMeshObj.hpp"
 #include "shader/pipeline/compute_pipeline.hpp"
 #include "struct.hpp"
 
@@ -111,18 +111,9 @@ void Scene::renderDeffered(CommandBuffer &cmd, RenderData &renderData) {
     // renderData.binded_mesh = &basicMeshes[Mesh::Cube];
     // renderData.descriptorSets.push(sceneDescriptorSet);
 
-    for (auto &renderable : renderables) {
+    for (auto &renderable : indirectRenderables) {
         renderable->render(cmd, renderData);
     }
-
-    VkDrawIndexedIndirectCommand testCmd;
-    testCmd.firstIndex= meshes.at(1).getFirstIndex();
-    testCmd.indexCount= meshes.at(1).nbIndicies();
-    testCmd.instanceCount= 1;
-    testCmd.vertexOffset= meshes.at(1).getFirstVertex();
-    testCmd.firstInstance= 1;
-
-    // renderData.drawCommands.push_back(testCmd);
 
     drawIndirectBuffers[renderData.frameIndex].writeToBuffer(
         renderData.drawCommands.data(), renderData.drawCommands.size() * sizeof(VkDrawIndexedIndirectCommand), 0);
@@ -134,6 +125,9 @@ void Scene::renderDeffered(CommandBuffer &cmd, RenderData &renderData) {
     vkCmdDrawIndexedIndirectCount(cmd, drawIndirectBuffers[renderData.frameIndex], 0, countIndirectBuffers[renderData.frameIndex], 0,
                                  drawcount, sizeof(VkDrawIndexedIndirectCommand));
 
+    for(auto &renderable : indirectRenderables){
+        renderable->render(cmd, renderData);
+    }
 
     int x = 0;
 }
@@ -174,6 +168,10 @@ uint32_t Scene::addNode(uint32_t Parent_id, std::shared_ptr<Node> node) {
     if (dynamic_cast<IRenderable *>(node.get())) {
         renderables.push_back(std::dynamic_pointer_cast<IRenderable>(node));
     }
+    if(dynamic_cast<IIndirectRenderable*>(node.get())){
+        indirectRenderables.push_back(std::dynamic_pointer_cast<IIndirectRenderable>(node));
+    }
+
     if (dynamic_cast<CameraV2 *>(node.get())) {
         cameras.push_back(std::dynamic_pointer_cast<CameraV2>(node));
         if (cameras.size() == 1) {
