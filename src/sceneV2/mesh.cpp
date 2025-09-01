@@ -299,4 +299,23 @@ SceneHit Mesh::intersectTriangle(glm::vec3& ro, glm::vec3& rd, Vertex& v0, Verte
     return hit;
 }
 
+Mesh::Triangle Mesh::getTriangle(uint32_t triangleIndex) {
+    Triangle returnValue;
+    returnValue.v[0] = indicies[triangleIndex * 3];
+    returnValue.v[1] = indicies[triangleIndex * 3 + 1];
+    returnValue.v[2] = indicies[triangleIndex * 3 + 2];
+
+    returnValue.opposing_triangle[0] = oposingTriangles[triangleIndex * 3];
+    returnValue.opposing_triangle[1] = oposingTriangles[triangleIndex * 3 + 1];
+    returnValue.opposing_triangle[2] = oposingTriangles[triangleIndex * 3 + 2];
+
+    Mesh* mesh = this;
+    return returnValue;
+}
+
+Mesh::Triangle Mesh::Triangle::getOposingTriangle(int i) {
+    return mesh->getTriangle(opposing_triangle[i]);
+}
+
+
 }  // namespace TTe

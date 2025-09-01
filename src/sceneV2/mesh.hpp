@@ -2,6 +2,7 @@
 
 #include <sys/types.h>
 
+#include <array>
 #include <cstdint>
 #include <glm/fwd.hpp>
 #include <glm/glm.hpp>
@@ -17,7 +18,7 @@ namespace TTe {
 
 class Mesh {
    public:
-    enum BasicShape { Triangle, Sphere, Cone, Cylinder, Cube, Plane };
+    enum BasicShape { Sphere, Cone, Cylinder, Cube, Plane };
 
     Mesh() {};
     Mesh(Device *device, Buffer::BufferType type = Buffer::BufferType::DYNAMIC) : device(device), type(type) {};
@@ -26,15 +27,19 @@ class Mesh {
         const std::vector<unsigned int> &indicies,
         const std::vector<Vertex> &verticies,
         Buffer::BufferType type = Buffer::BufferType::DYNAMIC);
-    
-    Mesh(Device *device, const std::vector<uint32_t> &indicies, const std::vector<Vertex> &verticies, 
-         uint first_index, uint first_vertex, Buffer indexBuffer, Buffer vertexBuffer);
- 
+
+    Mesh(
+        Device *device,
+        const std::vector<uint32_t> &indicies,
+        const std::vector<Vertex> &verticies,
+        uint first_index,
+        uint first_vertex,
+        Buffer indexBuffer,
+        Buffer vertexBuffer);
 
     Mesh(Device *device, const BasicShape &b, uint resolution, Buffer::BufferType type);
 
     Mesh(Device *device, const BasicShape &b, uint resolution);
-
 
     Mesh(const Mesh &other) = default;
     Mesh &operator=(const Mesh &other) = default;
@@ -52,13 +57,12 @@ class Mesh {
     void setVertexAndIndexBuffer(uint first_index, uint first_vertex, Buffer indexBuffer, Buffer vertexBuffer);
     void setVertexAndIndexBuffer(Buffer indexBuffer, Buffer vertexBuffer);
 
-
     int nbTriangle() const { return indicies.size() / 3; };
     int nbVerticies() const { return verticies.size(); };
     int nbIndicies() const { return indicies.size(); };
 
-    uint32_t getFirstIndex() const {return first_index;}
-    uint32_t getFirstVertex() const {return first_vertex;}
+    uint32_t getFirstIndex() const { return first_index; }
+    uint32_t getFirstVertex() const { return first_vertex; }
 
     Buffer &getVertexBuffer() { return vertexBuffer; }
     Buffer &getIndexBuffer() { return indexBuffer; }
@@ -84,12 +88,29 @@ class Mesh {
 
     static SceneHit intersectTriangle(glm::vec3 &ro, glm::vec3 &rd, Vertex &v0, Vertex &v1, Vertex &v2);
 
-
-
     std::vector<Vertex> verticies;
     std::vector<uint32_t> indicies;
 
+    // Chaine things
+
+    struct Triangle {
+        std::array<int32_t, 3> v = { -1, -1, -1 };
+        std::array<int32_t, 3> opposing_triangle = { -1, -1, -1 };
+
+        Mesh *mesh = nullptr;
+
+        Triangle getOposingTriangle(int i);
+    };
+
+    std::vector<uint32_t> triangleOfIndex;
+    std::vector<uint32_t> oposingTriangles;
+
+    Triangle getTriangle(uint32_t triangleIndex);
+
    private:
+    std::string name = "";
+
+    // BVH
     struct BVH_mesh {
         enum struct SplitAxe { X_SPLIT, Y_SPLIT, Z_SPLIT };
 
@@ -99,16 +120,22 @@ class Mesh {
         uint32_t nbTriangle = 0;
     };
 
-    void split(uint32_t index, uint32_t count, uint32_t bvh_index, uint32_t depth = 0);
-
-    std::string name = "";
-
     std::vector<BVH_mesh> bvh;
 
+    void split(uint32_t index, uint32_t count, uint32_t bvh_index, uint32_t depth = 0);
+
+    
+
+    
+
+    
+
+    // Storage data
     Buffer vertexBuffer;
     Buffer indexBuffer;
     Buffer::BufferType type = Buffer::BufferType::GPU_ONLY;
 
+    // Draw data
     uint32_t first_index = 0;
     uint32_t first_vertex = 0;
 
