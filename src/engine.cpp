@@ -88,6 +88,11 @@ void Engine::init() {
     shadingRenderPass = DynamicRenderPass(
         &device, window.getExtent(), {}, swapChain.getswapChainImages().size(), depthAndStencil::DEPTH, &swapChain, deferredRenderPass.getDepthAndStencilPtr());
 
+        imguiRenderPass = DynamicRenderPass(
+            &device, window.getExtent(), {}, swapChain.getswapChainImages().size(), depthAndStencil::NONE, &swapChain);
+    imguiRenderPass.setClearEnable(false);
+
+
     shadingRenderPass.setClearEnable(false);
     app->init(&device, &deferredRenderPass, &shadingRenderPass, &window);
  
@@ -139,7 +144,8 @@ void Engine::resize() {
     swapChain.recreateSwapchain(extent);
     deferredRenderPass.resize(extent);
     shadingRenderPass.resize(extent);
-    shadingRenderPass.setClearEnable(false);
+    imguiRenderPass.resize(extent);
+    imguiRenderPass.setClearEnable(false);
     app->resize(extent.width, extent.height);
     resizeMutex.unlock();
 }
@@ -174,6 +180,7 @@ void Engine::renderLoop(Engine &engine) {
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+        ImGui::ShowDemoWindow();
 
         // DEFERRED RENDERING
 
@@ -199,10 +206,10 @@ void Engine::renderLoop(Engine &engine) {
 
         // UI RENDERING
 
-        engine.shadingRenderPass.beginRenderPass(engine.shadingRenderCommandBuffers[engine.renderIndex], engine.currentSwapchainImage);
+        engine.imguiRenderPass.beginRenderPass(engine.shadingRenderCommandBuffers[engine.renderIndex], engine.currentSwapchainImage);
         ImGui::Render();
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), engine.shadingRenderCommandBuffers[engine.renderIndex]);
-        engine.shadingRenderPass.endRenderPass(engine.shadingRenderCommandBuffers[engine.renderIndex]);
+        engine.imguiRenderPass.endRenderPass(engine.shadingRenderCommandBuffers[engine.renderIndex]);
 
         engine.swapChain.getSwapChainImage(engine.currentSwapchainImage)
             .transitionImageLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, &engine.shadingRenderCommandBuffers[engine.renderIndex]);
