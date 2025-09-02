@@ -49,6 +49,10 @@ void App::init(Device *device, DynamicRenderPass *deferredRenderPass, DynamicRen
     // movementController.init(device, scene2.get());
 }
 
+App::~App() {
+    delete s;
+}
+
 void App::resize(int width, int height) {
     s->updateRenderPassDescriptorSets();
     s->getMainCamera()->extent = {(uint32_t)width, (uint32_t)height};

@@ -15,7 +15,7 @@ namespace TTe {
 class App : public IApp {
    public:
     App() = default;
-    ~App() = default;
+    ~App();
     // set up the application
     void init(Device* device, DynamicRenderPass *deferredRenderPass, DynamicRenderPass *shadingRenderPass, Window* window);
     void resize(int width, int height);

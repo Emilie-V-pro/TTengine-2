@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 
 // std
+#include <cstdio>
 #include <glm/gtc/constants.hpp>
 #include <limits>
 #include <memory>
@@ -13,6 +14,10 @@
 
 
 namespace TTe {
+
+GLFWcursorposfun MainController::previousMouseMoveCallback = nullptr;
+GLFWmousebuttonfun MainController::previousMouseButtonCallback = nullptr;
+
 void MainController::moveInPlaneXZ(Window* window, float dt, std::shared_ptr<CameraV2> cam) {
     glm::vec3 rotate{0};
 
@@ -54,6 +59,8 @@ void MainController::moveInPlaneXZ(Window* window, float dt, std::shared_ptr<Cam
 }
 
 void MainController::mouseMoveCallback(GLFWwindow* window, double xpos, double ypos) {
+    if(previousMouseMoveCallback)
+        previousMouseMoveCallback(window, xpos, ypos);
     Window* windowObj = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
     
     double xoffset =  windowObj->lastX - xpos ;
@@ -74,9 +81,13 @@ void MainController::mouseMoveCallback(GLFWwindow* window, double xpos, double y
 }
 
 void MainController::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+    
     Window* windowObj = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+    if(previousMouseButtonCallback)
+        previousMouseButtonCallback(window, button, action, mods);
 
     ImGuiIO& io = ImGui::GetIO();
+    io.AddMouseButtonEvent(button, action == GLFW_PRESS);
     if(!io.WantCaptureMouse){
 
         if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
@@ -96,6 +107,8 @@ void MainController::mouseButtonCallback(GLFWwindow* window, int button, int act
         
         }
 
+    }else {
+        printf("gneu") ;
     }
 }  // namespace TTe
 

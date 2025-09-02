@@ -11,8 +11,8 @@ class MainController {
    MainController(){};
 
    void setCursors(Window* window) {
-       glfwSetCursorPosCallback(*window, mouseMoveCallback);
-         glfwSetMouseButtonCallback(*window, mouseButtonCallback);
+       previousMouseMoveCallback = glfwSetCursorPosCallback(*window, mouseMoveCallback);
+        previousMouseButtonCallback = glfwSetMouseButtonCallback(*window, mouseButtonCallback);
     }
     struct KeyMappings {
         int moveLeft = GLFW_KEY_A;
@@ -30,6 +30,10 @@ class MainController {
         int ct = GLFW_KEY_LEFT_CONTROL;
 
     };
+
+    //previous callback functions
+    static GLFWcursorposfun previousMouseMoveCallback;
+    static GLFWmousebuttonfun previousMouseButtonCallback;
 
 
     void moveInPlaneXZ(Window* window, float dt, std::shared_ptr<CameraV2> cam);

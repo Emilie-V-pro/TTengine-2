@@ -86,7 +86,7 @@ void GraphicPipeline::setRasterizerInfo(VkCommandBuffer cmdBuffer) {
     uint32_t sampleMask = 0xFF;
     vkCmdSetSampleMaskEXT(cmdBuffer, VK_SAMPLE_COUNT_1_BIT, &sampleMask);
     vkCmdSetAlphaToCoverageEnableEXT(cmdBuffer, VK_FALSE);
-
+    vkCmdSetPolygonModeEXT(cmdBuffer, VK_POLYGON_MODE_FILL);
     
     vkCmdSetCullMode(cmdBuffer, VK_CULL_MODE_NONE);
     vkCmdSetFrontFace(cmdBuffer, VK_FRONT_FACE_COUNTER_CLOCKWISE);
