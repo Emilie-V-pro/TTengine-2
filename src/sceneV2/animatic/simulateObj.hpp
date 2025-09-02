@@ -16,7 +16,7 @@ class SimulateObj : public Node, public IIndirectRenderable, public IAnimatic {
 
 
     SimulateObj(){}
-    SimulateObj(Device *device, std::string &paramFile) : device(device) {
+    SimulateObj(Device *device, std::filesystem::path &paramFile) : device(device) {
         Param_mesh(paramFile);
         mesh = Mesh(device);
     }
@@ -91,7 +91,7 @@ class SimulateObj : public Node, public IIndirectRenderable, public IAnimatic {
     // ~SimulateObj();
 
     /*! Lecture des parametres lies au maillage */
-    void Param_mesh(std::string fich_param);
+    void Param_mesh(std::filesystem::path fich_param);
 
     /*! Initialisation des tableaux des sommets a partir du fichier de donnees de l objet */
     virtual void initObjetSimule() = 0;
@@ -117,13 +117,13 @@ class SimulateObj : public Node, public IIndirectRenderable, public IAnimatic {
 
     protected:
     /// Fichier de donnees contenant les points
-    std::string _Fich_Points;
+    std::filesystem::path _Fich_Points;
 
     /// Fichier de donnees contenant les masses
-    std::string _Fich_Masses;
+    std::filesystem::path _Fich_Masses;
 
     /// Interaction avec l utilisateur ou non
-    std::string _Interaction;
+    std::filesystem::path _Interaction;
 
     /// valeur d'absorption de la vitesse en cas de collision:
     /// 1=la particule repart aussi vite, 0=elle s'arrete

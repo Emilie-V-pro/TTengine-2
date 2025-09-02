@@ -34,13 +34,13 @@ file(GLOB_RECURSE TTENGINE_SOURCES CONFIGURE_DEPENDS
 add_library(TTengine STATIC ${TTENGINE_SOURCES})
 
 add_library(imgui STATIC
-${PROJECT_SOURCE_DIR}/external/imgui/imgui.cpp
-${PROJECT_SOURCE_DIR}/external/imgui/imgui_demo.cpp
-${PROJECT_SOURCE_DIR}/external/imgui/imgui_draw.cpp
-${PROJECT_SOURCE_DIR}/external/imgui/imgui_tables.cpp
-${PROJECT_SOURCE_DIR}/external/imgui/imgui_widgets.cpp
-${PROJECT_SOURCE_DIR}/external/imgui/backends/imgui_impl_glfw.cpp
-${PROJECT_SOURCE_DIR}/external/imgui/backends/imgui_impl_vulkan.cpp
+    ${PROJECT_SOURCE_DIR}/external/imgui/imgui.cpp
+    ${PROJECT_SOURCE_DIR}/external/imgui/imgui_demo.cpp
+    ${PROJECT_SOURCE_DIR}/external/imgui/imgui_draw.cpp
+    ${PROJECT_SOURCE_DIR}/external/imgui/imgui_tables.cpp
+    ${PROJECT_SOURCE_DIR}/external/imgui/imgui_widgets.cpp
+    ${PROJECT_SOURCE_DIR}/external/imgui/backends/imgui_impl_glfw.cpp
+    ${PROJECT_SOURCE_DIR}/external/imgui/backends/imgui_impl_vulkan.cpp
 )
 
 target_include_directories(imgui PUBLIC
@@ -89,7 +89,9 @@ target_link_libraries(TTengine PUBLIC
 option(TTENGINE_BUILD_EXAMPLES "Build TTengine example application" ON)
 
 if(TTENGINE_BUILD_EXAMPLES)
+
     add_executable(TTengineApp ${TTENGINE_SOURCES})
+    target_compile_definitions(TTengineApp PRIVATE DEFAULT_APP_PATH)
 
     target_link_libraries(TTengineApp PRIVATE TTengine)
 

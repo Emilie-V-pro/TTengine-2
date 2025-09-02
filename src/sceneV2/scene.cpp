@@ -33,16 +33,16 @@ Scene::Scene(Device *device) : device(device) {
 
 Scene::~Scene() {}
 
-void Scene::initSceneData(DynamicRenderPass *defferedRenderpass, DynamicRenderPass *shadingRenderPass) {
+void Scene::initSceneData(DynamicRenderPass *defferedRenderpass, DynamicRenderPass *shadingRenderPass, std::filesystem::path skyboxPath) {
     this->defferedRenderpass = defferedRenderpass;
     this->shadingRenderPass = shadingRenderPass;
     ImageCreateInfo skyboxImageCreateInfo;
-    skyboxImageCreateInfo.filename.push_back("textures/posx.jpg");
-    skyboxImageCreateInfo.filename.push_back("textures/negx.jpg");
-    skyboxImageCreateInfo.filename.push_back("textures/posy.jpg");
-    skyboxImageCreateInfo.filename.push_back("textures/negy.jpg");
-    skyboxImageCreateInfo.filename.push_back("textures/posz.jpg");
-    skyboxImageCreateInfo.filename.push_back("textures/negz.jpg");
+    skyboxImageCreateInfo.filename.push_back(skyboxPath/"posx.jpg");
+    skyboxImageCreateInfo.filename.push_back(skyboxPath/"negx.jpg");
+    skyboxImageCreateInfo.filename.push_back(skyboxPath/"posy.jpg");
+    skyboxImageCreateInfo.filename.push_back(skyboxPath/"negy.jpg");
+    skyboxImageCreateInfo.filename.push_back(skyboxPath/"posz.jpg");
+    skyboxImageCreateInfo.filename.push_back(skyboxPath/"negz.jpg");
     skyboxImageCreateInfo.usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT;
     skyboxImageCreateInfo.isCubeTexture = true;
     skyboxImageCreateInfo.enableMipMap = true;
@@ -401,17 +401,17 @@ void Scene::updateRenderPassDescriptorSets() {
 
 void Scene::createPipelines() {
     GraphicPipelineCreateInfo pipelineCreateInfo;
-    pipelineCreateInfo.fragmentShaderFile = "deffered.frag";
-    pipelineCreateInfo.vexterShaderFile = "deffered.vert";
+    pipelineCreateInfo.fragmentShaderFile = "shaders/deffered.frag";
+    pipelineCreateInfo.vexterShaderFile = "shaders/deffered.vert";
     meshPipeline = GraphicPipeline(device, pipelineCreateInfo);
 
-    pipelineCreateInfo.fragmentShaderFile = "bgV2.frag";
-    pipelineCreateInfo.vexterShaderFile = "bgV2.vert";
+    pipelineCreateInfo.fragmentShaderFile = "shaders/bgV2.frag";
+    pipelineCreateInfo.vexterShaderFile = "shaders/bgV2.vert";
     skyboxPipeline = GraphicPipeline(device, pipelineCreateInfo);
 
 
 
-    shadingPipeline = ComputePipeline(device, "shading.comp");
+    shadingPipeline = ComputePipeline(device, "shaders/shading.comp");
 }
 
 }  // namespace TTe

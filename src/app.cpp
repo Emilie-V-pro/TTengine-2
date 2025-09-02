@@ -31,9 +31,9 @@ void App::init(Device *device, DynamicRenderPass *deferredRenderPass, DynamicRen
 
     // gltfLoader.load("gltf/Sponza/glTF/Sponza.gltf");
 
-    // gltfLoader.load("gltf/sponza_full/Untitled.gltf");
-    // s = gltfLoader.getScene();
-    s = new Scene(device);
+    gltfLoader.load("gltf/robot/robot.glb");
+    s = gltfLoader.getScene();
+    // s = new Scene(device);
     s->initSceneData(deferredRenderPass, shadingRenderPass);
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
@@ -50,9 +50,7 @@ void App::init(Device *device, DynamicRenderPass *deferredRenderPass, DynamicRen
     // movementController.init(device, scene2.get());
 }
 
-App::~App() {
-    delete s;
-}
+App::~App() { delete s; }
 
 void App::resize(int width, int height) {
     s->updateRenderPassDescriptorSets();
@@ -81,9 +79,7 @@ void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
         renderCmdBuffer.submitCommandBuffer({}, {}, nullptr, true);
         temp.savedRenderPass(0);
     }
-   
 }
-
 
 void App::renderDeferredFrame(float deltatTime, CommandBuffer &cmdBuffer, uint32_t render_index, uint32_t swapchainIndex) {
     RenderData r;

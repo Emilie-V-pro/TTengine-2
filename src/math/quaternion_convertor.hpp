@@ -1,18 +1,18 @@
 #pragma once
+#include <iostream>
 #define GLM_ENABLE_EXPERIMENTAL
-#include <glm/glm.hpp>
+#include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/quaternion_common.hpp>
 #include <glm/ext/quaternion_trigonometric.hpp>
 #include <glm/ext/scalar_common.hpp>
-#include <glm/geometric.hpp>
-#include <glm/trigonometric.hpp>
-
-#include <glm/ext/matrix_transform.hpp>
 #include <glm/fwd.hpp>
+#include <glm/geometric.hpp>
+#include <glm/glm.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtx/euler_angles.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/transform.hpp>
+#include <glm/trigonometric.hpp>
 
 namespace TTe {
 inline glm::quat eulerZXYtoQuat(glm::vec3 euler) {
@@ -45,8 +45,8 @@ inline glm::quat eulerZYXtoQuat(glm::vec3 euler) {
     return q;  // Ordre de multiplication ZXY
 }
 
-inline glm::vec3 threeaxisrot(double r11, double r12, double r21, double r31, double r32) {
-    return glm::vec3(asin(r21), atan2(r31, r32), atan2(r11, r12));
+inline glm::vec3 threeaxisrot(double r11, double r12, double r21, double r31, double r32) {  
+    return glm::vec3(glm::asin(glm::clamp(r21, -1.0,1.0)), glm::atan2(r31, r32), glm::atan2(r11, r12));
 }
 
 inline glm::vec3 threeaxisrot2(double r11, double r12, double r21, double r31, double r32) {
@@ -64,4 +64,4 @@ inline glm::vec3 quatToEulerZYX(glm::quat q) {
         2 * (q.x * q.y + q.w * q.z), q.w * q.w + q.x * q.x - q.y * q.y - q.z * q.z, -2 * (q.x * q.z - q.w * q.y),
         2 * (q.y * q.z + q.w * q.x), q.w * q.w - q.x * q.x - q.y * q.y + q.z * q.z);
 }
-}
+}  // namespace TTe

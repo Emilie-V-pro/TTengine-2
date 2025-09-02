@@ -57,7 +57,7 @@ void SkeletonObj::init(BVH bvh) {
     this->transform.pos = glm::vec3(4, -10, 3);
 }
 
-void SkeletonObj::init(std::string bvh_folder) {
+void SkeletonObj::init(std::filesystem::path bvh_folder) {
     for (const auto &entry : std::filesystem::directory_iterator(bvh_folder)) {
         if (entry.path().filename().string().find("talk") != std::string::npos) {
             m_bvh[State::IDLE] = BVH(entry.path(), true);

@@ -39,7 +39,7 @@ public:
     ObjetSimuleMSS() {};
     
     /*! Constructeur */
-    ObjetSimuleMSS(Device *device, std::string fich_param);
+    ObjetSimuleMSS(Device *device, std::filesystem::path fich_param);
 
 
     // copy constructor

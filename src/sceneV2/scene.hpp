@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <filesystem>
 #include <glm/fwd.hpp>
 #include <map>
 #include <memory>
@@ -34,6 +35,7 @@ class Scene : public Node {
    public:
     Scene(){};
     Scene(Device *device);
+    void initSceneData(DynamicRenderPass* defferedRenderpass, DynamicRenderPass* shadingRenderPass, std::filesystem::path skyboxPath = "textures/skybox");
     ~Scene();
 
     //copy constructor
@@ -81,7 +83,7 @@ class Scene : public Node {
         return *this;
     };
 
-    void Param(std::string Fichier_Param);
+    void Param(std::filesystem::path Fichier_Param);
 
     void renderDeffered(CommandBuffer &cmd, RenderData &renderData);
     void renderShading(CommandBuffer &cmd, RenderData &renderData);
@@ -111,7 +113,7 @@ class Scene : public Node {
     void updateObjectBuffer();
     void updateDescriptorSets();
     void updateRenderPassDescriptorSets();
-    void initSceneData(DynamicRenderPass* defferedRenderpass, DynamicRenderPass* shadingRenderPass);
+    
     
     uint32_t firstIndexAvailable = 0;
     uint32_t firstVertexAvailable = 0;

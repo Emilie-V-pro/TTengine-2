@@ -20,7 +20,7 @@
 #include "structs_vk.hpp"
 #include "utils.hpp"
 
-#define TEXTURE_PATH "../data/"
+#define DATA_PATH "../data/"
 
 namespace TTe {
 
@@ -521,12 +521,12 @@ void Image::createImageView() {
     }
 }
 
-void Image::loadImageFromFile(std::vector<std::string> &filename) {
+void Image::loadImageFromFile(std::vector<std::filesystem::path> &filename) {
     stbi_set_flip_vertically_on_load(true);
     int nbOfchannel;
     int width = 0, height = 0;
-    std::cout << "Loading image: " << TEXTURE_PATH + filename[0] << std::endl;
-    stbi_info((TEXTURE_PATH + filename[0]).c_str(), &width, &height, &nbOfchannel);
+    std::cout << "Loading image: " <<DATA_PATH / filename[0] << std::endl;
+    stbi_info((DATA_PATH/filename[0]).c_str(), &width, &height, &nbOfchannel);
     if (width == 0 || height == 0) {
         std::cerr << "Erreur: l'image n'a pas pu être chargée" << std::endl;
     }
@@ -537,7 +537,7 @@ void Image::loadImageFromFile(std::vector<std::string> &filename) {
     imageCreateInfo.layers = filename.size();
     this->layer = filename.size();
     for (size_t i = 0; i < filename.size(); i++) {
-        imageCreateInfo.datas.push_back(stbi_load((TEXTURE_PATH + filename[i]).c_str(), &width, &height, &nbOfchannel, 4));
+        imageCreateInfo.datas.push_back(stbi_load((DATA_PATH /filename[i]).c_str(), &width, &height, &nbOfchannel, 4));
     }
 
     if (imageCreateInfo.format == VK_FORMAT_UNDEFINED) {

@@ -268,12 +268,15 @@ namespace TTe {
 
 Shader::Shader() {}
 
-Shader::Shader(Device *device, std::filesystem::path shaderFile, VkShaderStageFlags descriptorStage, VkShaderStageFlags nextShaderStage)
-    : shaderFile(shaderFile), nextShaderStage(nextShaderStage), device(device) {
-    shaderStage = getShaderStageFlagsBitFromFileName(shaderFile);
+Shader::Shader(Device *device, std::filesystem::path shaderPath, VkShaderStageFlags descriptorStage, VkShaderStageFlags nextShaderStage)
+    : shaderPath(shaderPath), nextShaderStage(nextShaderStage), device(device) {
+    shaderStage = getShaderStageFlagsBitFromFileName(shaderPath);
     loadShaderGLSLCode();
 
-    if (!std::ifstream((std::filesystem::path(ENGINE_DIR) / "shaders/spirv/" / shaderFile).concat(".spv")).good() ||
+    std::filesystem::path shaderFile = std::filesystem::path(shaderPath).filename();
+    std::filesystem::path shaderFolder = std::filesystem::path(shaderPath).parent_path();
+
+    if (!std::ifstream((std::filesystem::path(ENGINE_DIR) / shaderFolder / "spirv" / shaderFile).concat(".spv")).good() ||
         getSavedHash() != getShaderSourceCodeHash()) {
         compileToSPIRV();
     }
@@ -301,7 +304,7 @@ Shader::Shader(Shader &&other) {
     shaderModule = other.shaderModule;
     shaderCreateInfo = other.shaderCreateInfo;
     pushConstants = other.pushConstants;
-    shaderFile = other.shaderFile;
+    shaderPath = other.shaderPath;
     nextShaderStage = other.nextShaderStage;
     shaderStage = other.shaderStage;
     device = other.device;
@@ -324,7 +327,7 @@ Shader &Shader::operator=(Shader &&other) {
         shaderModule = other.shaderModule;
         shaderCreateInfo = other.shaderCreateInfo;
         pushConstants = other.pushConstants;
-        shaderFile = other.shaderFile;
+        shaderPath = other.shaderPath;
         nextShaderStage = other.nextShaderStage;
         shaderStage = other.shaderStage;
         device = other.device;
@@ -338,12 +341,16 @@ Shader &Shader::operator=(Shader &&other) {
 }
 
 void Shader::loadShaderSPVCode() {
+    std::filesystem::path shaderFile = std::filesystem::path(shaderPath).filename();
+    std::filesystem::path shaderFolder = std::filesystem::path(shaderPath).parent_path();
+
     shaderCode.clear();
-    std::filesystem::path shaderPath = std::filesystem::path(ENGINE_DIR) / "shaders/spirv/" / shaderFile;
+    std::filesystem::path shaderPath = std::filesystem::path(ENGINE_DIR) / shaderFolder / "spirv" / shaderFile;
     shaderPath.concat(".spv");
     std::ifstream file{shaderPath, std::ios::ate | std::ios::binary};
     if (!file.is_open()) {
-        throw std::runtime_error("failed to open file :" / std::filesystem::path(ENGINE_DIR) / "shaders/spirv/" / shaderFile / ".spv");
+        throw std::runtime_error(
+            "failed to open file :" / std::filesystem::path(ENGINE_DIR) / shaderFolder / "spirv" / shaderFile / ".spv");
     }
 
     size_t fileSize = static_cast<size_t>(file.tellg());
@@ -356,9 +363,9 @@ void Shader::loadShaderSPVCode() {
 }
 
 void Shader::loadShaderGLSLCode() {
-    std::ifstream file{std::filesystem::path(ENGINE_DIR) / "shaders/" / shaderFile, std::ios::ate};
+    std::ifstream file{ENGINE_DIR / shaderPath, std::ios::ate};
     if (!file.is_open()) {
-        throw std::runtime_error("failed to open file :" / std::filesystem::path(ENGINE_DIR) / "shaders/" / shaderFile);
+        throw std::runtime_error("failed to open file :" / std::filesystem::path(ENGINE_DIR) / shaderPath);
     }
 
     size_t fileSize = static_cast<size_t>(file.tellg());
@@ -401,7 +408,7 @@ void Shader::compileToSPIRV() {
         .size = 0,
     };
     if (!glslang_shader_preprocess(shader, &input)) {
-        printf("GLSL preprocessing failed %s\n", shaderFile.c_str());
+        printf("GLSL preprocessing failed %s\n", shaderPath.c_str());
         printf("%s\n", glslang_shader_get_info_log(shader));
         printf("%s\n", glslang_shader_get_info_debug_log(shader));
         printf("%s\n", input.code);
@@ -410,7 +417,7 @@ void Shader::compileToSPIRV() {
     }
 
     if (!glslang_shader_parse(shader, &input)) {
-        printf("GLSL parsing failed %s\n", shaderFile.c_str());
+        printf("GLSL parsing failed %s\n", shaderPath.c_str());
         printf("%s\n", glslang_shader_get_info_log(shader));
         printf("%s\n", glslang_shader_get_info_debug_log(shader));
         printf("%s\n", glslang_shader_get_preprocessed_code(shader));
@@ -422,7 +429,7 @@ void Shader::compileToSPIRV() {
     glslang_program_add_shader(program, shader);
 
     if (!glslang_program_link(program, GLSLANG_MSG_SPV_RULES_BIT | GLSLANG_MSG_VULKAN_RULES_BIT)) {
-        printf("GLSL linking failed %s\n", shaderFile.c_str());
+        printf("GLSL linking failed %s\n", shaderPath.c_str());
         printf("%s\n", glslang_program_get_info_log(program));
         printf("%s\n", glslang_program_get_info_debug_log(program));
         glslang_program_delete(program);
@@ -437,16 +444,20 @@ void Shader::compileToSPIRV() {
     glslang_program_SPIRV_get(program, bin.words.data());
 
     const char *spirv_messages = glslang_program_SPIRV_get_messages(program);
-    if (spirv_messages) printf("(%s) %s\b", shaderFile.c_str(), spirv_messages);
+    if (spirv_messages) printf("(%s) %s\b", shaderPath.c_str(), spirv_messages);
 
     glslang_program_delete(program);
     glslang_shader_delete(shader);
 
+    std::filesystem::path shaderFile = std::filesystem::path(shaderPath).filename();
+    std::filesystem::path shaderFolder = std::filesystem::path(shaderPath).parent_path();
+
     // write SPIR-V binary to file
-    std::ofstream outFile((std::filesystem::path(ENGINE_DIR) / "shaders/spirv/" / shaderFile).concat(".spv"), std::ios::binary);
+    std::ofstream outFile((std::filesystem::path(ENGINE_DIR) / shaderFolder / "spirv" / shaderFile).concat(".spv"), std::ios::binary);
     if (!outFile.is_open()) {
         throw std::runtime_error(
-            "failed to open file for writing SPIR-V binary: " / std::filesystem::path(ENGINE_DIR) / "shaders/spirv/" / shaderFile / ".spv");
+            "failed to open file for writing SPIR-V binary: " / std::filesystem::path(ENGINE_DIR) / shaderFolder / "spirv" / shaderFile /
+            ".spv");
     }
     outFile.write(reinterpret_cast<const char *>(bin.words.data()), bin.size * sizeof(uint32_t));
     outFile.close();
@@ -465,20 +476,27 @@ std::string Shader::getShaderSourceCodeHash() {
 void Shader::saveHash() {
     std::string hash = getShaderSourceCodeHash();
 
-    std::ofstream hashFile((std::filesystem::path(ENGINE_DIR) / "shaders/hash/" / shaderFile).concat(".hash"), std::ios::binary);
+    std::filesystem::path shaderFile = std::filesystem::path(shaderPath).filename();
+    std::filesystem::path shaderFolder = std::filesystem::path(shaderPath).parent_path();
+
+    std::ofstream hashFile((std::filesystem::path(ENGINE_DIR) / shaderFolder / "hash" / shaderFile).concat(".hash"), std::ios::binary);
     if (!hashFile.is_open()) {
         throw std::runtime_error(
-            "failed to open file for writing hash: " / (std::filesystem::path(ENGINE_DIR) / "shaders/hash/" / shaderFile).concat(".hash"));
+            "failed to open file for writing hash: " /
+            (std::filesystem::path(ENGINE_DIR) / shaderFolder / "hash" / shaderFile).concat(".hash"));
     }
     hashFile.write(hash.data(), hash.size());
     hashFile.close();
 }
 
 std::string Shader::getSavedHash() {
-    std::ifstream hashFile((std::filesystem::path(ENGINE_DIR) / "shaders/hash/" / shaderFile).concat(".hash"), std::ios::binary);
+    std::filesystem::path shaderFile = std::filesystem::path(shaderPath).filename();
+    std::filesystem::path shaderFolder = std::filesystem::path(shaderPath).parent_path();
+
+    std::ifstream hashFile((std::filesystem::path(ENGINE_DIR) / shaderFolder / "hash" / shaderFile).concat(".hash"), std::ios::binary);
     if (!hashFile.is_open()) {
         throw std::runtime_error(
-            "failed to open file for reading hash: " / (std::filesystem::path(ENGINE_DIR) / "shaders/hash/" / shaderFile).concat(".hash"));
+            "failed to open file for reading hash: " / (std::filesystem::path(ENGINE_DIR) / shaderFolder / "hash" / shaderFile).concat(".hash"));
     }
     std::string hash;
     hashFile.seekg(0, std::ios::end);
@@ -600,10 +618,8 @@ void Shader::buildLinkedShaders(Device *device, std::vector<Shader *> &shaders) 
 
 constexpr unsigned int str2int(const char *str, int h = 0) { return !str[h] ? 5381 : (str2int(str, h + 1) * 33) ^ str[h]; }
 
-VkShaderStageFlagBits Shader::getShaderStageFlagsBitFromFileName(std::string shaderFile) {
-    std::filesystem::path fp = shaderFile;
-
-    switch (str2int(fp.extension().c_str())) {
+VkShaderStageFlagBits Shader::getShaderStageFlagsBitFromFileName(std::filesystem::path shaderFile) {
+    switch (str2int(shaderFile.extension().c_str())) {
         case (str2int(".vert")):
             return VK_SHADER_STAGE_VERTEX_BIT;
             break;

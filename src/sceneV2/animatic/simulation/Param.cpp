@@ -61,7 +61,7 @@ namespace TTe {
 /**
 * Lecture des parametres de l execution relatifs a la scene.
  */
-void Scene::Param(std::string Fichier_Param)
+void Scene::Param(std::filesystem::path Fichier_Param)
 {
 	/** Donnees du fichier contenant les parametres de l execution **/
 	/* Proprietes du fichier */
@@ -107,7 +107,7 @@ void Scene::Param(std::string Fichier_Param)
 /**
 * Lecture des parametres de l execution relatfs au maillage.
  */
-void SimulateObj::Param_mesh(std::string Fichier_Param)
+void SimulateObj::Param_mesh(std::filesystem::path Fichier_Param)
 {
 	/** Donnees du fichier contenant les parametres de l execution **/
 	/* Proprietes du fichier */

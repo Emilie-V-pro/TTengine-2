@@ -45,7 +45,7 @@ class Shader {
     const VkExtent3D &getComputeWorkGroupSize() const { return computeWorkGroupSize; }
     std::vector<std::shared_ptr<DescriptorSetLayout>> &getDescriptorsSetLayout() { return descriptorsSetLayout; }
 
-    static VkShaderStageFlagBits getShaderStageFlagsBitFromFileName(std::string shaderFile);
+    static VkShaderStageFlagBits getShaderStageFlagsBitFromFileName(std::filesystem::path shaderFile);
     
 
     void setShaderHandler(VkShaderEXT shaderExt) { shader = shaderExt; }
@@ -72,7 +72,7 @@ class Shader {
 
     VkPushConstantRange pushConstants = {};
 
-    std::filesystem::path shaderFile;
+    std::filesystem::path shaderPath;
     VkShaderStageFlags nextShaderStage = 0;
     VkShaderStageFlagBits shaderStage;
 

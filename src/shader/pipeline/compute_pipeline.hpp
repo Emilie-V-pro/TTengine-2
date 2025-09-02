@@ -1,7 +1,6 @@
 #pragma once
 
 #include <memory>
-#include <string>
 #include <vector>
 
 #include "../../descriptor//descriptorSetLayout.hpp"
@@ -16,7 +15,7 @@ class ComputePipeline : public Pipeline {
    public:
    ComputePipeline() {};
     // Constructor
-    ComputePipeline(Device* device, std::string computeShaderName);
+    ComputePipeline(Device* device, std::filesystem::path computeShaderPath);
     // Destructor
     ~ComputePipeline();
 
@@ -38,7 +37,7 @@ class ComputePipeline : public Pipeline {
     std::vector<std::shared_ptr<DescriptorSetLayout>>& getDescriptorsSetLayout() { return computeShader.getDescriptorsSetLayout(); }
 
    private:
-    void createShaders(std::string& computeShaderName);
+    void createShaders(std::filesystem::path& computeShaderPath);
     void createPipelineLayout();
 
     Shader computeShader;

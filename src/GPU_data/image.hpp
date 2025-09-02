@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
@@ -24,7 +25,7 @@ struct ImageCreateInfo {
     VkImageLayout imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     bool isCubeTexture = false;
     bool enableMipMap = false;
-    std::vector<std::string> filename;
+    std::vector<std::filesystem::path> filename;
     std::vector<void *> datas;
 };
 
@@ -101,7 +102,7 @@ class Image : public vk_cmdBuffer_OBJ {
     void createImage();
     void createImageWithInfo(const VkImageCreateInfo &imageInfo, VkMemoryPropertyFlags properties);
     void createImageView();
-    void loadImageFromFile(std::vector<std::string> &filename);
+    void loadImageFromFile(std::vector<std::filesystem::path> &filename);
     void loadImageToGPU(CommandBuffer *extCmdBuffer = nullptr);
     void destruction();
 

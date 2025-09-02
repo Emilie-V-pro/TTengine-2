@@ -7,7 +7,7 @@
 
 namespace TTe {
 
-ComputePipeline::ComputePipeline(Device* device, std::string computeShaderName) : device(device) {
+ComputePipeline::ComputePipeline(Device* device, std::filesystem::path computeShaderName) : device(device) {
     createShaders(computeShaderName);
     createPipelineLayout();
 }
@@ -56,8 +56,8 @@ void ComputePipeline::dispatch(const CommandBuffer& cmdBuffer, uint32_t nbOfinvo
 }
 
 
-void ComputePipeline::createShaders(std::string& computeShaderName) {
-    computeShader = Shader(device, computeShaderName, VK_SHADER_STAGE_COMPUTE_BIT);
+void ComputePipeline::createShaders(std::filesystem::path& computeShaderPath) {
+    computeShader = Shader(device, computeShaderPath, VK_SHADER_STAGE_COMPUTE_BIT);
     computeShader.buildShader();
 
     pushConstantInfo = computeShader.getPushConstants();

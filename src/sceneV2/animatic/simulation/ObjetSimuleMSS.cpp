@@ -53,7 +53,7 @@ namespace TTe {
 /**
  * Constructeur de la class ObjetSimuleMSS.
  */
-ObjetSimuleMSS::ObjetSimuleMSS(Device *device, std::string fich_param) : SimulateObj(device, fich_param), _Size(), _SystemeMasseRessort(0) {
+ObjetSimuleMSS::ObjetSimuleMSS(Device *device, std::filesystem::path fich_param) : SimulateObj(device, fich_param), _Size(), _SystemeMasseRessort(0) {
     /* Allocation du systeme masse-ressort */
     _SystemeMasseRessort = new MSS();
 

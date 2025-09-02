@@ -97,6 +97,7 @@ void main() {
     } else {
         textColor = vec4(fragmaterial.color, 1);
     }
+
     vec3 surfaceNormal = normalize(fragNormalWorld);
     if (!gl_FrontFacing) {
         surfaceNormal = -surfaceNormal;
@@ -105,10 +106,15 @@ void main() {
     if (nonuniformEXT(fragmaterial.normal_tex_id) != -1) {
         surfaceNormal = perturb_normal(surfaceNormal, view, nonuniformEXT(fragmaterial.normal_tex_id), fraguv);
     }
+
     if (nonuniformEXT(fragmaterial.metallic_roughness_tex_id) != -1) {
         metalRoughness = texture(textures[nonuniformEXT(fragmaterial.metallic_roughness_tex_id)], fraguv).bg *
                          vec2(fragmaterial.metallic, fragmaterial.roughness);
+    } else {
+        metalRoughness = vec2(fragmaterial.metallic, fragmaterial.roughness);
     }
+
+
     if (textColor.a < 0.3) {
         discard;
     }

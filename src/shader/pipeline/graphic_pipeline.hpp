@@ -1,17 +1,15 @@
 #pragma once
 
-
-#include <string>
 #include "commandBuffer/command_buffer.hpp"
 #include "shader/pipeline.hpp"
 #include "shader/shader.hpp"
 namespace TTe {
 struct GraphicPipelineCreateInfo{
-    std::string vexterShaderFile;
-    std::string fragmentShaderFile;
-    std::string tesselationControlShaderFile;
-    std::string tesselationEvaluationShaderFile;
-    std::string geometryShaderFile;
+    std::filesystem::path vexterShaderFile;
+    std::filesystem::path fragmentShaderFile;
+    std::filesystem::path tesselationControlShaderFile;
+    std::filesystem::path tesselationEvaluationShaderFile;
+    std::filesystem::path geometryShaderFile;
 };
 
 class GraphicPipeline : public Pipeline {
