@@ -345,7 +345,17 @@ void Scene::createDescriptorSets() { sceneDescriptorSet = DescriptorSet(device, 
 
 void Scene::updateDescriptorSets() {
     if (images.size() == 0) {
-        return;
+        glm::vec4* defaultPixel = new glm::vec4(1, 1, 1, 1);
+        //create a default texture
+        ImageCreateInfo defaultImageCreateInfo;
+        defaultImageCreateInfo.width = 1;
+        defaultImageCreateInfo.height = 1;
+        defaultImageCreateInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+        defaultImageCreateInfo.usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT;
+        defaultImageCreateInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        defaultImageCreateInfo.datas.push_back(defaultPixel);
+        Image defaultImage = Image(device, defaultImageCreateInfo);
+        images.push_back(defaultImage);
     }
     std::vector<VkDescriptorImageInfo> imageInfos;
     for (auto &texture : images) {

@@ -29,10 +29,11 @@ void App::init(Device *device, DynamicRenderPass *deferredRenderPass, DynamicRen
     // gltfLoader.load("gltf/game2/Untitled.gltf");
     auto start = std::chrono::high_resolution_clock::now();
 
-    gltfLoader.load("gltf/Sponza/glTF/Sponza.gltf");
+    // gltfLoader.load("gltf/Sponza/glTF/Sponza.gltf");
 
     // gltfLoader.load("gltf/sponza_full/Untitled.gltf");
-    s = gltfLoader.getScene();
+    // s = gltfLoader.getScene();
+    s = new Scene(device);
     s->initSceneData(deferredRenderPass, shadingRenderPass);
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
