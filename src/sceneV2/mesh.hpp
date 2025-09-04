@@ -91,21 +91,7 @@ class Mesh {
     std::vector<Vertex> verticies;
     std::vector<uint32_t> indicies;
 
-    // Chaine things
 
-    struct Triangle {
-        std::array<int32_t, 3> v = { -1, -1, -1 };
-        std::array<int32_t, 3> opposing_triangle = { -1, -1, -1 };
-
-        Mesh *mesh = nullptr;
-
-        Triangle getOposingTriangle(int i);
-    };
-
-    std::vector<uint32_t> triangleOfIndex;
-    std::vector<uint32_t> oposingTriangles;
-
-    Triangle getTriangle(uint32_t triangleIndex);
 
    private:
     std::string name = "";

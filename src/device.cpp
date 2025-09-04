@@ -130,6 +130,7 @@ void setRequiredFeatures10(vkb::PhysicalDeviceSelector &phys_device_selector) {
     required_features.shaderInt64 = true;
     required_features.fillModeNonSolid = true;
     required_features.wideLines = true;
+    required_features.largePoints  = true;
     phys_device_selector.set_required_features(required_features);
 }
 

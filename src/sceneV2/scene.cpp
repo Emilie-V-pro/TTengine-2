@@ -1,7 +1,6 @@
 
 #include "scene.hpp"
 
-
 #include <cstdint>
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
@@ -74,7 +73,6 @@ void Scene::initSceneData(DynamicRenderPass *defferedRenderpass, DynamicRenderPa
     updateRenderPassDescriptorSets();
 }
 
-
 void Scene::renderDeffered(CommandBuffer &cmd, RenderData &renderData) {
     skyboxPipeline.bindPipeline(cmd);
     std::vector<DescriptorSet *> descriptorSets = {&sceneDescriptorSet};
@@ -84,14 +82,18 @@ void Scene::renderDeffered(CommandBuffer &cmd, RenderData &renderData) {
     basicMeshes[Mesh::Cube]->bindMesh(cmd);
     renderData.renderPass->setDepthAndStencil(cmd, false);
 
-    PushConstantStruct tp{objectBuffer.getBufferDeviceAddress(), materialBuffer.getBufferDeviceAddress(), cameraBuffer[renderData.frameIndex].getBufferDeviceAddress(), 0};
-
+    PushConstantStruct tp{
+        objectBuffer.getBufferDeviceAddress(), materialBuffer.getBufferDeviceAddress(),
+        cameraBuffer[renderData.frameIndex].getBufferDeviceAddress(), 0};
+    renderData.pushConstant = tp;
     // // set push_constant for cam_id
     vkCmdPushConstants(cmd, skyboxPipeline.getPipelineLayout(), skyboxPipeline.getPushConstantStage(), 0, sizeof(PushConstantStruct), &tp);
 
+    vkCmdSetCullMode(cmd, VK_CULL_MODE_NONE);
     vkCmdDrawIndexed(
         cmd, basicMeshes[Mesh::Cube]->nbIndicies(), 1, basicMeshes[Mesh::Cube]->getFirstIndex(), basicMeshes[Mesh::Cube]->getFirstVertex(),
         0);
+     vkCmdSetCullMode(cmd, VK_CULL_MODE_BACK_BIT);
     renderData.renderPass->setDepthAndStencil(cmd, true);
     ;
 
@@ -134,16 +136,27 @@ void Scene::renderShading(CommandBuffer &cmd, RenderData &renderData) {
 
     std::vector<DescriptorSet *> descriptorSets = {&deferreDescriptorSet[renderData.swapchainIndex]};
     DescriptorSet::bindDescriptorSet(cmd, descriptorSets, shadingPipeline.getPipelineLayout(), VK_PIPELINE_BIND_POINT_COMPUTE);
-    PushConstantStruct tp{objectBuffer.getBufferDeviceAddress(), materialBuffer.getBufferDeviceAddress(), cameraBuffer[renderData.frameIndex].getBufferDeviceAddress(), 0};
-
+    PushConstantStruct tp{
+        objectBuffer.getBufferDeviceAddress(), materialBuffer.getBufferDeviceAddress(),
+        cameraBuffer[renderData.frameIndex].getBufferDeviceAddress(), 0};
+    renderData.pushConstant = tp;
     // // set push_constant for cam_id
-    vkCmdPushConstants(cmd, shadingPipeline.getPipelineLayout(), shadingPipeline.getPushConstantStage(), 0, sizeof(PushConstantStruct), &tp);
+    vkCmdPushConstants(
+        cmd, shadingPipeline.getPipelineLayout(), shadingPipeline.getPushConstantStage(), 0, sizeof(PushConstantStruct), &tp);
 
     shadingPipeline.dispatch(cmd, renderData.renderPass->getFrameSize().width, renderData.renderPass->getFrameSize().height);
 
     defferedRenderpass->transitionColorAttachment(renderData.swapchainIndex, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, cmd);
     defferedRenderpass->transitionDepthAttachment(renderData.swapchainIndex, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, cmd);
     shadingRenderPass->transitionColorAttachment(renderData.swapchainIndex, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, cmd);
+    
+    shadingRenderPass->setClearEnable(false);
+    shadingRenderPass->beginRenderPass(cmd, renderData.swapchainIndex);
+    for (auto &renderable : renderables) {
+        renderable->render(cmd, renderData);
+    }
+    shadingRenderPass->endRenderPass(cmd);
+    shadingRenderPass->setClearEnable(true);
 }
 
 uint32_t Scene::getNewID() {

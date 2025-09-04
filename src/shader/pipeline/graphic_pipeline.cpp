@@ -1,5 +1,6 @@
 
 #include "graphic_pipeline.hpp"
+#include <vulkan/vulkan_core.h>
 
 
 #include <cstddef>
@@ -87,7 +88,7 @@ void GraphicPipeline::setRasterizerInfo(VkCommandBuffer cmdBuffer) {
     vkCmdSetAlphaToCoverageEnableEXT(cmdBuffer, VK_FALSE);
     vkCmdSetPolygonModeEXT(cmdBuffer, VK_POLYGON_MODE_FILL);
     
-    vkCmdSetCullMode(cmdBuffer, VK_CULL_MODE_NONE);
+    vkCmdSetCullMode(cmdBuffer, VK_CULL_MODE_BACK_BIT);
     vkCmdSetFrontFace(cmdBuffer, VK_FRONT_FACE_COUNTER_CLOCKWISE);
 }
 
