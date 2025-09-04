@@ -2,8 +2,6 @@
 #include "app.hpp"
 
 #include <GLFW/glfw3.h>
-#include <vulkan/vulkan_core.h>
-
 #include <cstdint>
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
@@ -59,7 +57,7 @@ void App::resize(int width, int height) {
 
 void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
     movementController.moveInPlaneXZ(&windowObj, deltaTime, s->getMainCamera());
-    s->updateCameraBuffer();
+    
     if (glfwGetKey(windowObj, GLFW_KEY_P) == GLFW_PRESS) {
         CommandBuffer renderCmdBuffer =
 
@@ -86,6 +84,9 @@ void App::renderDeferredFrame(float deltatTime, CommandBuffer &cmdBuffer, uint32
     r.frameIndex = render_index;
     r.cameraId = 0;
     r.renderPass = shadingRenderPass;
+
+    s->updateCameraBuffer(render_index);
+
     deferredRenderPass->beginRenderPass(cmdBuffer, swapchainIndex);
     s->renderDeffered(cmdBuffer, r);
     deferredRenderPass->endRenderPass(cmdBuffer);

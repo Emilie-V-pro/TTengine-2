@@ -1,6 +1,5 @@
 
 #include "graphic_pipeline.hpp"
-#include <vulkan/vulkan_core.h>
 
 
 #include <cstddef>

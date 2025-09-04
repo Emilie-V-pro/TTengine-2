@@ -108,7 +108,7 @@ class Scene : public Node {
 
     std::vector<Material>& getMaterials() { return materials; }
 
-    void updateCameraBuffer();
+    void updateCameraBuffer(uint32_t frameIndex = 0);
     void updateMaterialBuffer();
     void updateObjectBuffer();
     void updateDescriptorSets();
@@ -138,7 +138,7 @@ class Scene : public Node {
    DynamicRenderPass* defferedRenderpass;
    DynamicRenderPass* shadingRenderPass;
    
-   Buffer cameraBuffer;
+   std::array<Buffer, MAX_FRAMES_IN_FLIGHT> cameraBuffer;
    Buffer materialBuffer;
    Buffer objectBuffer;
 

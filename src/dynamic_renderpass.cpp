@@ -1,7 +1,6 @@
 
 #include "dynamic_renderpass.hpp"
 
-#include <vulkan/vulkan_core.h>
 
 #include <cassert>
 #include <glm/fwd.hpp>

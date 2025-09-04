@@ -1,7 +1,6 @@
 
 #include "scene.hpp"
 
-#include <vulkan/vulkan_core.h>
 
 #include <cstdint>
 #include <glm/fwd.hpp>
@@ -21,6 +20,7 @@
 #include "sceneV2/animatic/skeletonObj.hpp"
 #include "sceneV2/cameraV2.hpp"
 #include "sceneV2/mesh.hpp"
+#include "sceneV2/render_data.hpp"
 #include "shader/pipeline/compute_pipeline.hpp"
 #include "struct.hpp"
 
@@ -73,13 +73,7 @@ void Scene::initSceneData(DynamicRenderPass *defferedRenderpass, DynamicRenderPa
     updateDescriptorSets();
     updateRenderPassDescriptorSets();
 }
-#pragma pack(1)
-struct testPush {
-    VkDeviceAddress objBuffer;
-    VkDeviceAddress matBuffer;
-    VkDeviceAddress camBuffer;
-    uint32_t camid;
-};
+
 
 void Scene::renderDeffered(CommandBuffer &cmd, RenderData &renderData) {
     skyboxPipeline.bindPipeline(cmd);
@@ -90,10 +84,10 @@ void Scene::renderDeffered(CommandBuffer &cmd, RenderData &renderData) {
     basicMeshes[Mesh::Cube]->bindMesh(cmd);
     renderData.renderPass->setDepthAndStencil(cmd, false);
 
-    testPush tp{objectBuffer.getBufferDeviceAddress(), materialBuffer.getBufferDeviceAddress(), cameraBuffer.getBufferDeviceAddress(), 0};
+    PushConstantStruct tp{objectBuffer.getBufferDeviceAddress(), materialBuffer.getBufferDeviceAddress(), cameraBuffer[renderData.frameIndex].getBufferDeviceAddress(), 0};
 
     // // set push_constant for cam_id
-    vkCmdPushConstants(cmd, skyboxPipeline.getPipelineLayout(), skyboxPipeline.getPushConstantStage(), 0, sizeof(testPush), &tp);
+    vkCmdPushConstants(cmd, skyboxPipeline.getPipelineLayout(), skyboxPipeline.getPushConstantStage(), 0, sizeof(PushConstantStruct), &tp);
 
     vkCmdDrawIndexed(
         cmd, basicMeshes[Mesh::Cube]->nbIndicies(), 1, basicMeshes[Mesh::Cube]->getFirstIndex(), basicMeshes[Mesh::Cube]->getFirstVertex(),
@@ -140,10 +134,10 @@ void Scene::renderShading(CommandBuffer &cmd, RenderData &renderData) {
 
     std::vector<DescriptorSet *> descriptorSets = {&deferreDescriptorSet[renderData.swapchainIndex]};
     DescriptorSet::bindDescriptorSet(cmd, descriptorSets, shadingPipeline.getPipelineLayout(), VK_PIPELINE_BIND_POINT_COMPUTE);
-    testPush tp{objectBuffer.getBufferDeviceAddress(), materialBuffer.getBufferDeviceAddress(), cameraBuffer.getBufferDeviceAddress(), 0};
+    PushConstantStruct tp{objectBuffer.getBufferDeviceAddress(), materialBuffer.getBufferDeviceAddress(), cameraBuffer[renderData.frameIndex].getBufferDeviceAddress(), 0};
 
     // // set push_constant for cam_id
-    vkCmdPushConstants(cmd, shadingPipeline.getPipelineLayout(), shadingPipeline.getPushConstantStage(), 0, sizeof(testPush), &tp);
+    vkCmdPushConstants(cmd, shadingPipeline.getPipelineLayout(), shadingPipeline.getPushConstantStage(), 0, sizeof(PushConstantStruct), &tp);
 
     shadingPipeline.dispatch(cmd, renderData.renderPass->getFrameSize().width, renderData.renderPass->getFrameSize().height);
 
@@ -270,11 +264,11 @@ void Scene::updateFromInput(Window *window, float dt) {
     }
 }
 
-void Scene::updateCameraBuffer() {
+void Scene::updateCameraBuffer(uint32_t frameIndex) {
     if (cameras.size() == 0) return;
 
-    if (cameraBuffer.getInstancesCount() < cameras.size()) {
-        cameraBuffer = Buffer(device, sizeof(Ubo), 20, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
+    if (cameraBuffer[frameIndex].getInstancesCount() < cameras.size()) {
+        cameraBuffer[frameIndex] = Buffer(device, sizeof(Ubo), 20, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
     }
     std::vector<Ubo> ubos;
 
@@ -286,7 +280,7 @@ void Scene::updateCameraBuffer() {
         ubos.push_back(ubo);
     }
 
-    cameraBuffer.writeToBuffer(ubos.data(), sizeof(Ubo) * ubos.size());
+    cameraBuffer[frameIndex].writeToBuffer(ubos.data(), sizeof(Ubo) * ubos.size());
 }
 
 struct Object_data {

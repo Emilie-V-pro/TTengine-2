@@ -6,8 +6,6 @@
 
 
 #include <cstdint>
-#include <cstdio>
-#include <iostream>
 #include <vector>
 
 #include "synchronisation/fence.hpp"

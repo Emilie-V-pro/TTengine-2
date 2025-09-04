@@ -1,7 +1,7 @@
 
 #include "GPU_data/image.hpp"
 
-#include <vulkan/vulkan_core.h>
+
 
 #include <cstdint>
 #include <fstream>

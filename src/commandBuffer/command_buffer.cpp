@@ -1,7 +1,6 @@
 
 #include "command_buffer.hpp"
 
-#include <vulkan/vulkan_core.h>
 
 #include <cstdint>
 #include <iostream>
