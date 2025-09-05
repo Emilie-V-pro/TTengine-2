@@ -33,6 +33,7 @@ Scene::Scene(Device *device) : device(device) {
 Scene::~Scene() {}
 
 void Scene::initSceneData(DynamicRenderPass *defferedRenderpass, DynamicRenderPass *shadingRenderPass, std::filesystem::path skyboxPath) {
+    
     this->defferedRenderpass = defferedRenderpass;
     this->shadingRenderPass = shadingRenderPass;
     ImageCreateInfo skyboxImageCreateInfo;
@@ -52,9 +53,9 @@ void Scene::initSceneData(DynamicRenderPass *defferedRenderpass, DynamicRenderPa
     addStaticMesh(cubeMesh);
     basicMeshes[Mesh::BasicShape::Cube] = &meshes.at(nb_meshes - 1);
 
-    // Mesh sphereMesh(device, Mesh::BasicShape::Sphere, 1);
-    // addStaticMesh(sphereMesh);
-    // basicMeshes[Mesh::BasicShape::Sphere] = &meshes.back();
+    Mesh sphereMesh(device, Mesh::BasicShape::Sphere, 1);
+    addStaticMesh(sphereMesh);
+    basicMeshes[Mesh::BasicShape::Sphere] = &meshes.at(nb_meshes - 1);
 
     // Mesh planeMesh(device, Mesh::BasicShape::Plane, 1);
     // addStaticMesh(planeMesh);
@@ -74,6 +75,7 @@ void Scene::initSceneData(DynamicRenderPass *defferedRenderpass, DynamicRenderPa
 }
 
 void Scene::renderDeffered(CommandBuffer &cmd, RenderData &renderData) {
+    renderData.basicMeshes = basicMeshes;
     skyboxPipeline.bindPipeline(cmd);
     std::vector<DescriptorSet *> descriptorSets = {&sceneDescriptorSet};
 
@@ -129,6 +131,7 @@ void Scene::renderDeffered(CommandBuffer &cmd, RenderData &renderData) {
 }
 
 void Scene::renderShading(CommandBuffer &cmd, RenderData &renderData) {
+    renderData.basicMeshes = basicMeshes;
     defferedRenderpass->transitionAttachment(renderData.swapchainIndex, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, cmd);
     shadingRenderPass->transitionColorAttachment(renderData.swapchainIndex, VK_IMAGE_LAYOUT_GENERAL, cmd);
 

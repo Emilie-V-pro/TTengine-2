@@ -181,7 +181,7 @@ void Engine::renderLoop(Engine &engine) {
         ImGui_ImplGlfw_NewFrame();
 
         ImGui::NewFrame();
-        ImGui::ShowDemoWindow();
+        // ImGui::ShowDemoWindow();
 
         // DEFERRED RENDERING
 
