@@ -53,9 +53,9 @@ void Scene::initSceneData(DynamicRenderPass *defferedRenderpass, DynamicRenderPa
     addStaticMesh(cubeMesh);
     basicMeshes[Mesh::BasicShape::Cube] = &meshes.at(nb_meshes - 1);
 
-    // Mesh sphereMesh(device, Mesh::BasicShape::Sphere, 1);
-    // addStaticMesh(sphereMesh);
-    // basicMeshes[Mesh::BasicShape::Sphere] = &meshes.at(nb_meshes - 1);
+    Mesh sphereMesh(device, Mesh::BasicShape::Sphere, 1);
+    addStaticMesh(sphereMesh);
+    basicMeshes[Mesh::BasicShape::Sphere] = &meshes.at(nb_meshes - 1);
 
     // Mesh planeMesh(device, Mesh::BasicShape::Plane, 1);
     // addStaticMesh(planeMesh);
