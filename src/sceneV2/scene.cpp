@@ -53,9 +53,9 @@ void Scene::initSceneData(DynamicRenderPass *defferedRenderpass, DynamicRenderPa
     addStaticMesh(cubeMesh);
     basicMeshes[Mesh::BasicShape::Cube] = &meshes.at(nb_meshes - 1);
 
-    Mesh sphereMesh(device, Mesh::BasicShape::Sphere, 1);
-    addStaticMesh(sphereMesh);
-    basicMeshes[Mesh::BasicShape::Sphere] = &meshes.at(nb_meshes - 1);
+    // Mesh sphereMesh(device, Mesh::BasicShape::Sphere, 1);
+    // addStaticMesh(sphereMesh);
+    // basicMeshes[Mesh::BasicShape::Sphere] = &meshes.at(nb_meshes - 1);
 
     // Mesh planeMesh(device, Mesh::BasicShape::Plane, 1);
     // addStaticMesh(planeMesh);
@@ -123,7 +123,7 @@ void Scene::renderDeffered(CommandBuffer &cmd, RenderData &renderData) {
         cmd, drawIndirectBuffers[renderData.frameIndex], 0, countIndirectBuffers[renderData.frameIndex], 0, drawcount,
         sizeof(VkDrawIndexedIndirectCommand));
 
-    for (auto &renderable : indirectRenderables) {
+    for (auto &renderable : renderables) {
         renderable->render(cmd, renderData);
     }
 

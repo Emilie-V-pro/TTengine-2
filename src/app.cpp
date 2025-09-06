@@ -24,10 +24,10 @@ void App::init(Device *device, DynamicRenderPass *deferredRenderPass, DynamicRen
 
     GLTFLoader gltfLoader(device);
     // gltfLoader.load("gltf/ABeautifulGame/glTF/ABeautifulGame.gltf");
-    // gltfLoader.load("gltf/game2/Untitled.gltf");
     auto start = std::chrono::high_resolution_clock::now();
+    gltfLoader.load("gltf/lucy.glb");
 
-    gltfLoader.load("gltf/Sponza/glTF/Sponza.gltf");
+    // gltfLoader.load("gltf/Sponza/glTF/Sponza.gltf");
 
     // gltfLoader.load("gltf/robot/robot.glb");
     s = gltfLoader.getScene();
