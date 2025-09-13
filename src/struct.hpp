@@ -84,52 +84,52 @@ struct SceneHit{
 
 class Watchedvec3 {
    public:
-    glm::vec3 value;
+    glm::dvec3 value;
     std::function<void()> onChanged;
 
     Watchedvec3() = default;
-    Watchedvec3(const glm::vec3& v) : value(v) {}
+    Watchedvec3(const glm::dvec3& v) : value(v) {}
 
-    Watchedvec3& operator=(const glm::vec3& v) {
+    Watchedvec3& operator=(const glm::dvec3& v) {
         value = v;
         if (onChanged) onChanged();
         return *this;
     }
 
-    Watchedvec3(const glm::vec3&& v) : value(v) {}
+    Watchedvec3(const glm::dvec3&& v) : value(v) {}
 
-    Watchedvec3& operator=(const glm::vec3&& v) {
+    Watchedvec3& operator=(const glm::dvec3&& v) {
         value = v;
         if (onChanged) onChanged();
         return *this;
     }
 
     // access to value with .
-    glm::vec3* operator->() { return &value; }
-    const glm::vec3* operator->() const { return &value; }
+    glm::dvec3* operator->() { return &value; }
+    const glm::dvec3* operator->() const { return &value; }
 
-    operator glm::vec3&() { return value; }
-    operator const glm::vec3&() const { return value; }
+    operator glm::dvec3&() { return value; }
+    operator const glm::dvec3&() const { return value; }
 
-    Watchedvec3& operator+=(const glm::vec3& v) {
+    Watchedvec3& operator+=(const glm::dvec3& v) {
         value += v;
         if (onChanged) onChanged();
         return *this;
     }
 
-    Watchedvec3& operator-=(const glm::vec3& v) {
+    Watchedvec3& operator-=(const glm::dvec3& v) {
         value -= v;
         if (onChanged) onChanged();
         return *this;
     }
 
-    Watchedvec3& operator*=(const glm::vec3& v) {
+    Watchedvec3& operator*=(const glm::dvec3& v) {
         value *= v;
         if (onChanged) onChanged();
         return *this;
     }
 
-    Watchedvec3& operator/=(const glm::vec3& v) {
+    Watchedvec3& operator/=(const glm::dvec3& v) {
         value /= v;
         if (onChanged) onChanged();
         return *this;
@@ -159,37 +159,37 @@ class Watchedvec3 {
         return *this;
     }
 
-    friend glm::vec3 operator+(Watchedvec3 lhs, const glm::vec3& rhs) { return lhs.value + rhs; }
+    friend glm::dvec3 operator+(Watchedvec3 lhs, const glm::dvec3& rhs) { return lhs.value + rhs; }
 
-    friend glm::vec3 operator-(Watchedvec3 lhs, const glm::vec3& rhs) { return lhs.value - rhs; }
+    friend glm::dvec3 operator-(Watchedvec3 lhs, const glm::dvec3& rhs) { return lhs.value - rhs; }
 
-    friend glm::vec3 operator*(Watchedvec3 lhs, const glm::vec3& rhs) { return lhs.value * rhs; }
+    friend glm::dvec3 operator*(Watchedvec3 lhs, const glm::dvec3& rhs) { return lhs.value * rhs; }
 
-    friend glm::vec3 operator/(Watchedvec3 lhs, const glm::vec3& rhs) { return lhs.value / rhs; }
+    friend glm::dvec3 operator/(Watchedvec3 lhs, const glm::dvec3& rhs) { return lhs.value / rhs; }
 
-    friend glm::vec3 operator+(Watchedvec3 lhs, float rhs) { return lhs.value + rhs; }
+    friend glm::dvec3 operator+(Watchedvec3 lhs, double rhs) { return lhs.value + rhs; }
 
-    friend glm::vec3 operator-(Watchedvec3 lhs, float rhs) { return lhs.value - rhs; }
+    friend glm::dvec3 operator-(Watchedvec3 lhs, double rhs) { return lhs.value - rhs; }
 
-    friend glm::vec3 operator*(Watchedvec3 lhs, float rhs) { return lhs.value * rhs; }
+    friend glm::dvec3 operator*(Watchedvec3 lhs, double rhs) { return lhs.value * rhs; }
 
-    friend glm::vec3 operator/(Watchedvec3 lhs, float rhs) { return lhs.value / rhs; }
+    friend glm::dvec3 operator/(Watchedvec3 lhs, double rhs) { return lhs.value / rhs; }
 
-    friend glm::vec3 operator+(float lhs, Watchedvec3 rhs) { return lhs + rhs.value; }
+    friend glm::dvec3 operator+(double lhs, Watchedvec3 rhs) { return lhs + rhs.value; }
 
-    friend glm::vec3 operator-(float lhs, Watchedvec3 rhs) { return lhs - rhs.value; }
+    friend glm::dvec3 operator-(double lhs, Watchedvec3 rhs) { return lhs - rhs.value; }
 
-    friend glm::vec3 operator*(float lhs, Watchedvec3 rhs) { return lhs * rhs.value; }
+    friend glm::dvec3 operator*(double lhs, Watchedvec3 rhs) { return lhs * rhs.value; }
 
-    friend glm::vec3 operator/(float lhs, Watchedvec3 rhs) { return lhs / rhs.value; }
+    friend glm::dvec3 operator/(double lhs, Watchedvec3 rhs) { return lhs / rhs.value; }
 
-    friend bool operator==(const Watchedvec3& lhs, const glm::vec3& rhs) { return lhs.value == rhs; }
+    friend bool operator==(const Watchedvec3& lhs, const glm::dvec3& rhs) { return lhs.value == rhs; }
 };
 
 struct TransformComponent {
-    Watchedvec3 pos{glm::vec3(0.0f)};
-    Watchedvec3 rot{glm::vec3(0.0f)};
-    Watchedvec3 scale{glm::vec3(1.0f)};
+    Watchedvec3 pos{glm::dvec3(0.0f)};
+    Watchedvec3 rot{glm::dvec3(0.0f)};
+    Watchedvec3 scale{glm::dvec3(1.0f)};
 };
 
 }  // namespace TTe

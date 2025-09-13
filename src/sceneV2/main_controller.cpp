@@ -4,6 +4,7 @@
 
 // std
 #include <cstdio>
+#include <glm/fwd.hpp>
 #include <glm/gtc/constants.hpp>
 #include <limits>
 #include <memory>
@@ -28,15 +29,15 @@ void MainController::moveInPlaneXZ(Window* window, float dt, std::shared_ptr<Cam
     window->mouseMove = glm::vec3(0);
     
     // limit pitch values between about +/- 85ish degrees
-    cam->transform.rot->x = glm::clamp(cam->transform.rot->x, -1.5f, 1.5f);
-    cam->transform.rot->y = glm::mod(cam->transform.rot->y, glm::two_pi<float>());
+    cam->transform.rot->x = glm::clamp(float(cam->transform.rot->x), -1.5f, 1.5f);
+    cam->transform.rot->y = glm::mod(float(cam->transform.rot->y), glm::two_pi<float>());
 
     float yaw = cam->transform.rot->y;
-    const glm::vec3 forwardDir{sin(yaw), 0.f, cos(yaw)};
-    const glm::vec3 rightDir{forwardDir.z, 0.f, -forwardDir.x};
-    const glm::vec3 upDir{0.f, 1.f, 0.f};
+    const glm::dvec3 forwardDir{sin(yaw), 0.f, cos(yaw)};
+    const glm::dvec3 rightDir{forwardDir.z, 0.f, -forwardDir.x};
+    const glm::dvec3 upDir{0.f, 1.f, 0.f};
 
-    glm::vec3 moveDir{0.f};
+    glm::dvec3 moveDir{0.f};
     if (glfwGetKey(*window, keys.moveForward) == GLFW_PRESS) moveDir += forwardDir;
     if (glfwGetKey(*window, keys.moveBackward) == GLFW_PRESS) moveDir -= forwardDir;
     if (glfwGetKey(*window, keys.moveRight) == GLFW_PRESS) moveDir -= rightDir;
@@ -51,7 +52,7 @@ void MainController::moveInPlaneXZ(Window* window, float dt, std::shared_ptr<Cam
     }
 
     if (glm::dot(moveDir, moveDir) > std::numeric_limits<float>::epsilon()) {
-        cam->transform.pos += moveSpeed * dt * glm::normalize(moveDir);
+        cam->transform.pos += moveSpeed * double(dt) * glm::normalize(moveDir);
         // std::cout << moveSpeed * dt << "\n";
     }
 
@@ -107,8 +108,6 @@ void MainController::mouseButtonCallback(GLFWwindow* window, int button, int act
         
         }
 
-    }else {
-        printf("gneu") ;
     }
 }  // namespace TTe
 

@@ -6,6 +6,7 @@
 #include <glm/geometric.hpp>
 #include <glm/gtc/matrix_access.hpp>
 #include <glm/matrix.hpp>
+#include <memory>
 #include <vector>
 
 #include "GPU_data/buffer.hpp"
@@ -18,6 +19,7 @@
 #include "sceneV2/Icollider.hpp"
 #include "sceneV2/animatic/skeletonObj.hpp"
 #include "sceneV2/cameraV2.hpp"
+#include "sceneV2/light.hpp"
 #include "sceneV2/mesh.hpp"
 #include "sceneV2/render_data.hpp"
 #include "shader/pipeline/compute_pipeline.hpp"
@@ -33,7 +35,6 @@ Scene::Scene(Device *device) : device(device) {
 Scene::~Scene() {}
 
 void Scene::initSceneData(DynamicRenderPass *defferedRenderpass, DynamicRenderPass *shadingRenderPass, std::filesystem::path skyboxPath) {
-    
     this->defferedRenderpass = defferedRenderpass;
     this->shadingRenderPass = shadingRenderPass;
     ImageCreateInfo skyboxImageCreateInfo;
@@ -70,12 +71,14 @@ void Scene::initSceneData(DynamicRenderPass *defferedRenderpass, DynamicRenderPa
     updateCameraBuffer();
     updateObjectBuffer();
     updateMaterialBuffer();
+    updateLightBuffer();
     updateDescriptorSets();
     updateRenderPassDescriptorSets();
 }
 
 void Scene::renderDeffered(CommandBuffer &cmd, RenderData &renderData) {
     renderData.basicMeshes = basicMeshes;
+    renderData.cameras = &cameras;
     skyboxPipeline.bindPipeline(cmd);
     std::vector<DescriptorSet *> descriptorSets = {&sceneDescriptorSet};
 
@@ -86,7 +89,7 @@ void Scene::renderDeffered(CommandBuffer &cmd, RenderData &renderData) {
 
     PushConstantStruct tp{
         objectBuffer.getBufferDeviceAddress(), materialBuffer.getBufferDeviceAddress(),
-        cameraBuffer[renderData.frameIndex].getBufferDeviceAddress(), 0};
+        cameraBuffer[renderData.frameIndex].getBufferDeviceAddress(), lightBuffer.getBufferDeviceAddress(), 0, static_cast<uint32_t>(lightObjects.size())};
     renderData.pushConstant = tp;
     // // set push_constant for cam_id
     vkCmdPushConstants(cmd, skyboxPipeline.getPipelineLayout(), skyboxPipeline.getPushConstantStage(), 0, sizeof(PushConstantStruct), &tp);
@@ -95,7 +98,7 @@ void Scene::renderDeffered(CommandBuffer &cmd, RenderData &renderData) {
     vkCmdDrawIndexed(
         cmd, basicMeshes[Mesh::Cube]->nbIndicies(), 1, basicMeshes[Mesh::Cube]->getFirstIndex(), basicMeshes[Mesh::Cube]->getFirstVertex(),
         0);
-     vkCmdSetCullMode(cmd, VK_CULL_MODE_BACK_BIT);
+    vkCmdSetCullMode(cmd, VK_CULL_MODE_BACK_BIT);
     renderData.renderPass->setDepthAndStencil(cmd, true);
     ;
 
@@ -132,6 +135,7 @@ void Scene::renderDeffered(CommandBuffer &cmd, RenderData &renderData) {
 
 void Scene::renderShading(CommandBuffer &cmd, RenderData &renderData) {
     renderData.basicMeshes = basicMeshes;
+    renderData.cameras = &cameras;
     defferedRenderpass->transitionAttachment(renderData.swapchainIndex, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, cmd);
     shadingRenderPass->transitionColorAttachment(renderData.swapchainIndex, VK_IMAGE_LAYOUT_GENERAL, cmd);
 
@@ -141,7 +145,7 @@ void Scene::renderShading(CommandBuffer &cmd, RenderData &renderData) {
     DescriptorSet::bindDescriptorSet(cmd, descriptorSets, shadingPipeline.getPipelineLayout(), VK_PIPELINE_BIND_POINT_COMPUTE);
     PushConstantStruct tp{
         objectBuffer.getBufferDeviceAddress(), materialBuffer.getBufferDeviceAddress(),
-        cameraBuffer[renderData.frameIndex].getBufferDeviceAddress(), 0};
+        cameraBuffer[renderData.frameIndex].getBufferDeviceAddress(), lightBuffer.getBufferDeviceAddress(), 0, static_cast<uint32_t>(lightObjects.size())};
     renderData.pushConstant = tp;
     // // set push_constant for cam_id
     vkCmdPushConstants(
@@ -152,7 +156,7 @@ void Scene::renderShading(CommandBuffer &cmd, RenderData &renderData) {
     defferedRenderpass->transitionColorAttachment(renderData.swapchainIndex, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, cmd);
     defferedRenderpass->transitionDepthAttachment(renderData.swapchainIndex, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, cmd);
     shadingRenderPass->transitionColorAttachment(renderData.swapchainIndex, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, cmd);
-    
+
     shadingRenderPass->setClearEnable(false);
     shadingRenderPass->beginRenderPass(cmd, renderData.swapchainIndex);
     for (auto &renderable : renderables) {
@@ -199,6 +203,11 @@ uint32_t Scene::addNode(uint32_t Parent_id, std::shared_ptr<Node> node) {
     if (dynamic_cast<IInputController *>(node.get())) {
         controlledObjects.push_back(std::dynamic_pointer_cast<IInputController>(node));
     }
+
+    if (dynamic_cast<Light *>(node.get())) {
+        lightObjects.push_back(std::dynamic_pointer_cast<Light>(node));
+    }
+    
 
     if (Parent_id == -1) {
         this->addChild(node);
@@ -259,7 +268,7 @@ uint32_t Scene::addImage(Image &image) {
 void Scene::createDrawIndirectBuffers() {
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         drawIndirectBuffers[i] = Buffer(
-            device, sizeof(VkDrawIndexedIndirectCommand), 10000, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+            device, sizeof(VkDrawIndexedIndirectCommand), 100000, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
             Buffer::BufferType::DYNAMIC);
 
         countIndirectBuffers[i] = Buffer(
@@ -323,6 +332,39 @@ void Scene::updateObjectBuffer() {
             objectBuffer.writeToBuffer(&data, sizeof(Object_data), sizeof(Object_data) * obj.second->getId());
             obj.second->uploadedToGPU = true;
         }
+    }
+}
+
+void Scene::updateLightBuffer() {
+    if(lightObjects.size() == 0){
+        Light l;
+        l.color = glm::vec3(0);
+        l.intensity = 0;
+        l.type = Light::POINT;
+        addNode(-1, std::make_shared<Light>(l));
+    }
+
+    if (lightBuffer.getInstancesCount() < lightObjects.size()) {
+        lightBuffer = Buffer(
+            device, sizeof(LightGPU), lightObjects.size() * 2, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, Buffer::BufferType::DYNAMIC);
+
+        for (auto &light : lightObjects) {
+            light->uploadedToGPU = false;
+        }
+    }
+    int i = 0;
+    for (auto &light : lightObjects) {
+
+        if (!light->uploadedToGPU) {
+            LightGPU l;
+            l.color = glm::vec4(light->color, light->intensity);
+            l.pos = light->wMatrix() * glm::vec4(0, 0, 0, 1);
+            l.orienation = light->getParent()->wNormalMatrix() * light->transform.rot.value;
+            l.Type = light->type;
+            light->uploadedToGPU = true;
+            lightBuffer.writeToBuffer(&l, sizeof(LightGPU), sizeof(LightGPU) * i);
+        }
+        i++;
     }
 }
 

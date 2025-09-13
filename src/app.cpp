@@ -2,13 +2,17 @@
 #include "app.hpp"
 
 #include <GLFW/glfw3.h>
+
 #include <cstdint>
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
+#include <memory>
+#include <random>
 
 #include "commandBuffer/commandPool_handler.hpp"
 #include "device.hpp"
 #include "dynamic_renderpass.hpp"
+#include "sceneV2/light.hpp"
 #include "sceneV2/loader/gltf_loader.hpp"
 #include "sceneV2/main_controller.hpp"
 #include "sceneV2/render_data.hpp"
@@ -25,9 +29,9 @@ void App::init(Device *device, DynamicRenderPass *deferredRenderPass, DynamicRen
     GLTFLoader gltfLoader(device);
     // gltfLoader.load("gltf/ABeautifulGame/glTF/ABeautifulGame.gltf");
     auto start = std::chrono::high_resolution_clock::now();
-    gltfLoader.load("gltf/lucy.glb");
-
     // gltfLoader.load("gltf/Sponza/glTF/Sponza.gltf");
+
+    gltfLoader.load("gltf/mc/mc.gltf");
 
     // gltfLoader.load("gltf/robot/robot.glb");
     s = gltfLoader.getScene();
@@ -36,6 +40,22 @@ void App::init(Device *device, DynamicRenderPass *deferredRenderPass, DynamicRen
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     printf("Load gltf time: %ld ms\n", duration);
+
+    std::default_random_engine gen;
+    std::uniform_real_distribution<double> distribution(-200.0, 200.0);
+    std::uniform_real_distribution<double> distribution2(0.0, 50.0);
+    std::uniform_real_distribution<double> distribution3(0.0, 1.0);
+
+
+    for (int i = 0; i < 256; i++) {
+        Light l;
+        l.type = Light::POINT;
+        l.transform.pos = glm::vec3{distribution(gen),distribution2(gen),distribution(gen) };
+        l.color = glm::vec3{distribution3(gen),distribution3(gen),distribution3(gen) };
+        l.intensity = 100.f;
+        s->addNode(-1, std::make_shared<Light>(l));
+    }
+    s->updateLightBuffer();
 
     // movementController.setCursors(window);
 
@@ -57,7 +77,7 @@ void App::resize(int width, int height) {
 
 void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
     movementController.moveInPlaneXZ(&windowObj, deltaTime, s->getMainCamera());
-    
+
     if (glfwGetKey(windowObj, GLFW_KEY_P) == GLFW_PRESS) {
         CommandBuffer renderCmdBuffer =
 

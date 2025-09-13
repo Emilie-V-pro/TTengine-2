@@ -76,8 +76,8 @@ target_link_libraries(imgui PUBLIC
 target_link_libraries(TTengine PUBLIC
     glfw
     Vulkan::Vulkan
-    glslang
-    glslang-default-resource-limits
+    glslang::SPIRV glslang::glslang
+    glslang::glslang-default-resource-limits
     volk
     vk-bootstrap::vk-bootstrap
     spirv-cross-cpp

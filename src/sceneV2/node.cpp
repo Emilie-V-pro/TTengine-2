@@ -57,7 +57,7 @@ Node &Node::operator=(const Node &other) {
     }
 
 glm::mat4 Node::wMatrix() {
-    mtx.lock();
+    // mtx.lock();
     if (dirty) {
         glm::mat4 scaleMatrix = glm::scale(transform.scale.value);
         glm::mat4 translationMatrix = glm::translate(transform.pos.value);
@@ -68,7 +68,7 @@ glm::mat4 Node::wMatrix() {
         dirty = false;
         // mtx.unlock();
     }
-    mtx.unlock();
+    // mtx.unlock();
     return worldMatrix;
 }
 
@@ -82,15 +82,15 @@ glm::mat3 Node::wNormalMatrix() {
 }
 
 void Node::setDirty() {
-    if (mtx.try_lock()) {
+    // if (mtx.try_lock()) {
         dirty = true;
         normalDirty = true;
         uploadedToGPU = false;
         for (auto &child : children) {
             child->setDirty();
         }
-        mtx.unlock();
-    }
+    //     mtx.unlock();
+    // }
 }
 
 Node *Node::getParent() const { return parent; }

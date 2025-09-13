@@ -20,6 +20,7 @@
 #include "sceneV2/Ianimatic.hpp"
 #include "sceneV2/Icollider.hpp"
 #include "sceneV2/animatic/skeletonObj.hpp"
+#include "sceneV2/light.hpp"
 #include "sceneV2/loader/gltf_loader.hpp"
 #include "sceneV2/mesh.hpp"
 #include "sceneV2/IRenderable.hpp"
@@ -111,6 +112,7 @@ class Scene : public Node {
     void updateCameraBuffer(uint32_t frameIndex = 0);
     void updateMaterialBuffer();
     void updateObjectBuffer();
+    void updateLightBuffer();
     void updateDescriptorSets();
     void updateRenderPassDescriptorSets();
     
@@ -141,6 +143,7 @@ class Scene : public Node {
    std::array<Buffer, MAX_FRAMES_IN_FLIGHT> cameraBuffer;
    Buffer materialBuffer;
    Buffer objectBuffer;
+   Buffer lightBuffer;
 
 
    std::array<Buffer, MAX_FRAMES_IN_FLIGHT> drawIndirectBuffers;
@@ -152,6 +155,7 @@ class Scene : public Node {
    std::vector<std::shared_ptr<IRenderable>> renderables;
    std::vector<std::shared_ptr<IIndirectRenderable>> indirectRenderables;
    std::vector<std::shared_ptr<ICollider>> collisionObjects;
+   std::vector<std::shared_ptr<Light>> lightObjects;
    std::vector<std::shared_ptr<IInputController>> controlledObjects;
 
    

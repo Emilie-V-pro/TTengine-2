@@ -3,10 +3,5 @@
 
 namespace TTe {
 
-Light::Light() {
-}
-
-Light::~Light() {
-}
 
 }

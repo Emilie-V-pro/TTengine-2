@@ -49,6 +49,8 @@ Mesh::Mesh(
 }
 
 
+
+
 void Mesh::split(uint32_t index, uint32_t count, uint32_t bvh_index, uint32_t depth) {
     // compute bounding box
     glm::vec3 pmin = verticies[indicies[index] ].pos;
@@ -59,7 +61,8 @@ void Mesh::split(uint32_t index, uint32_t count, uint32_t bvh_index, uint32_t de
     }
     bvh[bvh_index].bbox.pmin = pmin;
     bvh[bvh_index].bbox.pmax = pmax;
-
+    bvh[bvh_index].indicies_index = index;
+    bvh[bvh_index].nbTriangleToDraw = count/3;
     // leaf
     if (count < (20 * 3) || depth > 32) {
         bvh[bvh_index].nbTriangle = count;
@@ -169,6 +172,7 @@ SceneHit Mesh::hit(glm::vec3& ro, glm::vec3& rd) {
     while (!bvh_stack.empty()) {
         uint32_t index = bvh_stack.top();
         bvh_stack.pop();
+        
 
         // if leaf
         if (bvh[index].nbTriangle != 0) {

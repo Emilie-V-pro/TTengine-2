@@ -29,7 +29,7 @@ glm::mat4 CameraV2::getViewMatrix() {
 
     // Position cible en fonction de la direction
     glm::vec3 target = transform.pos + forward;
-    glm::vec3 origin = transform.pos;
+    glm::vec3 origin = transform.pos.value;
     
     if (parent){
         origin += parent->transform.pos.value;

@@ -34,9 +34,18 @@ struct Object_data {
     vec3 padding;
 };
 
+struct Light{
+    vec4 color;
+    vec3 pos;
+    uint Type;
+    vec3 orienation;
+    uint offset;
+};
+
 layout(buffer_reference, std430) readonly buffer ObjectBuffer { Object_data data[]; };
 layout(buffer_reference, std430) readonly buffer MaterialBuffer { Material data[]; };
 layout(buffer_reference, std430) readonly buffer CameraBuffer { Camera_data data[]; };
+layout(buffer_reference, std430) readonly buffer LightBuffer { Light data[]; };
 
 layout(set = 0, binding = 0) uniform sampler2D textures[1000];
 
@@ -46,7 +55,9 @@ layout(push_constant) uniform constants {
     ObjectBuffer objBuffer;
     MaterialBuffer matBuffer;
     CameraBuffer camBuffer;
+    LightBuffer lightBuffer;
     uint camera_id;
+    uint nbLight;
 }pc;
 
 

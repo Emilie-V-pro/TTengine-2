@@ -91,12 +91,6 @@ class Mesh {
     std::vector<Vertex> verticies;
     std::vector<uint32_t> indicies;
 
-
-
-   private:
-    std::string name = "";
-
-    // BVH
     struct BVH_mesh {
         enum struct SplitAxe { X_SPLIT, Y_SPLIT, Z_SPLIT };
 
@@ -104,17 +98,19 @@ class Mesh {
 
         uint32_t index = 0;  // for child index and indicies index
         uint32_t nbTriangle = 0;
+
+        uint32_t indicies_index = 0;
+        uint32_t nbTriangleToDraw = 0;
     };
 
     std::vector<BVH_mesh> bvh;
 
+   private:
+    std::string name = "";
+
+    // BVH
+
     void split(uint32_t index, uint32_t count, uint32_t bvh_index, uint32_t depth = 0);
-
-    
-
-    
-
-    
 
     // Storage data
     Buffer vertexBuffer;
