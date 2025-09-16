@@ -132,6 +132,6 @@ void main() {
 
 
     albedo_mettalic = vec4(textColor.rgb, metalRoughness.r);
-    normal_roughness = vec4((surfaceNormal/2.+0.5), metalRoughness.g);
+    normal_roughness = vec4((surfaceNormal)*0.5 + 0.5, metalRoughness.g);
 
 }

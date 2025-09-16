@@ -29,9 +29,9 @@ void App::init(Device *device, DynamicRenderPass *deferredRenderPass, DynamicRen
     GLTFLoader gltfLoader(device);
     // gltfLoader.load("gltf/ABeautifulGame/glTF/ABeautifulGame.gltf");
     auto start = std::chrono::high_resolution_clock::now();
-    // gltfLoader.load("gltf/Sponza/glTF/Sponza.gltf");
+    gltfLoader.load("gltf/Sponza/glTF/Sponza.gltf");
 
-    gltfLoader.load("gltf/mc/mc.gltf");
+    // gltfLoader.load("gltf/mc/mc.gltf");
 
     // gltfLoader.load("gltf/robot/robot.glb");
     s = gltfLoader.getScene();
@@ -85,11 +85,12 @@ void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
         renderCmdBuffer.beginCommandBuffer();
 
         DynamicRenderPass temp =
-            DynamicRenderPass(device, {4096, 4096}, {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_SNORM}, 1, DEPTH, nullptr, nullptr);
+            DynamicRenderPass(device, {4096, 4096}, {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM}, 1, DEPTH, nullptr, nullptr);
         RenderData r;
         r.frameIndex = 0;
         r.cameraId = 0;
         r.renderPass = &temp;
+        // s->getMainCamera()->extent = {1,1};
         temp.beginRenderPass(renderCmdBuffer, 0);
         s->renderDeffered(renderCmdBuffer, r);
         temp.endRenderPass(renderCmdBuffer);
