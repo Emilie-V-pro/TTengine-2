@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <vector>
 
 #include "Iapp.hpp"
@@ -30,6 +31,8 @@ class App : public IApp {
    DynamicRenderPass *shadingRenderPass = nullptr;
    Scene *s;
    MainController movementController;
+
+   std::mutex m;
 
 
   

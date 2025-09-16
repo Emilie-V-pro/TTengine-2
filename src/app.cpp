@@ -95,6 +95,9 @@ void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
         temp.endRenderPass(renderCmdBuffer);
         renderCmdBuffer.endCommandBuffer();
         renderCmdBuffer.submitCommandBuffer({}, {}, nullptr, true);
+
+        glm::mat4 view = s->getMainCamera()->getViewMatrix();
+        glm::mat4 proj = s->getMainCamera()->getProjectionMatrix();
         temp.savedRenderPass(0);
     }
 }

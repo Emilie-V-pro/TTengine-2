@@ -82,7 +82,7 @@ void Engine::init() {
     // create renderPass
 
     deferredRenderPass = DynamicRenderPass(
-        &device, window.getExtent(), {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_SNORM}, swapChain.getswapChainImages().size(), DEPTH, nullptr, nullptr);
+        &device, window.getExtent(), {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM}, swapChain.getswapChainImages().size(), DEPTH, nullptr, nullptr);
 
  
     shadingRenderPass = DynamicRenderPass(

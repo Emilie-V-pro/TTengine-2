@@ -257,7 +257,7 @@ void Image::saveImageToFile() {
 
             b->readFromBuffer(imageData.data(), width * height * layer * 4);
 
-            unsigned error = lodepng::encode(name + ".png", imageData, width, height);
+            unsigned error = lodepng::encode(name + ".png", imageData, width, height, LodePNGColorType::LCT_RGBA);
             if (error) {
                 std::cout << "Error encoding PNG: " << lodepng_error_text(error) << std::endl;
             }
