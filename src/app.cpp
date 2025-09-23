@@ -29,9 +29,9 @@ void App::init(Device *device, DynamicRenderPass *deferredRenderPass, DynamicRen
     GLTFLoader gltfLoader(device);
     // gltfLoader.load("gltf/ABeautifulGame/glTF/ABeautifulGame.gltf");
     auto start = std::chrono::high_resolution_clock::now();
-    gltfLoader.load("gltf/Sponza/glTF/Sponza.gltf");
+    // gltfLoader.load("gltf/Sponza/glTF/Sponza.gltf");
 
-    // gltfLoader.load("gltf/mc/mc.gltf");
+    gltfLoader.load("gltf/mc/mc.gltf");
 
     // gltfLoader.load("gltf/robot/robot.glb");
     s = gltfLoader.getScene();
@@ -47,7 +47,7 @@ void App::init(Device *device, DynamicRenderPass *deferredRenderPass, DynamicRen
     std::uniform_real_distribution<double> distribution3(0.0, 1.0);
 
 
-    for (int i = 0; i < 256; i++) {
+    for (int i = 0; i < 128; i++) {
         Light l;
         l.type = Light::POINT;
         l.transform.pos = glm::vec3{distribution(gen),distribution2(gen),distribution(gen) };

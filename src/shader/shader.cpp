@@ -437,7 +437,15 @@ void Shader::compileToSPIRV() {
         throw std::runtime_error("GLSL linking failed");
     }
 
-    glslang_program_SPIRV_generate(program, input.stage);
+    glslang_spv_options_t spv_options = {
+        .generate_debug_info = false,
+        .disable_optimizer = false,
+        .optimize_size = false,
+        .disassemble = false,
+        .validate = false,
+    };
+
+    glslang_program_SPIRV_generate_with_options(program, input.stage, &spv_options);
 
     bin.size = glslang_program_SPIRV_get_size(program);
     bin.words.resize(bin.size);
@@ -496,7 +504,8 @@ std::string Shader::getSavedHash() {
     std::ifstream hashFile((std::filesystem::path(ENGINE_DIR) / shaderFolder / "hash" / shaderFile).concat(".hash"), std::ios::binary);
     if (!hashFile.is_open()) {
         throw std::runtime_error(
-            "failed to open file for reading hash: " / (std::filesystem::path(ENGINE_DIR) / shaderFolder / "hash" / shaderFile).concat(".hash"));
+            "failed to open file for reading hash: " /
+            (std::filesystem::path(ENGINE_DIR) / shaderFolder / "hash" / shaderFile).concat(".hash"));
     }
     std::string hash;
     hashFile.seekg(0, std::ios::end);

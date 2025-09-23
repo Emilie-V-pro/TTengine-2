@@ -47,7 +47,9 @@ void Device::selectPhysicalDevice(Window &window) {
     phys_device_selector.set_surface(surface);
     setRequiredExtensions(phys_device_selector);
     setRequiredFeatures(phys_device_selector);
+    phys_device_selector.prefer_gpu_device_type(vkb::PreferredDeviceType::integrated);
     auto physical_device_selector_return = phys_device_selector.select();
+    std::cout << physical_device_selector_return->name << "\n";
     if (!physical_device_selector_return) {
         throw std::runtime_error(physical_device_selector_return.error().message());
     }

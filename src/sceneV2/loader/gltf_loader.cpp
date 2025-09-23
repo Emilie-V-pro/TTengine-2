@@ -288,8 +288,8 @@ void GLTFLoader::loadNode(cgltf_data* data) {
                 cam_node->fov = yFOV_to_FOV(
                     glm::degrees(node->camera->data.perspective.yfov),
                     (node->camera->data.perspective.aspect_ratio == 0) ? 1 : node->camera->data.perspective.aspect_ratio);
-                cam_node->near = 0.1f;// node->camera->data.perspective.znear;
-                cam_node->far = 10.f;// node->camera->data.perspective.zfar;
+                cam_node->near = 0.5f;// node->camera->data.perspective.znear;
+                cam_node->far = 300.f;// node->camera->data.perspective.zfar;
                 engin_node = cam_node;
             }
 

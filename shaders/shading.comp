@@ -189,13 +189,17 @@ void main() {
     vec4 albedo_metalic = texelFetch(albedo_mettalic_texture, pixel_pos, 0);
     vec4 normal_roughness = texelFetch(normal_roughness_texture, pixel_pos, 0);
     float depth = texelFetch(depth_texture, pixel_pos, 0).r;
+    if (depth == 1.0) {
+        imageStore(output_texture, pixel_pos, fromLinear(vec4(albedo_metalic.rgb, 1)));
+        return;
+    }
 
     Camera_data cam = pc.camBuffer.data[0];
     vec2 sample_uv = (vec2(pixel_pos) + vec2(0.5)) / vec2(imageSize(output_texture));
     vec3 wpos = reconstructWorldPos(sample_uv, depth, cam.projection, cam.view);
 
     vec3 albedo = albedo_metalic.rgb;
-    vec3 normal  = (normal_roughness.rgb - 0.5) *2. ;
+    vec3 normal = (normal_roughness.rgb - 0.5) * 2.;
     vec2 metal_roughness = vec2(albedo_metalic.w, normal_roughness.w);
     // vec3 albedo = vec3(1,1,1);
     // if(depth == 1.0) return;
@@ -235,19 +239,16 @@ void main() {
     }
 
     vec3 final_color;
-    if (depth != 1.0) {
-        final_color = color_difuse + vec3(0.03) * albedo;
-    } else {
-        final_color = albedo;
-    }
+
+    final_color = color_difuse + vec3(0.03) * albedo;
 
     vec2 ndc;
     ndc.x = sample_uv.x * 2.0 - 1.0;
     ndc.y = sample_uv.y * 2.0 - 1.0;
     ndc.y *= -1.0; // Invert Y for Vulkan
-    vec4 clip = vec4(ndc, depth , 1.0);
+    vec4 clip = vec4(ndc, depth, 1.0);
 
-    imageStore(output_texture, pixel_pos, vec4(normal_roughness.rgb , 1));
+    imageStore(output_texture, pixel_pos, fromLinear(vec4(final_color.rgb, 1)));
     // // BRDFResults res = DisneyBRDF(textColor.rgb, metalRoughness.r, metalRoughness.g, surfaceNormal, view, lightDir);
     // // color += ((res.diffuse + res.specular) * cubeMapColor.rgb);
 
