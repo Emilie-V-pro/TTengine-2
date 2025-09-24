@@ -6,6 +6,7 @@
 #include <cstring>
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
+#include <iostream>
 #include <map>
 #include <stack>
 #include <tuple>
@@ -64,7 +65,7 @@ void Mesh::split(uint32_t index, uint32_t count, uint32_t bvh_index, uint32_t de
     bvh[bvh_index].indicies_index = index;
     bvh[bvh_index].nbTriangleToDraw = count/3;
     // leaf
-    if (count < (20 * 3) || depth > 32) {
+    if (count < (250 * 3)) {
         bvh[bvh_index].nbTriangle = count;
         bvh[bvh_index].index = index;
         if (count == 0) {
@@ -177,14 +178,13 @@ SceneHit Mesh::hit(glm::vec3& ro, glm::vec3& rd) {
         // if leaf
         if (bvh[index].nbTriangle != 0) {
             for (uint32_t i = 0; i < bvh[index].nbTriangle; i += 3) {
-                glm::vec3 p1 = verticies[indicies[bvh[index].index + i]].pos;
-                glm::vec3 p2 = verticies[indicies[bvh[index].index + i + 1]].pos;
-                glm::vec3 p3 = verticies[indicies[bvh[index].index + i + 2]].pos;
 
                 SceneHit hit = intersectTriangle(
                     ro, rd, verticies[indicies[bvh[index].index + i]], verticies[indicies[bvh[index].index + i + 1]],
                     verticies[indicies[bvh[index].index + i + 2]]);
+
                 if (hit.t > 0 && hit.t < hit_min.t) {
+                    std::cout << "wesh" << std::endl;
                     hit_min = hit;
                 }
             }

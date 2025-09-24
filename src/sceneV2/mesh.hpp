@@ -104,9 +104,9 @@ class Mesh {
     };
 
     std::vector<BVH_mesh> bvh;
-
-   private:
     std::string name = "";
+   private:
+    
 
     // BVH
 

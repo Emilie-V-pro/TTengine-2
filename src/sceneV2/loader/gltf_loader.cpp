@@ -109,6 +109,7 @@ void GLTFLoader::loadMesh(cgltf_data* data) {
         cgltf_mesh* mesh = &data->meshes[i];
         std::cout << "Mesh name: " << (mesh->name ? mesh->name : "Unnamed") << std::endl;
 
+
         std::vector<Vertex> vertices;
         std::vector<uint32_t> indices;
         for (int j = 0; j < mesh->primitives_count; j++) {
@@ -170,6 +171,7 @@ void GLTFLoader::loadMesh(cgltf_data* data) {
             Mesh m = Mesh(
                 device, indices, vertices, global_Indices_Indices[i], global_Vertex_Indices[i], scene->indexBuffer, scene->vertexBuffer);
             addMeshMutex.lock();
+            m.name = (mesh->name ? mesh->name : "Unnamed");
 
             scene->meshes[i] = std::move(m);
             // scene->addStaticMesh(m);

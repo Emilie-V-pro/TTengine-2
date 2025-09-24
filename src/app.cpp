@@ -31,12 +31,13 @@ void App::init(Device *device, DynamicRenderPass *deferredRenderPass, DynamicRen
     auto start = std::chrono::high_resolution_clock::now();
     // gltfLoader.load("gltf/Sponza/glTF/Sponza.gltf");
 
-    gltfLoader.load("gltf/mc/mc.gltf");
+    // gltfLoader.load("gltf/mc2/mc.gltf");
 
-    // gltfLoader.load("gltf/robot/robot.glb");
+    gltfLoader.load("gltf/sponza_intel/NewSponza_Main_glTF_003.gltf");
     s = gltfLoader.getScene();
     // s = new Scene(device);
     s->initSceneData(deferredRenderPass, shadingRenderPass);
+    s->computeBoundingBox();
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     printf("Load gltf time: %ld ms\n", duration);
@@ -76,7 +77,7 @@ void App::resize(int width, int height) {
 }
 
 void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
-    movementController.moveInPlaneXZ(&windowObj, deltaTime, s->getMainCamera());
+    movementController.moveInPlaneXZ(&windowObj, deltaTime, s->getMainCamera(), s);
 
     if (glfwGetKey(windowObj, GLFW_KEY_P) == GLFW_PRESS) {
         CommandBuffer renderCmdBuffer =

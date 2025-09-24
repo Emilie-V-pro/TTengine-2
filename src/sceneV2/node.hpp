@@ -18,7 +18,6 @@ class Node {
 
     virtual ~Node() = 0;
 
-
     Node(const Node &other);
     Node &operator=(const Node &other);
 
@@ -38,7 +37,7 @@ class Node {
     void setId(int id);
 
     void setName(const std::string name);
-    std::string& getName(); 
+    std::string &getName();
 
     std::shared_ptr<Node> getChild(int index) const;
     std::vector<std::shared_ptr<Node>> &getChildren();
@@ -98,12 +97,12 @@ class Node {
                 if (it->first > t_min) {
                     continue;
                 }
-
                 SceneHit child_hit = child->hit(ro, rd);
                 if (child_hit.t != -1 && child_hit.t < t_min) {
                     t_min = child_hit.t;
                     hit = child_hit;
                 }
+
             }
         }
 

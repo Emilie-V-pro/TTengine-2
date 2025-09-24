@@ -9,6 +9,7 @@
 #include "device.hpp"
 #include "dynamic_renderpass.hpp"
 #include "sceneV2/main_controller.hpp"
+#include "sceneV2/main_controller_col.hpp"
 #include "sceneV2/scene.hpp"
 #include "window.hpp"
 
@@ -30,7 +31,7 @@ class App : public IApp {
    DynamicRenderPass *deferredRenderPass = nullptr;
    DynamicRenderPass *shadingRenderPass = nullptr;
    Scene *s;
-   MainController movementController;
+   MainControllerCOL movementController;
 
    std::mutex m;
 
