@@ -22,7 +22,6 @@ Node::Node() {
     transform.scale.onChanged = [this]() { setDirty(); };
 }
 
-
 Node::~Node() {
     for (auto &child : children) {
         child->setParent(nullptr);
@@ -30,6 +29,25 @@ Node::~Node() {
 }
 
 Node::Node(const Node &other) {
+    transform.pos.onChanged = [this]() { setDirty(); };
+    transform.rot.onChanged = [this]() { setDirty(); };
+    transform.scale.onChanged = [this]() { setDirty(); };
+    id = other.id;
+    name = other.name;
+    transform = other.transform;
+    worldMatrix = other.worldMatrix;
+    worldNormalMatrix = other.worldNormalMatrix;
+    dirty = other.dirty;
+    normalDirty = other.normalDirty;
+    parent = other.parent;
+    children = other.children;
+};
+
+Node &Node::operator=(const Node &other) {
+    if (this != &other) {
+        transform.pos.onChanged = [this]() { setDirty(); };
+        transform.rot.onChanged = [this]() { setDirty(); };
+        transform.scale.onChanged = [this]() { setDirty(); };
         id = other.id;
         name = other.name;
         transform = other.transform;
@@ -39,22 +57,9 @@ Node::Node(const Node &other) {
         normalDirty = other.normalDirty;
         parent = other.parent;
         children = other.children;
-    };
-
-Node &Node::operator=(const Node &other) {
-        if (this != &other) {
-            id = other.id;
-            name = other.name;
-            transform = other.transform;
-            worldMatrix = other.worldMatrix;
-            worldNormalMatrix = other.worldNormalMatrix;
-            dirty = other.dirty;
-            normalDirty = other.normalDirty;
-            parent = other.parent;
-            children = other.children;
-        }
-        return *this;
     }
+    return *this;
+}
 
 glm::mat4 Node::wMatrix() {
     // mtx.lock();
@@ -83,12 +88,12 @@ glm::mat3 Node::wNormalMatrix() {
 
 void Node::setDirty() {
     // if (mtx.try_lock()) {
-        dirty = true;
-        normalDirty = true;
-        uploadedToGPU = false;
-        for (auto &child : children) {
-            child->setDirty();
-        }
+    dirty = true;
+    normalDirty = true;
+    uploadedToGPU = false;
+    for (auto &child : children) {
+        child->setDirty();
+    }
     //     mtx.unlock();
     // }
 }
@@ -101,13 +106,9 @@ int Node::getId() const { return id; }
 
 void Node::setId(int id) { this->id = id; }
 
-void Node::setName(const std::string name) {
-    this->name = name;
-}
+void Node::setName(const std::string name) { this->name = name; }
 
-std::string& Node::getName() {
-    return this->name;
-}
+std::string &Node::getName() { return this->name; }
 
 std::shared_ptr<Node> Node::getChild(int index) const { return children[index]; }
 

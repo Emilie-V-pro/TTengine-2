@@ -53,6 +53,7 @@ Mesh::Mesh(
 
 
 void Mesh::split(uint32_t index, uint32_t count, uint32_t bvh_index, uint32_t depth) {
+    static uint32_t max_depth = 0;
     // compute bounding box
     glm::vec3 pmin = verticies[indicies[index] ].pos;
     glm::vec3 pmax = verticies[indicies[index] ].pos;
@@ -60,24 +61,35 @@ void Mesh::split(uint32_t index, uint32_t count, uint32_t bvh_index, uint32_t de
         pmin = glm::min(pmin, verticies[indicies[index + i] ].pos);
         pmax = glm::max(pmax, verticies[indicies[index + i] ].pos);
     }
+    if(pmin.x == pmax.x){
+        pmax.x = pmin.x + 0.000001f;
+    }
+    if(pmin.y == pmax.y){
+        pmax.y = pmin.y + 0.000001f;
+    }
+    if(pmin.z == pmax.z){
+        pmax.z = pmin.z + 0.000001f;
+    }
+
     bvh[bvh_index].bbox.pmin = pmin;
     bvh[bvh_index].bbox.pmax = pmax;
     bvh[bvh_index].indicies_index = index;
     bvh[bvh_index].nbTriangleToDraw = count/3;
     // leaf
-    if (count < (250 * 3)) {
+    if (count < (30 * 3)) {
+        if(depth > max_depth){
+            max_depth = depth;
+            std::cout << "max depth: " << max_depth << std::endl;
+        }
         bvh[bvh_index].nbTriangle = count;
         bvh[bvh_index].index = index;
-        if (count == 0) {
-        }
+        
 
         return;
     }
     // split
     else {
-        if (index == 480 && count == 120 && bvh_index == 31 && depth == 5) {
-            int a = 0;
-        }
+
         // find the longest axis
 
         // find the split center based on bounding box of barycenter of triangles
@@ -164,7 +176,9 @@ void Mesh::createBVH() {
 }
 
 SceneHit Mesh::hit(glm::vec3& ro, glm::vec3& rd) {
+ 
     std::stack<uint32_t> bvh_stack;
+    std::stack<float> dist_stack;
     bvh_stack.push(0);
 
     SceneHit hit_min;
@@ -178,13 +192,11 @@ SceneHit Mesh::hit(glm::vec3& ro, glm::vec3& rd) {
         // if leaf
         if (bvh[index].nbTriangle != 0) {
             for (uint32_t i = 0; i < bvh[index].nbTriangle; i += 3) {
-
                 SceneHit hit = intersectTriangle(
                     ro, rd, verticies[indicies[bvh[index].index + i]], verticies[indicies[bvh[index].index + i + 1]],
                     verticies[indicies[bvh[index].index + i + 2]]);
 
                 if (hit.t > 0 && hit.t < hit_min.t) {
-                    std::cout << "wesh" << std::endl;
                     hit_min = hit;
                 }
             }
@@ -202,8 +214,8 @@ SceneHit Mesh::hit(glm::vec3& ro, glm::vec3& rd) {
             uint32_t childIndexNear = isNearestA ? left_child : right_child;
             uint32_t childIndexFar = isNearestA ? right_child : left_child;
 
-            if (dstFar < hit_min.t) bvh_stack.push(childIndexFar);
-            if (dstNear < hit_min.t) bvh_stack.push(childIndexNear);
+            if (dstFar < hit_min.t && dstFar != -1) bvh_stack.push(childIndexFar);
+            if (dstNear < hit_min.t && dstNear != -1) bvh_stack.push(childIndexNear);
         }
     }
     return hit_min;

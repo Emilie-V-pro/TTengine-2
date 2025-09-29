@@ -50,7 +50,7 @@ struct BoundingBox {
     glm::vec3 pmin = {0,0,0};
     glm::vec3 pmax = {0,0,0};
 
-    float intersect(glm::vec3 origin, glm::vec3 direction) {
+    float intersect(glm::vec3 &origin, glm::vec3 &direction) {
         float txpmin = (pmin.x - origin.x) / direction.x;
         float txpmax = (pmax.x - origin.x) / direction.x;
 

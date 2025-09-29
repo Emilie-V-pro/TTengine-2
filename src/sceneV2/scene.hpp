@@ -108,6 +108,7 @@ class Scene : public Node {
     std::shared_ptr<Node> getNode(uint32_t id) { return objects[id]; }
 
     std::vector<Material>& getMaterials() { return materials; }
+    std::vector<std::shared_ptr<Light>> & getLights() { return lightObjects; }
 
     void updateCameraBuffer(uint32_t frameIndex = 0);
     void updateMaterialBuffer();

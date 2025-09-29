@@ -8,6 +8,7 @@
 #include <glm/geometric.hpp>
 #include <memory>
 #include <random>
+#include <vector>
 
 #include "commandBuffer/commandPool_handler.hpp"
 #include "device.hpp"
@@ -33,7 +34,7 @@ void App::init(Device *device, DynamicRenderPass *deferredRenderPass, DynamicRen
 
     // gltfLoader.load("gltf/mc2/mc.gltf");
 
-    gltfLoader.load("gltf/sponza_intel/NewSponza_Main_glTF_003.gltf");
+    gltfLoader.load("gltf/mc/mc.gltf");
     s = gltfLoader.getScene();
     // s = new Scene(device);
     s->initSceneData(deferredRenderPass, shadingRenderPass);
@@ -47,16 +48,21 @@ void App::init(Device *device, DynamicRenderPass *deferredRenderPass, DynamicRen
     std::uniform_real_distribution<double> distribution2(0.0, 50.0);
     std::uniform_real_distribution<double> distribution3(0.0, 1.0);
 
-
-    for (int i = 0; i < 128; i++) {
-        Light l;
-        l.type = Light::POINT;
-        l.transform.pos = glm::vec3{distribution(gen),distribution2(gen),distribution(gen) };
-        l.color = glm::vec3{distribution3(gen),distribution3(gen),distribution3(gen) };
-        l.intensity = 100.f;
-        s->addNode(-1, std::make_shared<Light>(l));
+    for (int i = 0; i < MAX_LIGHTS; i++) {
+        auto l = std::make_shared<Light>();
+        l->type = Light::POINT;
+        l->transform.pos = glm::vec3{distribution(gen), distribution2(gen), distribution(gen)};
+        l->color = glm::vec3{distribution3(gen), distribution3(gen), distribution3(gen)};
+        l->intensity = 100.f;
+        s->addNode(-1, l);
+        lightAccelerations.push_back(glm::vec3(0, 0, 0));
+        lightSpeeds.push_back(glm::vec3(0, 0, 0));
     }
     s->updateLightBuffer();
+    std::vector<std::shared_ptr<Light>> &P = s->getLights();
+    for (int i = 0; i < MAX_LIGHTS; ++i) {
+        P[i]->updateOnchangeFunc();
+    }
 
     // movementController.setCursors(window);
 
@@ -78,6 +84,29 @@ void App::resize(int width, int height) {
 
 void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
     movementController.moveInPlaneXZ(&windowObj, deltaTime, s->getMainCamera(), s);
+    std::default_random_engine gen;
+    std::uniform_real_distribution<double> distribution3(-0.1, 0.1);
+
+    std::vector<std::shared_ptr<Light>> &P = s->getLights();
+    for (int i = 0; i < MAX_LIGHTS; ++i) {
+        lightAccelerations[i] = glm::vec3(distribution3(gen), distribution3(gen), distribution3(gen));
+        lightSpeeds[i] = (lightSpeeds[i] + deltaTime * lightAccelerations[i]) * 1.f;
+        P[i]->transform.pos = P[i]->transform.pos + deltaTime * lightSpeeds[i];
+
+        if (P[i]->transform.pos->x > 200 || P[i]->transform.pos->x < -200) {
+            P[i]->transform.pos->x = -P[i]->transform.pos->x;
+        }
+        if (P[i]->transform.pos->y > 50) {
+            P[i]->transform.pos->y -= 50;
+        }
+        else if(P[i]->transform.pos->y < 0){
+            P[i]->transform.pos->y +=  50;
+        }
+        if (P[i]->transform.pos->z > 200 || P[i]->transform.pos->z < -200) {
+            P[i]->transform.pos->z = -P[i]->transform.pos->z;
+        }
+    }
+    s->updateLightBuffer();
 
     if (glfwGetKey(windowObj, GLFW_KEY_P) == GLFW_PRESS) {
         CommandBuffer renderCmdBuffer =

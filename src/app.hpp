@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <glm/fwd.hpp>
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -14,6 +15,9 @@
 #include "window.hpp"
 
 namespace TTe {
+
+#define MAX_LIGHTS 128
+
 class App : public IApp {
    public:
     App() = default;
@@ -27,6 +31,9 @@ class App : public IApp {
     void renderDeferredFrame(float deltatTime, CommandBuffer &cmdBuffer ,uint32_t render_index, uint32_t swapchainIndex) ;
     void renderShadedFrame(float deltatTime, CommandBuffer &cmdBuffer, uint32_t render_index, uint32_t swapchainIndex) ;
    private:
+
+   std::vector<glm::vec3> lightAccelerations;
+   std::vector<glm::vec3> lightSpeeds;
 
    DynamicRenderPass *deferredRenderPass = nullptr;
    DynamicRenderPass *shadingRenderPass = nullptr;

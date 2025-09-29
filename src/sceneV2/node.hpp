@@ -30,6 +30,12 @@ class Node {
     glm::mat4 wMatrix();
     glm::mat3 wNormalMatrix();
 
+    void updateOnchangeFunc() {
+        transform.pos.onChanged = [this]() { setDirty(); };
+        transform.rot.onChanged = [this]() { setDirty(); };
+        transform.scale.onChanged = [this]() { setDirty(); };
+    };
+
     Node *getParent() const;
     void setParent(Node *parent);
 
@@ -102,7 +108,6 @@ class Node {
                     t_min = child_hit.t;
                     hit = child_hit;
                 }
-
             }
         }
 
