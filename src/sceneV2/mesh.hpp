@@ -92,7 +92,6 @@ class Mesh {
     std::vector<uint32_t> indicies;
 
     struct BVH_mesh {
-        enum struct SplitAxe { X_SPLIT, Y_SPLIT, Z_SPLIT };
 
         BoundingBox bbox;
 

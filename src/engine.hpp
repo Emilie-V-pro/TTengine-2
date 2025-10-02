@@ -54,7 +54,7 @@ class Engine {
 
     std::mutex resizeMutex;
 
-    Window window{1000, 1000, "mon napli"};
+    Window window{512, 512, "mon napli"};
     Device device{window};
     SwapChain swapChain{&device, window.getExtent(), vkb::SwapchainBuilder::BufferMode::DOUBLE_BUFFERING};
 

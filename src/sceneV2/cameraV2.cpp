@@ -10,7 +10,7 @@
 namespace TTe {
 
 CameraV2::CameraV2() {
-    transform.pos = glm::vec3(0.0f, 10.0f, 0.0f);
+    transform.pos = glm::vec3(0.0f, 0.0f, 0.0f);
 }
 
 CameraV2::~CameraV2() {
