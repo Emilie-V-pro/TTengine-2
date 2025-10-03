@@ -51,7 +51,7 @@ class Shader {
     void setShaderHandler(VkShaderEXT shaderExt) { shader = shaderExt; }
     void setPushConstant(VkPushConstantRange pushConstant) { pushConstants = pushConstant; }
     void createShaderInfo();
-   private:
+   protected:
     void loadShaderSPVCode();
     void loadShaderGLSLCode();
     void compileToSPIRV();
