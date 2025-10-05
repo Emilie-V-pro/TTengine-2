@@ -299,7 +299,7 @@ void Scene::updateCameraBuffer(uint32_t frameIndex) {
 
     for (auto cam : cameras) {
         Ubo ubo;
-        ubo.projection = mainCamera->getProjectionMatrix();
+        ubo.projection = glm::inverse(mainCamera->getProjectionMatrix());
         ubo.view = mainCamera->getViewMatrix();
         ubo.invView = glm::inverse(mainCamera->getViewMatrix());
         ubos.push_back(ubo);
