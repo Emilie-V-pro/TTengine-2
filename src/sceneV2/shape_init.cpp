@@ -5,11 +5,10 @@
 #include <unordered_map>
 #include <vector>
 
-#include "IRessource.hpp"
+
 #include "device.hpp"
 #include "mesh.hpp"
 #include "struct.hpp"
-#include "utils.hpp"
 
 namespace TTe {
 

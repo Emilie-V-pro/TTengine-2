@@ -7,13 +7,12 @@
 #include <memory>
 
 #include "../commandBuffer/command_buffer.hpp"
-#include "IRessource.hpp"
 #include "device.hpp"
 #include "structs_vk.hpp"
 
 namespace TTe {
 
-class Buffer : public vk_cmdBuffer_OBJ, public Ressource {
+class Buffer : public vk_cmdBuffer_OBJ {
    public:
     enum struct BufferType { GPU_ONLY, STAGING, READBACK, DYNAMIC, OTHER };
     // Constructors

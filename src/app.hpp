@@ -38,7 +38,7 @@ class App : public IApp {
    DynamicRenderPass *deferredRenderPass = nullptr;
    DynamicRenderPass *shadingRenderPass = nullptr;
    Scene *s;
-   MainControllerCOL movementController;
+   MainController movementController;
 
    std::mutex m;
 

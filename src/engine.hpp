@@ -74,12 +74,6 @@ class Engine {
     DynamicRenderPass deferredRenderPass;
     DynamicRenderPass shadingRenderPass;
     DynamicRenderPass imguiRenderPass;
-
-    Buffer indirectDrawBuffer;
-    Buffer indirectDrawBufferCount;
-
-
-
     
 };
 }  // namespace TTe

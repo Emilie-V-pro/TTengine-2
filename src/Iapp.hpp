@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 #include <vector>
 #include "commandBuffer/command_buffer.hpp"
 #include "device.hpp"
@@ -21,6 +22,7 @@ class IApp {
     void virtual renderShadedFrame(float deltatTime, CommandBuffer &cmdBuffer,uint32_t render_index, uint32_t swapchainIndex) = 0;
    protected:
    Device *device;
+   std::string name;
    private:
 
 };

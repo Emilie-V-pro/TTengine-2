@@ -26,8 +26,8 @@ void MainControllerCOL::moveInPlaneXZ(Window* window, float dt, std::shared_ptr<
     if (glm::dot(rotate, rotate) > std::numeric_limits<float>::epsilon()) {
         cam->transform.rot += lookSpeed * dt * glm::normalize(rotate);
     }
-    cam->transform.rot += window->mouseMove;
-    window->mouseMove = glm::vec3(0);
+    cam->transform.rot += window->mouse_move;
+    window->mouse_move = glm::vec3(0);
 
     // limit pitch values between about +/- 85ish degrees
     cam->transform.rot->x = glm::clamp(float(cam->transform.rot->x), -1.5f, 1.5f);
@@ -107,12 +107,12 @@ void MainControllerCOL::mouseMoveCallback(GLFWwindow* window, double xpos, doubl
 
     windowObj->lastX = xpos;
     windowObj->lastY = ypos;
-    if (windowObj->moveCam == false) return;
+    if (windowObj->move_cam == false) return;
 
     xoffset *= 0.005;
     yoffset *= 0.005;
 
-    windowObj->mouseMove += glm::vec3(yoffset, xoffset, 0);
+    windowObj->mouse_move += glm::vec3(yoffset, xoffset, 0);
 }
 
 void MainControllerCOL::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
@@ -123,15 +123,15 @@ void MainControllerCOL::mouseButtonCallback(GLFWwindow* window, int button, int 
     io.AddMouseButtonEvent(button, action == GLFW_PRESS);
     if (!io.WantCaptureMouse) {
         if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-            if (windowObj->moveCam == false) {
-                windowObj->moveCam = true;
+            if (windowObj->move_cam == false) {
+                windowObj->move_cam = true;
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
                 io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
             }
         } else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
-            if (windowObj->moveCam == true) {
-                windowObj->moveCam = false;
+            if (windowObj->move_cam == true) {
+                windowObj->move_cam = false;
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
                 io.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
             }

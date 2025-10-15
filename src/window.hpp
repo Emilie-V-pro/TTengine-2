@@ -13,11 +13,11 @@
 namespace TTe {
 class Window {
    public:
-    Window(unsigned int width, unsigned int height, std::string name);
+    Window(const unsigned int p_width, const unsigned int p_height, const std::string p_name);
     ~Window();
 
     /**
-     * Only one window should be created for this engine.
+     * Only one m_window should be created for this engine.
      */
     // desable copy
     Window(Window const &) = delete;
@@ -26,34 +26,34 @@ class Window {
     Window(Window &&) = delete;
     Window &operator=(Window &&) = delete;
 
-    operator GLFWwindow *() const { return window; }
+    operator GLFWwindow *() const { return m_window; }
 
     // getter
-    VkSurfaceKHR &getSurface(const vkb::Instance &vkInstance);
-    const VkExtent2D &getExtent() const { return size; }
+    VkSurfaceKHR &getSurface(const vkb::Instance &p_vkb_instance);
+    const VkExtent2D &getExtent() const { return m_size; }
     const VkExtent2D &getExtentGLFW();
     
-    const GLFWwindow *getGLFWwindow() const { return window; }
-    bool wasWindowResized() const { return framebufferResized; }
-    bool shouldClose() const { return glfwWindowShouldClose(window); }
+    const GLFWwindow *getGLFWwindow() const { return m_window; }
+    bool wasWindowResized() const { return m_is_frame_buffer_resize; }
+    bool shouldClose() const { return glfwWindowShouldClose(m_window); }
 
     // setter
-    void resetWindowResizedFlag() { framebufferResized = false; }
+    void resetWindowResizedFlag() { m_is_frame_buffer_resize = false; }
 
-    glm::vec3 mouseMove{0};
-    bool moveCam = false;
+    glm::vec3 mouse_move{0};
+    bool move_cam = false;
     double lastX{0}, lastY{0};
     std::chrono::time_point<std::chrono::system_clock> mouseLastMoved;
 
 
    private:
-    static void framebufferResizeCallback(GLFWwindow *window, int width, int height);
+    static void framebufferResizeCallback(GLFWwindow *m_window, int width, int height);
 
 
-    VkExtent2D size = {0, 0};
+    VkExtent2D m_size = {0, 0};
 
-    bool framebufferResized = false;
+    bool m_is_frame_buffer_resize = false;
     VkSurfaceKHR surface = VK_NULL_HANDLE;
-    GLFWwindow *window = nullptr;
+    GLFWwindow *m_window = nullptr;
 };
 }  // namespace TTe

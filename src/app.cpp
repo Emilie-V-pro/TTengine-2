@@ -30,11 +30,11 @@ void App::init(Device *device, DynamicRenderPass *deferredRenderPass, DynamicRen
     GLTFLoader gltfLoader(device);
     // gltfLoader.load("gltf/ABeautifulGame/glTF/ABeautifulGame.gltf");
     auto start = std::chrono::high_resolution_clock::now();
-    // gltfLoader.load("gltf/Sponza/glTF/Sponza.gltf");
+    gltfLoader.load("gltf/Sponza/glTF/Sponza.gltf");
 
     // gltfLoader.load("gltf/mc2/mc.gltf");
 
-    gltfLoader.load("gltf/mc/mc.gltf");
+    // gltfLoader.load("gltf/mc/mc.gltf");
     s = gltfLoader.getScene();
     // s = new Scene(device);
     s->initSceneData(deferredRenderPass, shadingRenderPass);
@@ -83,7 +83,7 @@ void App::resize(int width, int height) {
 }
 
 void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
-    movementController.moveInPlaneXZ(&windowObj, deltaTime, s->getMainCamera(), s);
+    movementController.moveInPlaneXZ(&windowObj, deltaTime, s->getMainCamera());
     std::default_random_engine gen;
     std::uniform_real_distribution<double> distribution3(-0.1, 0.1);
 

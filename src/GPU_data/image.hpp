@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-#include "IRessource.hpp"
+
 #include "commandBuffer/command_buffer.hpp"
 #include "destroyable.hpp"
 #include "device.hpp"
