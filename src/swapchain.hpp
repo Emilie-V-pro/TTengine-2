@@ -13,28 +13,25 @@
 #include "synchronisation/semaphore.hpp"
 namespace TTe {
 
-class SwapChain {
+class Swapchain {
    public:
     // constructor
-    SwapChain(Device* p_device, const VkExtent2D p_window_extent, const vkb::SwapchainBuilder::BufferMode p_buffering_mode);
+    Swapchain(Device* p_device, const VkExtent2D p_window_extent, const vkb::SwapchainBuilder::BufferMode p_buffering_mode);
 
     // destructor
-    ~SwapChain();
+    ~Swapchain();
 
     // delete copy and move constructors
-    SwapChain(const SwapChain&) = delete;
-    SwapChain(SwapChain&&) = delete;
-    SwapChain& operator=(const SwapChain&) = delete;
-    SwapChain& operator=(SwapChain&&) = delete;
+    Swapchain(const Swapchain&) = delete;
+    Swapchain(Swapchain&&) = delete;
+    Swapchain& operator=(const Swapchain&) = delete;
+    Swapchain& operator=(Swapchain&&) = delete;
 
     void recreateSwapchain(const VkExtent2D p_window_extent);
 
-    const VkResult acquireNextImage(uint32_t& p_current_swapchain_image, int* p_render_index,  Semaphore*& p_aquire_frame_semaphore,  Fence*& p_fence);
-    const VkResult presentFrame(const uint32_t& p_current_swapchain_image, const Semaphore* p_wait_semaphore) const;
+    VkResult acquireNextImage(uint32_t& p_current_swapchain_image, int* p_render_index,  Semaphore*& p_aquire_frame_semaphore,  Fence*& p_fence);
+    VkResult presentFrame(const uint32_t& p_current_swapchain_image, const Semaphore* p_wait_semaphore) const;
 
-    const float getExtentAspectRatio() const {
-        return static_cast<float>(m_vkb_swapchain.extent.width) / static_cast<float>(m_vkb_swapchain.extent.height);
-    }
 
     Image& getSwapChainImage(const unsigned int p_index)  { return m_swapchain_images[p_index]; }
     std::vector<Image>& getswapChainImages()  { return m_swapchain_images; };

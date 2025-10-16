@@ -34,8 +34,8 @@ class Window {
     const VkExtent2D &getExtentGLFW();
     
     const GLFWwindow *getGLFWwindow() const { return m_window; }
-    const bool wasWindowResized() const { return m_is_frame_buffer_resize; }
-    const bool shouldClose() const { return glfwWindowShouldClose(m_window); }
+    bool wasWindowResized() const { return m_is_frame_buffer_resize; }
+    bool shouldClose() const { return glfwWindowShouldClose(m_window); }
 
     // setter
     void resetWindowResizedFlag() { m_is_frame_buffer_resize = false; }

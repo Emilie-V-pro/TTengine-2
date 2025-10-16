@@ -6,7 +6,7 @@ project(TTengine VERSION 1.0 DESCRIPTION "Vulkan Engine")
 # Compiler options
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
+add_compile_options(-Wall -Wextra -Wpedantic)
 # set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 # set(BUILD_SHARED_LIBS OFF)
 # set(CMAKE_EXE_LINKER_FLAGS "-static")

@@ -41,7 +41,7 @@ class DynamicRenderPass  {
         std::vector<VkFormat> imageFormats,
         unsigned int numberOfFrame,
         depthAndStencil enableDepthAndStencil,
-        SwapChain *swapChain = nullptr,
+        Swapchain *swapChain = nullptr,
         std::vector<Image> *externalDepthImages = {}
         );
     ~DynamicRenderPass();
@@ -80,7 +80,7 @@ class DynamicRenderPass  {
     unsigned int numberOfFrame = 0;
     VkExtent2D frameSize = {0, 0};
     depthAndStencil enableDepthAndStencil = NONE;
-    SwapChain *swapChain = nullptr;
+    Swapchain *swapChain = nullptr;
 
     std::vector<AttachementStruct> attachments;
     std::vector<std::vector<Image>> imageAttachement;

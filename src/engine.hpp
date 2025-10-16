@@ -5,7 +5,6 @@
 #include <mutex>
 #include <vector>
 
-#include "GPU_data/buffer.hpp"
 #include "Iapp.hpp"
 #include "commandBuffer/commandPool_handler.hpp"
 #include "commandBuffer/command_buffer.hpp"
@@ -15,12 +14,14 @@
 #include "synchronisation/semaphore.hpp"
 #include "utils.hpp"
 #include "window.hpp"
+
+
 namespace TTe {
 
 class Engine {
    public:
     // Constructor
-    Engine(IApp *app) : app(app) {};
+    Engine(IApp *p_app) : m_app(p_app) {};
 
     // Destructor
     ~Engine();
@@ -39,41 +40,41 @@ class Engine {
    
     void resize();
 
-    bool startFrame(Semaphore *&aquireFrameSemaphore, Fence *&fence);
-    void endAndPresentFrame(Semaphore *waitRenderSemaphore);
+    bool startFrame(Semaphore *&p_aquire_frame_semaphore, Fence *&p_fence);
+    void endAndPresentFrame(Semaphore *p_wait_render_semaphore);
 
-    static void renderLoop(Engine &engine);
-    static void updateLoop(Engine &engine);
+    static void renderLoop(Engine &p_engine);
+    static void updateLoop(Engine &p_engine);
 
     void saveDeferredRenderPass();
 
-    uint32_t currentSwapchainImage = 0;
-    int renderIndex = 0;
+    uint32_t m_current_swapchain_image = 0;
+    int m_render_index = 0;
 
-    bool shouldClose = false;
+    bool should_close = false;
 
-    std::mutex resizeMutex;
+    std::mutex m_resize_mutex;
 
-    Window window{512, 512, "mon napli"};
-    Device device{window};
-    SwapChain swapChain{&device, window.getExtent(), vkb::SwapchainBuilder::BufferMode::DOUBLE_BUFFERING};
+    IApp *m_app;
+    Window m_window{512, 512, m_app->name};
+    Device m_device{m_window};
+    Swapchain m_swapchain{&m_device, m_window.getExtent(), vkb::SwapchainBuilder::BufferMode::DOUBLE_BUFFERING};
 
-    IApp *app;
     
-    std::vector<Semaphore> waitToPresentSemaphores;
+    std::vector<Semaphore> m_wait_to_present_semaphores;
     
-    CommandBufferPool *commandBufferPool = CommandPoolHandler::getCommandPool(&device, device.getRenderQueue());
+    CommandBufferPool *m_cmd_buffer_pool = CommandPoolHandler::getCommandPool(&m_device, m_device.getRenderQueue());
     
-    CommandBuffer updateCommandBuffer;
+    CommandBuffer m_update_cmd_buffer;
     
     // RenderData
-    std::array<Semaphore, MAX_FRAMES_IN_FLIGHT>  deferredRenderSemaphores;
-    std::array<CommandBuffer, MAX_FRAMES_IN_FLIGHT> defferedRenderCommandBuffers;
-    std::array<CommandBuffer, MAX_FRAMES_IN_FLIGHT> shadingRenderCommandBuffers;
+    std::array<Semaphore, MAX_FRAMES_IN_FLIGHT>  m_deferred_render_semaphores;
+    std::array<CommandBuffer, MAX_FRAMES_IN_FLIGHT> m_deffered_render_cmd_buffers;
+    std::array<CommandBuffer, MAX_FRAMES_IN_FLIGHT> m_shading_render_cmd_buffers;
     
-    DynamicRenderPass deferredRenderPass;
-    DynamicRenderPass shadingRenderPass;
-    DynamicRenderPass imguiRenderPass;
+    DynamicRenderPass m_deferred_renderpass;
+    DynamicRenderPass m_shading_renderpass;
+    DynamicRenderPass m_imgui_renderpass;
     
 };
 }  // namespace TTe

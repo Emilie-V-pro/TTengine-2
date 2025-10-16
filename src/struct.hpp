@@ -17,10 +17,10 @@ struct Material {
     int metallic_roughness_tex_id = -1;
     int normal_tex_id = -1;
 
-    void applyTextureOffset(uint offset) {
-        albedo_tex_id += (albedo_tex_id != -1) ? offset : 0;
-        metallic_roughness_tex_id += (metallic_roughness_tex_id != -1) ? offset : 0;
-        normal_tex_id += (normal_tex_id != -1) ? offset : 0;
+    void applyTextureOffset(uint p_offset) {
+        albedo_tex_id += (albedo_tex_id != -1) ? p_offset : 0;
+        metallic_roughness_tex_id += (metallic_roughness_tex_id != -1) ? p_offset : 0;
+        normal_tex_id += (normal_tex_id != -1) ? p_offset : 0;
     }
 };
 
@@ -50,7 +50,7 @@ struct BoundingBox {
     glm::vec3 pmin = {0,0,0};
     glm::vec3 pmax = {0,0,0};
 
-    float intersect(glm::vec3 &origin, glm::vec3 &direction) {
+    float intersect(const glm::vec3 &origin, const glm::vec3 &direction) {
         float txpmin = (pmin.x - origin.x) / direction.x;
         float txpmax = (pmax.x - origin.x) / direction.x;
 
@@ -85,14 +85,14 @@ struct SceneHit{
 class Watchedvec3 {
    public:
     glm::dvec3 value;
-    std::function<void()> onChanged;
+    std::function<void()> on_changed;
 
     Watchedvec3() = default;
     Watchedvec3(const glm::dvec3& v) : value(v) {}
 
     Watchedvec3& operator=(const glm::dvec3& v) {
         value = v;
-        if (onChanged) onChanged();
+        if (on_changed) on_changed();
         return *this;
     }
 
@@ -100,7 +100,7 @@ class Watchedvec3 {
 
     Watchedvec3& operator=(const glm::dvec3&& v) {
         value = v;
-        if (onChanged) onChanged();
+        if (on_changed) on_changed();
         return *this;
     }
 
@@ -113,49 +113,49 @@ class Watchedvec3 {
 
     Watchedvec3& operator+=(const glm::dvec3& v) {
         value += v;
-        if (onChanged) onChanged();
+        if (on_changed) on_changed();
         return *this;
     }
 
     Watchedvec3& operator-=(const glm::dvec3& v) {
         value -= v;
-        if (onChanged) onChanged();
+        if (on_changed) on_changed();
         return *this;
     }
 
     Watchedvec3& operator*=(const glm::dvec3& v) {
         value *= v;
-        if (onChanged) onChanged();
+        if (on_changed) on_changed();
         return *this;
     }
 
     Watchedvec3& operator/=(const glm::dvec3& v) {
         value /= v;
-        if (onChanged) onChanged();
+        if (on_changed) on_changed();
         return *this;
     }
 
     Watchedvec3& operator+=(float v) {
         value += v;
-        if (onChanged) onChanged();
+        if (on_changed) on_changed();
         return *this;
     }
 
     Watchedvec3& operator-=(float v) {
         value -= v;
-        if (onChanged) onChanged();
+        if (on_changed) on_changed();
         return *this;
     }
 
     Watchedvec3& operator*=(float v) {
         value *= v;
-        if (onChanged) onChanged();
+        if (on_changed) on_changed();
         return *this;
     }
 
     Watchedvec3& operator/=(float v) {
         value /= v;
-        if (onChanged) onChanged();
+        if (on_changed) on_changed();
         return *this;
     }
 

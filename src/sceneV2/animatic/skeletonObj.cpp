@@ -516,7 +516,7 @@ void SkeletonObj::updateFromInput(Window *window, float dt) {
     }
     State wantedState = State::IDLE;
 
-    if (glfwGetKey(*window, keys.lookUp) == GLFW_PRESS) {
+    if (glfwGetKey(*window, keys.look_up) == GLFW_PRESS) {
         if (glfwGetKey(*window, keys.shift) == GLFW_PRESS) {
             speed = std::min(speed + accel * dt * 4, speed_max_run);
             wantedState = State::RUN;
@@ -531,10 +531,10 @@ void SkeletonObj::updateFromInput(Window *window, float dt) {
         wantedState = State::IDLE;
     }
 
-    if (glfwGetKey(*window, keys.lookLeft) == GLFW_PRESS) {
+    if (glfwGetKey(*window, keys.look_left) == GLFW_PRESS) {
         transform.rot->y += dt * 4;
     }
-    if (glfwGetKey(*window, keys.lookRight) == GLFW_PRESS) {
+    if (glfwGetKey(*window, keys.look_right) == GLFW_PRESS) {
         transform.rot->y -= dt * 4;
     }
 

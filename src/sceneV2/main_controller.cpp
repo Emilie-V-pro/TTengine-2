@@ -38,12 +38,12 @@ void MainController::moveInPlaneXZ(Window* window, float dt, std::shared_ptr<Cam
     const glm::dvec3 upDir{0.f, 1.f, 0.f};
 
     glm::dvec3 moveDir{0.f};
-    if (glfwGetKey(*window, keys.moveForward) == GLFW_PRESS) moveDir += forwardDir;
-    if (glfwGetKey(*window, keys.moveBackward) == GLFW_PRESS) moveDir -= forwardDir;
-    if (glfwGetKey(*window, keys.moveRight) == GLFW_PRESS) moveDir -= rightDir;
-    if (glfwGetKey(*window, keys.moveLeft) == GLFW_PRESS) moveDir += rightDir;
-    if (glfwGetKey(*window, keys.moveUp) == GLFW_PRESS) moveDir += upDir;
-    if (glfwGetKey(*window, keys.moveDown) == GLFW_PRESS) moveDir -= upDir;
+    if (glfwGetKey(*window, keys.move_forward) == GLFW_PRESS) moveDir += forwardDir;
+    if (glfwGetKey(*window, keys.move_backward) == GLFW_PRESS) moveDir -= forwardDir;
+    if (glfwGetKey(*window, keys.move_right) == GLFW_PRESS) moveDir -= rightDir;
+    if (glfwGetKey(*window, keys.move_left) == GLFW_PRESS) moveDir += rightDir;
+    if (glfwGetKey(*window, keys.move_up) == GLFW_PRESS) moveDir += upDir;
+    if (glfwGetKey(*window, keys.move_down) == GLFW_PRESS) moveDir -= upDir;
 
     if (glfwGetKey(*window, keys.ct) == GLFW_PRESS) {
         moveSpeed = 30.f;

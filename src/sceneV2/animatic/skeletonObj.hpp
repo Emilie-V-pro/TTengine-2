@@ -13,8 +13,7 @@
 #include "sceneV2/Icollider.hpp"
 #include "sceneV2/IIndirectRenderable.hpp"
 #include "sceneV2/animatic/skeleton/BVH.h"
-#include "sceneV2/collision/collision_obj.hpp"
-#include "IinputController.hpp"
+#include "i_input_controller.hpp"
 #include "sceneV2/node.hpp"
 
 

@@ -21,7 +21,7 @@ DynamicRenderPass::DynamicRenderPass(
     std::vector<VkFormat> imageFormats,
     unsigned int numberOfFrame,
     depthAndStencil enableDepthAndStencil,
-    SwapChain *swapChain,
+    Swapchain *swapChain,
     std::vector<Image> *externalDepthImages)
     : device(device),
       frameSize(frameSize),

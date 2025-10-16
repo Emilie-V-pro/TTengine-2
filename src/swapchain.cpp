@@ -15,7 +15,7 @@
 #include "structs_vk.hpp"
 namespace TTe {
 
-SwapChain::SwapChain(Device* p_device, const VkExtent2D p_window_extent, const vkb::SwapchainBuilder::BufferMode p_buffering_mode)
+Swapchain::Swapchain(Device* p_device, const VkExtent2D p_window_extent, const vkb::SwapchainBuilder::BufferMode p_buffering_mode)
     : m_buffering_mode(p_buffering_mode), m_device(p_device) {
     vkb::SwapchainBuilder swapchain_builder{p_device->getVkbDevice()};
     swapchain_builder.set_desired_min_image_count(m_buffering_mode + 1);
@@ -37,7 +37,7 @@ SwapChain::SwapChain(Device* p_device, const VkExtent2D p_window_extent, const v
     createSyncObjects();
 }
 
-SwapChain::~SwapChain() {
+Swapchain::~Swapchain() {
     for (auto& fence : m_ressources_available_fences) {
         delete fence;
     }
@@ -45,7 +45,7 @@ SwapChain::~SwapChain() {
     vkb::destroy_swapchain(m_vkb_swapchain);
 }
 
-void SwapChain::generateSwapchainImages() {
+void Swapchain::generateSwapchainImages() {
     auto vk_images = m_vkb_swapchain.get_images().value();
     m_swapchain_images.clear();
     m_swapchain_images.reserve(vk_images.size());
@@ -59,7 +59,7 @@ void SwapChain::generateSwapchainImages() {
     }
 }
 
-void SwapChain::recreateSwapchain(const VkExtent2D p_window_extent) {
+void Swapchain::recreateSwapchain(const VkExtent2D p_window_extent) {
     m_vkb_swapchain.destroy_image_views(m_swapchain_image_views);
     vkb::SwapchainBuilder swapchain_builder{m_device->getVkbDevice()};
     swapchain_builder.set_old_swapchain(m_vkb_swapchain);
@@ -85,7 +85,7 @@ void SwapChain::recreateSwapchain(const VkExtent2D p_window_extent) {
     createSyncObjects();
 }
 
-const VkResult SwapChain::acquireNextImage(
+ VkResult Swapchain::acquireNextImage(
     uint32_t& p_current_swapchain_image, int* p_render_index, Semaphore*& p_aquire_frame_semaphore,  Fence*& p_fence) {
     Fence::waitForFences(m_device, m_ressources_available_fences, false, p_render_index);
     if (*p_render_index == -1) {
@@ -106,17 +106,17 @@ const VkResult SwapChain::acquireNextImage(
     return result;
 }
 
-const VkResult SwapChain::presentFrame(const uint32_t& p_current_swapchain_image, const Semaphore* p_wait_semaphore) const {
+ VkResult Swapchain::presentFrame(const uint32_t& p_current_swapchain_image, const Semaphore* p_wait_semaphore) const {
     auto present_info = make<VkPresentInfoKHR>();
 
-    const VkSemaphore& test = *p_wait_semaphore;
+    const VkSemaphore& p_wait_semaphore_ptr = *p_wait_semaphore;
 
     present_info.waitSemaphoreCount = 1;
-    present_info.pWaitSemaphores = &test;
+    present_info.pWaitSemaphores = &p_wait_semaphore_ptr;
 
-    VkSwapchainKHR swapChains[] = {m_vkb_swapchain.swapchain};
+    VkSwapchainKHR swapchains[] = {m_vkb_swapchain.swapchain};
     present_info.swapchainCount = 1;
-    present_info.pSwapchains = swapChains;
+    present_info.pSwapchains = swapchains;
 
     present_info.pImageIndices = &p_current_swapchain_image;
 
@@ -124,7 +124,7 @@ const VkResult SwapChain::presentFrame(const uint32_t& p_current_swapchain_image
     return result;
 }
 
-void SwapChain::createSyncObjects() {
+void Swapchain::createSyncObjects() {
     m_ressources_available_fences.clear();
     m_image_available_semaphores.clear();
     m_ressources_available_fences.reserve(m_number_of_frame - 1);

@@ -31,9 +31,9 @@ class Node {
     glm::mat3 wNormalMatrix();
 
     void updateOnchangeFunc() {
-        transform.pos.onChanged = [this]() { setDirty(); };
-        transform.rot.onChanged = [this]() { setDirty(); };
-        transform.scale.onChanged = [this]() { setDirty(); };
+        transform.pos.on_changed = [this]() { setDirty(); };
+        transform.rot.on_changed = [this]() { setDirty(); };
+        transform.scale.on_changed = [this]() { setDirty(); };
     };
 
     Node *getParent() const;

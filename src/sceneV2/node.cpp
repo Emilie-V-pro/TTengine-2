@@ -17,9 +17,9 @@
 namespace TTe {
 
 Node::Node() {
-    transform.pos.onChanged = [this]() { setDirty(); };
-    transform.rot.onChanged = [this]() { setDirty(); };
-    transform.scale.onChanged = [this]() { setDirty(); };
+    transform.pos.on_changed = [this]() { setDirty(); };
+    transform.rot.on_changed = [this]() { setDirty(); };
+    transform.scale.on_changed = [this]() { setDirty(); };
 }
 
 Node::~Node() {
@@ -29,9 +29,9 @@ Node::~Node() {
 }
 
 Node::Node(const Node &other) {
-    transform.pos.onChanged = [this]() { setDirty(); };
-    transform.rot.onChanged = [this]() { setDirty(); };
-    transform.scale.onChanged = [this]() { setDirty(); };
+    transform.pos.on_changed = [this]() { setDirty(); };
+    transform.rot.on_changed = [this]() { setDirty(); };
+    transform.scale.on_changed = [this]() { setDirty(); };
     id = other.id;
     name = other.name;
     transform = other.transform;
@@ -45,9 +45,9 @@ Node::Node(const Node &other) {
 
 Node &Node::operator=(const Node &other) {
     if (this != &other) {
-        transform.pos.onChanged = [this]() { setDirty(); };
-        transform.rot.onChanged = [this]() { setDirty(); };
-        transform.scale.onChanged = [this]() { setDirty(); };
+        transform.pos.on_changed = [this]() { setDirty(); };
+        transform.rot.on_changed = [this]() { setDirty(); };
+        transform.scale.on_changed = [this]() { setDirty(); };
         id = other.id;
         name = other.name;
         transform = other.transform;
