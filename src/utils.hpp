@@ -14,44 +14,44 @@ static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
 
 
-inline VkAccessFlagBits2 getFlagFromPipelineStage(VkPipelineStageFlags2 pipelineStage) {
-    VkAccessFlagBits2 returnFlag = 0;
-    switch (pipelineStage) {
+inline VkAccessFlagBits2 getFlagFromPipelineStage(const VkPipelineStageFlags2 p_pipeline_stage) {
+    VkAccessFlagBits2 return_flag = 0;
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_NONE:
-            returnFlag |= VK_ACCESS_2_NONE;
+            return_flag |= VK_ACCESS_2_NONE;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT:
         case VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR:
-            returnFlag |= VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
+            return_flag |= VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT:
         case VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT:
-            returnFlag |= VK_ACCESS_2_INDEX_READ_BIT;
+            return_flag |= VK_ACCESS_2_INDEX_READ_BIT;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT:
         case VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT:
-            returnFlag |= VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT;
+            return_flag |= VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT:
         case VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT:
         case VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT:
@@ -63,22 +63,22 @@ inline VkAccessFlagBits2 getFlagFromPipelineStage(VkPipelineStageFlags2 pipeline
         case VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT:
         case VK_PIPELINE_STAGE_2_SUBPASS_SHADER_BIT_HUAWEI:
         case VK_PIPELINE_STAGE_2_CLUSTER_CULLING_SHADER_BIT_HUAWEI:
-            returnFlag |= VK_ACCESS_2_UNIFORM_READ_BIT;
+            return_flag |= VK_ACCESS_2_UNIFORM_READ_BIT;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT:
         case VK_PIPELINE_STAGE_2_SUBPASS_SHADER_BIT_HUAWEI:
-            returnFlag |= VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT;
+            return_flag |= VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR:
         case VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT:
         case VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT:
@@ -92,13 +92,13 @@ inline VkAccessFlagBits2 getFlagFromPipelineStage(VkPipelineStageFlags2 pipeline
         case VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT:
         case VK_PIPELINE_STAGE_2_SUBPASS_SHADER_BIT_HUAWEI:
         case VK_PIPELINE_STAGE_2_CLUSTER_CULLING_SHADER_BIT_HUAWEI:
-            returnFlag |= VK_ACCESS_2_SHADER_READ_BIT;
+            return_flag |= VK_ACCESS_2_SHADER_READ_BIT;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT:
         case VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT:
         case VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT:
@@ -110,49 +110,49 @@ inline VkAccessFlagBits2 getFlagFromPipelineStage(VkPipelineStageFlags2 pipeline
         case VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT:
         case VK_PIPELINE_STAGE_2_SUBPASS_SHADER_BIT_HUAWEI:
         case VK_PIPELINE_STAGE_2_CLUSTER_CULLING_SHADER_BIT_HUAWEI:
-            returnFlag |= VK_ACCESS_2_SHADER_WRITE_BIT;
+            return_flag |= VK_ACCESS_2_SHADER_WRITE_BIT;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT:
         case VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT:
-            returnFlag |= VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
+            return_flag |= VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT:
-            returnFlag |= VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+            return_flag |= VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT:
         case VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT:
         case VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT:
-            returnFlag |= VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+            return_flag |= VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT:
         case VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT:
-            returnFlag |= VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+            return_flag |= VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT:
         case VK_PIPELINE_STAGE_2_COPY_BIT:
         case VK_PIPELINE_STAGE_2_RESOLVE_BIT:
@@ -160,13 +160,13 @@ inline VkAccessFlagBits2 getFlagFromPipelineStage(VkPipelineStageFlags2 pipeline
         case VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR:
         case VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR:
         case VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT:
-            returnFlag |= VK_ACCESS_2_TRANSFER_READ_BIT;
+            return_flag |= VK_ACCESS_2_TRANSFER_READ_BIT;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT:
         case VK_PIPELINE_STAGE_2_COPY_BIT:
         case VK_PIPELINE_STAGE_2_RESOLVE_BIT:
@@ -175,29 +175,29 @@ inline VkAccessFlagBits2 getFlagFromPipelineStage(VkPipelineStageFlags2 pipeline
         case VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR:
         case VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR:
         case VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT:
-            returnFlag |= VK_ACCESS_2_TRANSFER_WRITE_BIT;
+            return_flag |= VK_ACCESS_2_TRANSFER_WRITE_BIT;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_HOST_BIT:
-            returnFlag |= VK_ACCESS_2_HOST_READ_BIT;
+            return_flag |= VK_ACCESS_2_HOST_READ_BIT;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_HOST_BIT:
-            returnFlag |= VK_ACCESS_2_HOST_WRITE_BIT;
+            return_flag |= VK_ACCESS_2_HOST_WRITE_BIT;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT:
         case VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT:
         case VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT:
@@ -209,12 +209,12 @@ inline VkAccessFlagBits2 getFlagFromPipelineStage(VkPipelineStageFlags2 pipeline
         case VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT:
         case VK_PIPELINE_STAGE_2_SUBPASS_SHADER_BIT_HUAWEI:
         case VK_PIPELINE_STAGE_2_CLUSTER_CULLING_SHADER_BIT_HUAWEI:
-            returnFlag |= VK_ACCESS_2_SHADER_SAMPLED_READ_BIT;
+            return_flag |= VK_ACCESS_2_SHADER_SAMPLED_READ_BIT;
             break;
         default:
             break;
     }
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT:
         case VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT:
         case VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT:
@@ -226,12 +226,12 @@ inline VkAccessFlagBits2 getFlagFromPipelineStage(VkPipelineStageFlags2 pipeline
         case VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT:
         case VK_PIPELINE_STAGE_2_SUBPASS_SHADER_BIT_HUAWEI:
         case VK_PIPELINE_STAGE_2_CLUSTER_CULLING_SHADER_BIT_HUAWEI:
-            returnFlag |= VK_ACCESS_2_SHADER_STORAGE_READ_BIT;
+            return_flag |= VK_ACCESS_2_SHADER_STORAGE_READ_BIT;
             break;
         default:
             break;
     }
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT:
         case VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT:
         case VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT:
@@ -243,102 +243,102 @@ inline VkAccessFlagBits2 getFlagFromPipelineStage(VkPipelineStageFlags2 pipeline
         case VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT:
         case VK_PIPELINE_STAGE_2_SUBPASS_SHADER_BIT_HUAWEI:
         case VK_PIPELINE_STAGE_2_CLUSTER_CULLING_SHADER_BIT_HUAWEI:
-            returnFlag |= VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT;
+            return_flag |= VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_VIDEO_DECODE_BIT_KHR:
-            returnFlag |= VK_ACCESS_2_VIDEO_DECODE_READ_BIT_KHR;
+            return_flag |= VK_ACCESS_2_VIDEO_DECODE_READ_BIT_KHR;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_VIDEO_DECODE_BIT_KHR:
-            returnFlag |= VK_ACCESS_2_VIDEO_DECODE_WRITE_BIT_KHR;
+            return_flag |= VK_ACCESS_2_VIDEO_DECODE_WRITE_BIT_KHR;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_VIDEO_ENCODE_BIT_KHR:
-            returnFlag |= VK_ACCESS_2_VIDEO_ENCODE_READ_BIT_KHR;
+            return_flag |= VK_ACCESS_2_VIDEO_ENCODE_READ_BIT_KHR;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_VIDEO_ENCODE_BIT_KHR:
-            returnFlag |= VK_ACCESS_2_VIDEO_ENCODE_WRITE_BIT_KHR;
+            return_flag |= VK_ACCESS_2_VIDEO_ENCODE_WRITE_BIT_KHR;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_TRANSFORM_FEEDBACK_BIT_EXT:
         case VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT:
-            returnFlag |= VK_ACCESS_2_TRANSFORM_FEEDBACK_WRITE_BIT_EXT;
+            return_flag |= VK_ACCESS_2_TRANSFORM_FEEDBACK_WRITE_BIT_EXT;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_TRANSFORM_FEEDBACK_BIT_EXT:
-            returnFlag |= VK_ACCESS_2_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT;
+            return_flag |= VK_ACCESS_2_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_TRANSFORM_FEEDBACK_BIT_EXT:
-            returnFlag |= VK_ACCESS_2_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT;
+            return_flag |= VK_ACCESS_2_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_CONDITIONAL_RENDERING_BIT_EXT:
-            returnFlag |= VK_ACCESS_2_CONDITIONAL_RENDERING_READ_BIT_EXT;
+            return_flag |= VK_ACCESS_2_CONDITIONAL_RENDERING_READ_BIT_EXT;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_COMMAND_PREPROCESS_BIT_NV:
-            returnFlag |= VK_ACCESS_2_COMMAND_PREPROCESS_READ_BIT_NV;
+            return_flag |= VK_ACCESS_2_COMMAND_PREPROCESS_READ_BIT_NV;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_COMMAND_PREPROCESS_BIT_NV:
-            returnFlag |= VK_ACCESS_2_COMMAND_PREPROCESS_WRITE_BIT_NV;
+            return_flag |= VK_ACCESS_2_COMMAND_PREPROCESS_WRITE_BIT_NV;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR:
-            returnFlag |= VK_ACCESS_2_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR;
+            return_flag |= VK_ACCESS_2_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT:
         case VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT:
         case VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT:
@@ -352,38 +352,38 @@ inline VkAccessFlagBits2 getFlagFromPipelineStage(VkPipelineStageFlags2 pipeline
         case VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR:
         case VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR:
         case VK_PIPELINE_STAGE_2_SUBPASS_SHADER_BIT_HUAWEI:
-            returnFlag |= VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+            return_flag |= VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR:
         case VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR:
-            returnFlag |= VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
+            return_flag |= VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_FRAGMENT_DENSITY_PROCESS_BIT_EXT:
-            returnFlag |= VK_ACCESS_2_FRAGMENT_DENSITY_MAP_READ_BIT_EXT;
+            return_flag |= VK_ACCESS_2_FRAGMENT_DENSITY_MAP_READ_BIT_EXT;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT:
-            returnFlag |= VK_ACCESS_2_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT;
+            return_flag |= VK_ACCESS_2_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT;
             break;
         default:
             break;
     }
 
-    switch (pipelineStage) {
+    switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT:
         case VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT:
         case VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT:
@@ -395,16 +395,16 @@ inline VkAccessFlagBits2 getFlagFromPipelineStage(VkPipelineStageFlags2 pipeline
         case VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT:
         case VK_PIPELINE_STAGE_2_CLUSTER_CULLING_SHADER_BIT_HUAWEI:
         case VK_PIPELINE_STAGE_2_SUBPASS_SHADER_BIT_HUAWEI:
-            returnFlag |= VK_ACCESS_2_DESCRIPTOR_BUFFER_READ_BIT_EXT;
+            return_flag |= VK_ACCESS_2_DESCRIPTOR_BUFFER_READ_BIT_EXT;
             break;
         default:
             break;
     }
-    return returnFlag;
+    return return_flag;
 };
 
-inline unsigned int getPixelSizeFromFormat(VkFormat format) {
-    switch (format) {
+inline unsigned int getPixelSizeFromFormat(const VkFormat p_format) {
+    switch (p_format) {
         case VK_FORMAT_UNDEFINED:
             throw std::runtime_error("Undefined image format");
             break;
@@ -581,8 +581,8 @@ inline unsigned int getPixelSizeFromFormat(VkFormat format) {
     }
 }
 
-inline VkAccessFlags getAccessFlagsFromLayout(VkImageLayout layout) {
-    switch (layout) {
+inline VkAccessFlags getAccessFlagsFromLayout(const VkImageLayout p_layout) {
+    switch (p_layout) {
         case VK_IMAGE_LAYOUT_UNDEFINED:
             return 0;
             break;
@@ -643,7 +643,7 @@ inline VkAccessFlags getAccessFlagsFromLayout(VkImageLayout layout) {
 }
 
 // from Vulkan Samples
-inline VkDeviceSize alignedVkSize(VkDeviceSize value, VkDeviceSize alignment) { return (value + alignment - 1) & ~(alignment - 1); }
+inline VkDeviceSize alignedVkSize(const VkDeviceSize value, const VkDeviceSize alignment) { return (value + alignment - 1) & ~(alignment - 1); }
 
 }  // namespace TTe
 

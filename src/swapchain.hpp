@@ -16,48 +16,47 @@ namespace TTe {
 class SwapChain {
    public:
     // constructor
-    SwapChain(Device *device, VkExtent2D windowExtent, vkb::SwapchainBuilder::BufferMode bufferingMode);
+    SwapChain(Device* p_device, const VkExtent2D p_window_extent, const vkb::SwapchainBuilder::BufferMode p_buffering_mode);
 
     // destructor
     ~SwapChain();
 
-    //delete copy and move constructors
+    // delete copy and move constructors
     SwapChain(const SwapChain&) = delete;
     SwapChain(SwapChain&&) = delete;
     SwapChain& operator=(const SwapChain&) = delete;
     SwapChain& operator=(SwapChain&&) = delete;
 
-    void recreateSwapchain(VkExtent2D windowExtent);
+    void recreateSwapchain(const VkExtent2D p_window_extent);
 
-    VkResult acquireNextImage(uint32_t& currentSwapchainImage, int* renderIndex , Semaphore*& aquireFrameSemaphore, Fence*& fence);
-    VkResult presentFrame(uint32_t& currentSwapchainImage, Semaphore* waitSemaphores);
-   
-    float extentAspectRatio() { 
-        return static_cast<float>(vkbSwapchain.extent.width) / static_cast<float>(vkbSwapchain.extent.height); 
-        }
+    const VkResult acquireNextImage(uint32_t& p_current_swapchain_image, int* p_render_index,  Semaphore*& p_aquire_frame_semaphore,  Fence*& p_fence);
+    const VkResult presentFrame(const uint32_t& p_current_swapchain_image, const Semaphore* p_wait_semaphore) const;
 
-    Image& getSwapChainImage(unsigned int index) { return swapChainImage[index]; }
+    const float getExtentAspectRatio() const {
+        return static_cast<float>(m_vkb_swapchain.extent.width) / static_cast<float>(m_vkb_swapchain.extent.height);
+    }
 
-    std::vector<Image> &getswapChainImages(){return swapChainImage;};
+    Image& getSwapChainImage(const unsigned int p_index)  { return m_swapchain_images[p_index]; }
+    std::vector<Image>& getswapChainImages()  { return m_swapchain_images; };
 
    private:
     void generateSwapchainImages();
     void createSyncObjects();
 
-    unsigned int numberOfFrame = 0;
+    unsigned int m_number_of_frame = 0;
 
-    std::vector<Image> swapChainImage;
-    std::vector<VkImageView> swapChainImageView;
+    std::vector<Image> m_swapchain_images;
+    std::vector<VkImageView> m_swapchain_image_views;
 
-    std::vector<Fence *> imageAvailableFences;
-    std::vector<Semaphore> imageAvailableSemaphores;
-    
-    vkb::SwapchainBuilder::BufferMode bufferingMode;
+    // should be mouved out of swapchain
+    std::vector<Fence*> m_ressources_available_fences;
+    std::vector<Semaphore> m_image_available_semaphores;
 
+    vkb::SwapchainBuilder::BufferMode m_buffering_mode;
 
-    VkQueue presentQueue = VK_NULL_HANDLE;
-    Device *device = nullptr;
-    vkb::Swapchain vkbSwapchain;
+    VkQueue m_present_queue = VK_NULL_HANDLE;
+    Device* m_device = nullptr;
+    vkb::Swapchain m_vkb_swapchain;
 };
 
-}  // namespace vk_stage
+}  // namespace TTe

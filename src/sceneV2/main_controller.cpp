@@ -64,15 +64,15 @@ void MainController::mouseMoveCallback(GLFWwindow* window, double xpos, double y
         previousMouseMoveCallback(window, xpos, ypos);
     Window* windowObj = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
     
-    double xoffset =  windowObj->lastX - xpos ;
-    double yoffset = windowObj->lastY - ypos; // reversed since y-coordinates go from bottom to top
+    double xoffset =  windowObj->last_x - xpos ;
+    double yoffset = windowObj->last_y - ypos; // reversed since y-coordinates go from bottom to top
 
     // std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
-    // std::chrono::duration<double> elapsed = now - windowObj->mouseLastMoved;
-    // windowObj->mouseLastMoved = now;
+    // std::chrono::duration<double> elapsed = now - windowObj->mouse_last_moved;
+    // windowObj->mouse_last_moved = now;
 
-    windowObj->lastX = xpos;
-    windowObj->lastY = ypos;
+    windowObj->last_x = xpos;
+    windowObj->last_y = ypos;
     if(windowObj->move_cam == false) return;
 
     xoffset *= 0.005;

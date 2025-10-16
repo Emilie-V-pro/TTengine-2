@@ -28,7 +28,7 @@ class Semaphore : public vk_cmdBuffer_OBJ {
     uint64_t getTimeLineSemaphoreCountValue() const;
     VkResult waitTimeLineSemaphore(uint64_t waitValue) const;
     void signalTimeLineSemaphore(uint64_t signalValue) const;
-    operator VkSemaphore&() { return vksemaphore; }
+    operator const VkSemaphore&() const { return vksemaphore; }
 
     VkSemaphoreSubmitInfo getSemaphoreSubmitSignalInfo();
     VkSemaphoreSubmitInfo getSemaphoreSubmitWaittInfo() const;

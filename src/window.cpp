@@ -4,41 +4,41 @@
 #include <cstdint>
 
 namespace TTe {
-Window::Window(unsigned int width, unsigned int height, std::string name) : size(width, height) {
+Window::Window(const unsigned int p_width, const unsigned int p_height, const std::string p_name) : m_size(p_width, p_height) {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
-    window = glfwCreateWindow(width, height, name.c_str(), nullptr, nullptr);
-    glfwSetWindowUserPointer(window, this);
+    m_window = glfwCreateWindow(p_width, p_height, p_name.c_str(), nullptr, nullptr);
+    glfwSetWindowUserPointer(m_window, this);
     
-    if (glfwRawMouseMotionSupported()) glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+    if (glfwRawMouseMotionSupported()) glfwSetInputMode(m_window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 
-    glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+    glfwSetFramebufferSizeCallback(m_window, framebufferResizeCallback);
 }
 
-VkSurfaceKHR &Window::getSurface(const vkb::Instance &vkInstance) {
-    if (glfwCreateWindowSurface(vkInstance.instance, window, nullptr, &surface) != VK_SUCCESS) {
-        throw std::runtime_error("failed to craete window surface");
+const VkSurfaceKHR &Window::createSurface(const vkb::Instance &p_vkb_instance) {
+    if (glfwCreateWindowSurface(p_vkb_instance.instance, m_window, nullptr, &surface) != VK_SUCCESS) {
+        throw std::runtime_error("failed to craete m_window surface");
     }
     return surface;
 }
 
 Window::~Window() {
-    glfwDestroyWindow(window);
+    glfwDestroyWindow(m_window);
     glfwTerminate();
 }
 
 const VkExtent2D& Window::getExtentGLFW() {
     int width, height;
-    glfwGetWindowSize(window, &width, &height);
-    this->size = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
-    return this->size;
+    glfwGetWindowSize(m_window, &width, &height);
+    m_size = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+    return m_size;
 }
 
-void Window::framebufferResizeCallback(GLFWwindow *window, int width , int height) {
-    auto windowObj = reinterpret_cast<Window *>(glfwGetWindowUserPointer(window));
-    windowObj->framebufferResized = true;
-    windowObj->size = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+void Window::framebufferResizeCallback(GLFWwindow *p_window, int p_width , int p_height) {
+    auto windowObj = reinterpret_cast<Window *>(glfwGetWindowUserPointer(p_window));
+    windowObj->m_is_frame_buffer_resize = true;
+    windowObj->m_size = {static_cast<uint32_t>(p_width), static_cast<uint32_t>(p_height)};
 }
 }  // namespace TTe
