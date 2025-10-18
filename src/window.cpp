@@ -18,10 +18,10 @@ Window::Window(const unsigned int p_width, const unsigned int p_height, const st
 }
 
 const VkSurfaceKHR &Window::createSurface(const vkb::Instance &p_vkb_instance) {
-    if (glfwCreateWindowSurface(p_vkb_instance.instance, m_window, nullptr, &surface) != VK_SUCCESS) {
-        throw std::runtime_error("failed to craete m_window surface");
+    if (glfwCreateWindowSurface(p_vkb_instance.instance, m_window, nullptr, &m_surface) != VK_SUCCESS) {
+        throw std::runtime_error("failed to craete m_window m_surface");
     }
-    return surface;
+    return m_surface;
 }
 
 Window::~Window() {

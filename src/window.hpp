@@ -53,7 +53,7 @@ class Window {
     VkExtent2D m_size = {0, 0};
 
     bool m_is_frame_buffer_resize = false;
-    VkSurfaceKHR surface = VK_NULL_HANDLE;
+    VkSurfaceKHR m_surface = VK_NULL_HANDLE;
     GLFWwindow *m_window = nullptr;
 };
 }  // namespace TTe

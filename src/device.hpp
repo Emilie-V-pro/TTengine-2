@@ -32,35 +32,35 @@ class Device {
     Device &operator=(Device &&) = delete;
 
     uint32_t getRenderQueueFamilyIndexFromQueu(const VkQueue& queue) const  { 
-        if(queue == renderQueue) return renderQueueFamilyIndex;
-        if(queue == computeQueue) return computeQueueFamilyIndex;
-        if(queue == transferQueue) return transferQueueFamilyIndex;
+        if(queue == m_render_queue) return m_render_queue_family_index;
+        if(queue == m_compute_queue) return m_compute_queue_family_index;
+        if(queue == m_transfer_queue) return m_transfer_queue_family_index;
         return -1;
      }
 
     std::mutex &getMutexFromQueue(const VkQueue& queue)  { 
-        if(queue == renderQueue) return renderQueueMutex;
-        if(queue == computeQueue) return computeQueueMutex;
-        if(queue == transferQueue) return transferQueueMutex;
+        if(queue == m_render_queue) return m_render_queue_mutex;
+        if(queue == m_compute_queue) return m_compute_queue_mutex;
+        if(queue == m_transfer_queue) return m_transfer_queue_mutex;
         throw std::runtime_error("Invalid queue");
      }
 
-    VkInstance getInstance() const { return vk_instance; }
+    VkInstance getInstance() const { return m_vk_instance; }
 
-    const VkQueue& getRenderQueue() const { return renderQueue; }
-    const VkQueue& getComputeQueue() const { return computeQueue; }
-    const VkQueue& getTransferQueue() const { return transferQueue; }
-    const VkQueue& getPresentQueue() const { return presentQueue; }
+    const VkQueue& getRenderQueue() const { return m_render_queue; }
+    const VkQueue& getComputeQueue() const { return m_compute_queue; }
+    const VkQueue& getTransferQueue() const { return m_transfer_queue; }
+    const VkQueue& getPresentQueue() const { return m_present_queue; }
 
-    const VmaAllocator& getAllocator() const { return _allocator; } 
+    const VmaAllocator& getAllocator() const { return m_allocator; } 
 
-    const vkb::Device &getVkbDevice() const { return vkbDevice; }
+    const vkb::Device &getVkbDevice() const { return m_vkb_device; }
 
-    const VkPhysicalDeviceDescriptorBufferPropertiesEXT &getDeviceDescProps() const { return deviceDescProps; }
+    const VkPhysicalDeviceDescriptorBufferPropertiesEXT &getDeviceDescProps() const { return m_device_desc_props; }
     VkFormat findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
     //get device
-    operator VkDevice() const { return vk_device; }
+    operator VkDevice() const { return m_vk_device; }
 
    private:
     void createInstance();
@@ -72,31 +72,31 @@ class Device {
 
     void queryPhysicalDeviceProperties();
 
-    VkDevice vk_device = VK_NULL_HANDLE;
-    VkInstance vk_instance = VK_NULL_HANDLE;
-    VkSurfaceKHR surface = VK_NULL_HANDLE;
-    VmaAllocator _allocator ;
-     VmaVulkanFunctions vma_vulkan_func{};
+    VkDevice m_vk_device = VK_NULL_HANDLE;
+    VkInstance m_vk_instance = VK_NULL_HANDLE;
+    VkSurfaceKHR m_surface = VK_NULL_HANDLE;
+    VmaAllocator m_allocator ;
+    VmaVulkanFunctions m_vma_vulkan_func{};
 
-    VkQueue renderQueue = VK_NULL_HANDLE;
-    uint32_t renderQueueFamilyIndex = -1;
-    VkQueue computeQueue = VK_NULL_HANDLE;
-    uint32_t computeQueueFamilyIndex = -1;
-    VkQueue transferQueue = VK_NULL_HANDLE;
-    uint32_t transferQueueFamilyIndex = -1;
+    VkQueue m_render_queue = VK_NULL_HANDLE;
+    uint32_t m_render_queue_family_index = -1;
+    VkQueue m_compute_queue = VK_NULL_HANDLE;
+    uint32_t m_compute_queue_family_index = -1;
+    VkQueue m_transfer_queue = VK_NULL_HANDLE;
+    uint32_t m_transfer_queue_family_index = -1;
 
-    std::mutex renderQueueMutex;
-    std::mutex computeQueueMutex;
-    std::mutex transferQueueMutex;
+    std::mutex m_render_queue_mutex;
+    std::mutex m_compute_queue_mutex;
+    std::mutex m_transfer_queue_mutex;
 
-    VkQueue presentQueue = VK_NULL_HANDLE;
+    VkQueue m_present_queue = VK_NULL_HANDLE;
 
-    VkPhysicalDeviceProperties2KHR deviceProps2 = {};
-    VkPhysicalDeviceDescriptorBufferPropertiesEXT deviceDescProps = {};
+    VkPhysicalDeviceProperties2KHR m_device_props_2 = {};
+    VkPhysicalDeviceDescriptorBufferPropertiesEXT m_device_desc_props = {};
 
-    vkb::Instance vkbInstance;
-    vkb::PhysicalDevice vkbPhysicalDevice;
-    vkb::Device vkbDevice;
+    vkb::Instance m_vkb_instance;
+    vkb::PhysicalDevice m_vkb_physical_device;
+    vkb::Device m_vkb_device;
 
     // disable validation on release build type to get full performance
 #ifdef NDEBUG
