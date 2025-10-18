@@ -34,9 +34,9 @@ Scene::Scene(Device *device) : device(device) {
 
 Scene::~Scene() {}
 
-void Scene::initSceneData(DynamicRenderPass *defferedRenderpass, DynamicRenderPass *shadingRenderPass, std::filesystem::path skyboxPath) {
+void Scene::initSceneData(DynamicRenderPass *defferedRenderpass, DynamicRenderPass *m_shading_renderpass, std::filesystem::path skyboxPath) {
     this->defferedRenderpass = defferedRenderpass;
-    this->shadingRenderPass = shadingRenderPass;
+    this->m_shading_renderpass = m_shading_renderpass;
     ImageCreateInfo skyboxImageCreateInfo;
     skyboxImageCreateInfo.filename.push_back(skyboxPath / "posx.jpg");
     skyboxImageCreateInfo.filename.push_back(skyboxPath / "negx.jpg");
@@ -137,7 +137,7 @@ void Scene::renderShading(CommandBuffer &cmd, RenderData &renderData) {
     renderData.basicMeshes = basicMeshes;
     renderData.cameras = &cameras;
     defferedRenderpass->transitionAttachment(renderData.swapchainIndex, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, cmd);
-    shadingRenderPass->transitionColorAttachment(renderData.swapchainIndex, VK_IMAGE_LAYOUT_GENERAL, cmd);
+    m_shading_renderpass->transitionColorAttachment(renderData.swapchainIndex, VK_IMAGE_LAYOUT_GENERAL, cmd);
 
     shadingPipeline.bindPipeline(cmd);
 
@@ -155,15 +155,15 @@ void Scene::renderShading(CommandBuffer &cmd, RenderData &renderData) {
 
     defferedRenderpass->transitionColorAttachment(renderData.swapchainIndex, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, cmd);
     defferedRenderpass->transitionDepthAttachment(renderData.swapchainIndex, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, cmd);
-    shadingRenderPass->transitionColorAttachment(renderData.swapchainIndex, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, cmd);
+    m_shading_renderpass->transitionColorAttachment(renderData.swapchainIndex, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, cmd);
 
-    shadingRenderPass->setClearEnable(false);
-    shadingRenderPass->beginRenderPass(cmd, renderData.swapchainIndex);
+    m_shading_renderpass->setClearEnable(false);
+    m_shading_renderpass->beginRenderPass(cmd, renderData.swapchainIndex);
     for (auto &renderable : renderables) {
         renderable->render(cmd, renderData);
     }
-    shadingRenderPass->endRenderPass(cmd);
-    shadingRenderPass->setClearEnable(true);
+    m_shading_renderpass->endRenderPass(cmd);
+    m_shading_renderpass->setClearEnable(true);
 }
 
 uint32_t Scene::getNewID() {
@@ -390,7 +390,10 @@ void Scene::updateMaterialBuffer() {
     materialBuffer.writeToBuffer(materialsGPU.data(), sizeof(MaterialGPU) * materialsGPU.size(), 0);
 }
 
-void Scene::createDescriptorSets() { sceneDescriptorSet = DescriptorSet(device, meshPipeline.getDescriptorSetLayout(0)); }
+void Scene::createDescriptorSets() { 
+    
+    sceneDescriptorSet = DescriptorSet(device, meshPipeline.getDescriptorSetLayout(0)); 
+}
 
 void Scene::updateDescriptorSets() {
     if (images.size() == 0) {
@@ -440,7 +443,7 @@ void Scene::updateRenderPassDescriptorSets() {
         deferreDescriptorSet[i].writeImageDescriptor(2, imageInfo);
 
         // swapchain
-        imageInfo = shadingRenderPass->getimageAttachement()[i][0].getDescriptorImageInfo(samplerType::LINEAR);
+        imageInfo = m_shading_renderpass->getimageAttachement()[i][0].getDescriptorImageInfo(samplerType::LINEAR);
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
         deferreDescriptorSet[i].writeImageDescriptor(3, imageInfo);
     }

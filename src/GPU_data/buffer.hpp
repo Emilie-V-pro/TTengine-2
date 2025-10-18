@@ -12,7 +12,7 @@
 
 namespace TTe {
 
-class Buffer : public vk_cmdBuffer_OBJ {
+class Buffer : public CmdBufferRessource {
    public:
     enum struct BufferType { GPU_ONLY, STAGING, READBACK, DYNAMIC, OTHER };
     // Constructors

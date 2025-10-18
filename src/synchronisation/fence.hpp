@@ -7,11 +7,11 @@
 #include "../device.hpp"
 #include "volk.h"
 namespace TTe {
-class Fence : public vk_cmdBuffer_OBJ {
+class Fence : public CmdBufferRessource {
    public:
     // Constructors
     Fence() = default;
-    Fence(const Device *device, bool signaled = false);
+    Fence(const Device *p_device, bool p_signaled = false);
 
     // Destructor
     ~Fence();
@@ -26,12 +26,12 @@ class Fence : public vk_cmdBuffer_OBJ {
     VkResult waitForFence();
     void resetFence();
 
-    operator VkFence() const { return vk_Fence; }
-    static VkResult waitForFences(const Device *vkDevice, const std::vector<Fence *> &fences, bool waitAllFence, int *firstFenceSignaled);
+    operator VkFence() const { return m_vk_fence; }
+    static VkResult waitForFences(const Device *p_device, const std::vector<Fence *> &p_fences, bool p_wait_all_fence, int *p_first_fence_signaled);
 
    private:
-    VkFence vk_Fence = VK_NULL_HANDLE;
-    std::mutex mutex;
-    const Device *device = nullptr;
+    VkFence m_vk_fence = VK_NULL_HANDLE;
+    std::mutex m_mutex;
+    const Device *m_device = nullptr;
 };
 }  // namespace TTe

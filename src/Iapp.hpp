@@ -19,7 +19,7 @@ class IApp {
     void virtual renderShadedFrame(float p_delta_time, CommandBuffer &p_cmd_buffer,uint32_t p_render_index, uint32_t p_swapchain_index) = 0;
     std::string name;
    protected:
-   Device *device;
+   Device *m_device;
    private:
 
 };

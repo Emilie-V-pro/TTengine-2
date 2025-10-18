@@ -16,7 +16,7 @@
 namespace TTe {
 class Device {
    public:
-    Device(Window &window);
+    Device(Window &p_window);
     ~Device();
 
     const VkDevice &operator()();
@@ -31,17 +31,17 @@ class Device {
     Device(Device &&) = delete;
     Device &operator=(Device &&) = delete;
 
-    uint32_t getRenderQueueFamilyIndexFromQueu(const VkQueue& queue) const  { 
-        if(queue == m_render_queue) return m_render_queue_family_index;
-        if(queue == m_compute_queue) return m_compute_queue_family_index;
-        if(queue == m_transfer_queue) return m_transfer_queue_family_index;
+    uint32_t getRenderQueueFamilyIndexFromQueu(const VkQueue& p_queue) const  { 
+        if(p_queue == m_render_queue) return m_render_queue_family_index;
+        if(p_queue == m_compute_queue) return m_compute_queue_family_index;
+        if(p_queue == m_transfer_queue) return m_transfer_queue_family_index;
         return -1;
      }
 
-    std::mutex &getMutexFromQueue(const VkQueue& queue)  { 
-        if(queue == m_render_queue) return m_render_queue_mutex;
-        if(queue == m_compute_queue) return m_compute_queue_mutex;
-        if(queue == m_transfer_queue) return m_transfer_queue_mutex;
+    std::mutex &getMutexFromQueue(const VkQueue& p_queue)  { 
+        if(p_queue == m_render_queue) return m_render_queue_mutex;
+        if(p_queue == m_compute_queue) return m_compute_queue_mutex;
+        if(p_queue == m_transfer_queue) return m_transfer_queue_mutex;
         throw std::runtime_error("Invalid queue");
      }
 
@@ -57,17 +57,17 @@ class Device {
     const vkb::Device &getVkbDevice() const { return m_vkb_device; }
 
     const VkPhysicalDeviceDescriptorBufferPropertiesEXT &getDeviceDescProps() const { return m_device_desc_props; }
-    VkFormat findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+    VkFormat findSupportedFormat(const std::vector<VkFormat> &p_candidates, VkImageTiling p_tiling, VkFormatFeatureFlags p_features);
 
     //get device
     operator VkDevice() const { return m_vk_device; }
 
    private:
     void createInstance();
-    void selectPhysicalDevice(Window  &window);
+    void selectPhysicalDevice(Window  &p_window);
     void createLogicialDevice();
-    void setRequiredFeatures(vkb::PhysicalDeviceSelector &phys_device_selector);
-    void setRequiredExtensions(vkb::PhysicalDeviceSelector &phys_device_selector);
+    void setRequiredFeatures(vkb::PhysicalDeviceSelector &p_phys_device_selector);
+    void setRequiredExtensions(vkb::PhysicalDeviceSelector &p_phys_device_selector);
     void initVMA();
 
     void queryPhysicalDeviceProperties();

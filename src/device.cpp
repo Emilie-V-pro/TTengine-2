@@ -13,9 +13,9 @@
 #include "vk_mem_alloc.h"
 namespace TTe {
 
-Device::Device(Window &window) {
+Device::Device(Window &p_window) {
     createInstance();
-    selectPhysicalDevice(window);
+    selectPhysicalDevice(p_window);
     createLogicialDevice();
     initVMA();
     queryPhysicalDeviceProperties();
@@ -40,8 +40,8 @@ void Device::createInstance() {
     m_vk_instance = m_vkb_instance.instance;
 }
 
-void Device::selectPhysicalDevice(Window &window) {
-    this->m_surface = window.createSurface(m_vkb_instance);
+void Device::selectPhysicalDevice(Window &p_window) {
+    this->m_surface = p_window.createSurface(m_vkb_instance);
     std::cout << "m_surface created" << std::endl;
     vkb::PhysicalDeviceSelector phys_device_selector(m_vkb_instance);
     phys_device_selector.set_surface(m_surface);
@@ -75,14 +75,12 @@ void Device::createLogicialDevice() {
     m_vk_device = m_vkb_device.device;
 }
 
-void VmaLogCallbackFunction(void *pUserData, const char *message) { std::cout << "VMA: " << message << std::endl; }
-
 void Device::initVMA() {
-    VmaAllocatorCreateInfo allocatorInfo = {};
-    allocatorInfo.physicalDevice = m_vkb_physical_device.physical_device;
-    allocatorInfo.device = *this;
-    allocatorInfo.instance = m_vkb_instance.instance;
-    allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_3;
+    VmaAllocatorCreateInfo allocator_info = {};
+    allocator_info.physicalDevice = m_vkb_physical_device.physical_device;
+    allocator_info.device = *this;
+    allocator_info.instance = m_vkb_instance.instance;
+    allocator_info.vulkanApiVersion = VK_API_VERSION_1_3;
 
     m_vma_vulkan_func.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
     m_vma_vulkan_func.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
@@ -105,43 +103,43 @@ void Device::initVMA() {
     m_vma_vulkan_func.vkUnmapMemory = vkUnmapMemory;
     m_vma_vulkan_func.vkCmdCopyBuffer = vkCmdCopyBuffer;
 
-    allocatorInfo.pVulkanFunctions = &m_vma_vulkan_func;
-    allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
-    vmaCreateAllocator(&allocatorInfo, &m_allocator);
+    allocator_info.pVulkanFunctions = &m_vma_vulkan_func;
+    allocator_info.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+    vmaCreateAllocator(&allocator_info, &m_allocator);
 }
 
-void setRequiredExtensionsFeatures(vkb::PhysicalDeviceSelector &phys_device_selector) {
-    VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjFeature{};
-    shaderObjFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT;
-    shaderObjFeature.shaderObject = true;
+void setRequiredExtensionsFeatures(vkb::PhysicalDeviceSelector &p_phys_device_selector) {
+    VkPhysicalDeviceShaderObjectFeaturesEXT shader_obj_feature{};
+    shader_obj_feature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT;
+    shader_obj_feature.shaderObject = true;
 
-    VkPhysicalDeviceDescriptorBufferFeaturesEXT descriptorBufferFeature{};
-    descriptorBufferFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT;
-    descriptorBufferFeature.descriptorBuffer = true;
-    descriptorBufferFeature.descriptorBufferCaptureReplay = true;
+    VkPhysicalDeviceDescriptorBufferFeaturesEXT descriptor_buffer_feature{};
+    descriptor_buffer_feature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT;
+    descriptor_buffer_feature.descriptorBuffer = true;
+    descriptor_buffer_feature.descriptorBufferCaptureReplay = true;
 
-    phys_device_selector.add_required_extension_features(shaderObjFeature);
-    phys_device_selector.add_required_extension_features(descriptorBufferFeature);
+    p_phys_device_selector.add_required_extension_features(shader_obj_feature);
+    p_phys_device_selector.add_required_extension_features(descriptor_buffer_feature);
 }
 
 // Features paramater
 
-void setRequiredFeatures10(vkb::PhysicalDeviceSelector &phys_device_selector) {
+void setRequiredFeatures10(vkb::PhysicalDeviceSelector &p_phys_device_selector) {
     auto required_features = make<VkPhysicalDeviceFeatures>();
     required_features.samplerAnisotropy = true;
     required_features.shaderInt64 = true;
     required_features.fillModeNonSolid = true;
     required_features.wideLines = true;
     required_features.largePoints  = true;
-    phys_device_selector.set_required_features(required_features);
+    p_phys_device_selector.set_required_features(required_features);
 }
 
-void setRequiredFeatures11(vkb::PhysicalDeviceSelector &phys_device_selector) {
+void setRequiredFeatures11(vkb::PhysicalDeviceSelector &p_phys_device_selector) {
     auto required_features = make<VkPhysicalDeviceVulkan11Features>();
-    phys_device_selector.set_required_features_11(required_features);
+    p_phys_device_selector.set_required_features_11(required_features);
 }
 
-void setRequiredFeatures12(vkb::PhysicalDeviceSelector &phys_device_selector) {
+void setRequiredFeatures12(vkb::PhysicalDeviceSelector &p_phys_device_selector) {
     auto required_features12 = make<VkPhysicalDeviceVulkan12Features>();
     required_features12.descriptorBindingPartiallyBound = true;
     // required_features12.runtimeDescriptorArray = true;
@@ -154,29 +152,29 @@ void setRequiredFeatures12(vkb::PhysicalDeviceSelector &phys_device_selector) {
     required_features12.timelineSemaphore = true;
     required_features12.shaderSampledImageArrayNonUniformIndexing = true;
     
-    phys_device_selector.set_required_features_12(required_features12);
+    p_phys_device_selector.set_required_features_12(required_features12);
 }
 
-void setRequiredFeatures13(vkb::PhysicalDeviceSelector &phys_device_selector) {
+void setRequiredFeatures13(vkb::PhysicalDeviceSelector &p_phys_device_selector) {
     auto required_features13 = make<VkPhysicalDeviceVulkan13Features>();
     required_features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
     required_features13.dynamicRendering = true;
     required_features13.synchronization2 = true;
     required_features13.shaderDemoteToHelperInvocation = true;
-    phys_device_selector.set_required_features_13(required_features13);
+    p_phys_device_selector.set_required_features_13(required_features13);
 }
 
-void Device::setRequiredFeatures(vkb::PhysicalDeviceSelector &phys_device_selector) {
-    setRequiredExtensionsFeatures(phys_device_selector);
-    setRequiredFeatures10(phys_device_selector);
-    setRequiredFeatures12(phys_device_selector);
-    setRequiredFeatures13(phys_device_selector);
+void Device::setRequiredFeatures(vkb::PhysicalDeviceSelector &p_phys_device_selector) {
+    setRequiredExtensionsFeatures(p_phys_device_selector);
+    setRequiredFeatures10(p_phys_device_selector);
+    setRequiredFeatures12(p_phys_device_selector);
+    setRequiredFeatures13(p_phys_device_selector);
 }
 
-void Device::setRequiredExtensions(vkb::PhysicalDeviceSelector &phys_device_selector) {
-    phys_device_selector.add_required_extension("VK_EXT_shader_object");
-    phys_device_selector.add_required_extension("VK_EXT_descriptor_buffer");
-    phys_device_selector.add_required_extension("VK_KHR_swapchain_mutable_format");
+void Device::setRequiredExtensions(vkb::PhysicalDeviceSelector &p_phys_device_selector) {
+    p_phys_device_selector.add_required_extension("VK_EXT_shader_object");
+    p_phys_device_selector.add_required_extension("VK_EXT_descriptor_buffer");
+    p_phys_device_selector.add_required_extension("VK_KHR_swapchain_mutable_format");
 }
 
 void Device::queryPhysicalDeviceProperties() {
@@ -187,14 +185,14 @@ void Device::queryPhysicalDeviceProperties() {
     vkGetPhysicalDeviceProperties2(m_vkb_physical_device.physical_device, &m_device_props_2);
 }
 
-VkFormat Device::findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
-    for (VkFormat format : candidates) {
+VkFormat Device::findSupportedFormat(const std::vector<VkFormat> &p_candidates, VkImageTiling p_tiling, VkFormatFeatureFlags p_features) {
+    for (VkFormat format : p_candidates) {
         VkFormatProperties props;
         vkGetPhysicalDeviceFormatProperties(m_vkb_device.physical_device, format, &props);
 
-        if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
+        if (p_tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & p_features) == p_features) {
             return format;
-        } else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
+        } else if (p_tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & p_features) == p_features) {
             return format;
         }
     }

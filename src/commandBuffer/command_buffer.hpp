@@ -45,7 +45,7 @@ class CommandBufferPool {
     friend class CommandBuffer;
 };
 
-class CommandBuffer : public vk_cmdBuffer_OBJ {
+class CommandBuffer : public CmdBufferRessource {
    public:
     CommandBuffer();
     CommandBuffer(Device* device, CommandBufferPool* CommandBufferPool, const VkCommandBuffer& cmdBuffer);
@@ -68,18 +68,17 @@ class CommandBuffer : public vk_cmdBuffer_OBJ {
         Fence* vk_fence = nullptr,
         bool waitForExecution = false);
 
-    void addRessourceToDestroy(vk_cmdBuffer_OBJ* ressource);
-    void addRessource(vk_cmdBuffer_OBJ &ressource) { 
+    void addRessourceToDestroy(CmdBufferRessource* ressource);
+    void addRessource(CmdBufferRessource &ressource) { 
         ressources.push_back(ressource);
-        int x = 0;
         };
 
     bool fini = true;
    private:
     static void waitAndDestroy(CommandBuffer* cmdBuffer, Semaphore* s, uint32_t index);
 
-    std::vector<vk_cmdBuffer_OBJ*> ressourcesToDestroy;
-    std::vector<vk_cmdBuffer_OBJ> ressources;
+    std::vector<CmdBufferRessource*> ressourcesToDestroy;
+    std::vector<CmdBufferRessource> ressources;
     
     CommandBufferPool* cmdBufferPool = nullptr;
 

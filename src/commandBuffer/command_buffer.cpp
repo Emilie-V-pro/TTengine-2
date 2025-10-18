@@ -252,6 +252,6 @@ void CommandBuffer::waitAndDestroy(CommandBuffer* cmdBuffer, Semaphore* S, uint3
     cmdBuffer->mutex.unlock();
 }
 
-void CommandBuffer::addRessourceToDestroy(vk_cmdBuffer_OBJ* ressource) { ressourcesToDestroy.push_back(ressource); }
+void CommandBuffer::addRessourceToDestroy(CmdBufferRessource* ressource) { ressourcesToDestroy.push_back(ressource); }
 
 }  // namespace TTe

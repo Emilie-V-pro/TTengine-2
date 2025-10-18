@@ -36,7 +36,7 @@ class Scene : public Node {
     Scene() {};
     Scene(Device *device);
     void initSceneData(
-        DynamicRenderPass *defferedRenderpass, DynamicRenderPass *shadingRenderPass, std::filesystem::path skyboxPath = "textures/skybox");
+        DynamicRenderPass *defferedRenderpass, DynamicRenderPass *m_shading_renderpass, std::filesystem::path skyboxPath = "textures/skybox");
     ~Scene();
 
     // copy constructor
@@ -143,7 +143,7 @@ class Scene : public Node {
     std::vector<DescriptorSet> deferreDescriptorSet;
 
     DynamicRenderPass *defferedRenderpass;
-    DynamicRenderPass *shadingRenderPass;
+    DynamicRenderPass *m_shading_renderpass;
 
     
     

@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include <glm/fwd.hpp>
-#include <memory>
 #include <mutex>
 #include <vector>
 
@@ -10,7 +9,6 @@
 #include "device.hpp"
 #include "dynamic_renderpass.hpp"
 #include "sceneV2/main_controller.hpp"
-#include "sceneV2/main_controller_col.hpp"
 #include "sceneV2/scene.hpp"
 #include "window.hpp"
 
@@ -23,22 +21,22 @@ class App : public IApp {
     App() = default;
     ~App();
     // set up the application
-    void init(Device* device, DynamicRenderPass *deferredRenderPass, DynamicRenderPass *shadingRenderPass, Window* window);
-    void resize(int width, int height);
+    void init(Device* p_device, DynamicRenderPass *p_deferred_renderpass, DynamicRenderPass *p_shading_renderpass, Window* p_window);
+    void resize(int p_width, int p_height);
 
     // update the application
-    void update(float deltaTime, CommandBuffer &cmdBuffer, Window& windowObj) ;
-    void renderDeferredFrame(float deltatTime, CommandBuffer &cmdBuffer ,uint32_t render_index, uint32_t swapchainIndex) ;
-    void renderShadedFrame(float deltatTime, CommandBuffer &cmdBuffer, uint32_t render_index, uint32_t swapchainIndex) ;
+    void update(float p_delta_time, CommandBuffer &p_cmd_buffer, Window& p_window_obj) ;
+    void renderDeferredFrame(float p_deltat_time, CommandBuffer &p_cmd_buffer ,uint32_t p_render_index, uint32_t p_swapchain_index) ;
+    void renderShadedFrame(float p_deltat_time, CommandBuffer &p_cmd_buffer, uint32_t p_render_index, uint32_t p_swapchain_index) ;
    private:
 
-   std::vector<glm::vec3> lightAccelerations;
-   std::vector<glm::vec3> lightSpeeds;
+   std::vector<glm::vec3> m_light_accelerations;
+   std::vector<glm::vec3> m_light_speeds;
 
-   DynamicRenderPass *deferredRenderPass = nullptr;
-   DynamicRenderPass *shadingRenderPass = nullptr;
+   DynamicRenderPass *m_deferred_renderpass = nullptr;
+   DynamicRenderPass *m_shading_renderpass = nullptr;
    Scene *s;
-   MainController movementController;
+   MainController m_movement_controller;
 
    std::mutex m;
 

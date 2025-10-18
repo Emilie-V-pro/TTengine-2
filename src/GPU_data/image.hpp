@@ -29,7 +29,7 @@ struct ImageCreateInfo {
     std::vector<void *> datas;
 };
 
-class Image : public vk_cmdBuffer_OBJ {
+class Image : public CmdBufferRessource {
    public:
     // Constructor
     Image(){};

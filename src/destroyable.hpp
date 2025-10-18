@@ -2,8 +2,8 @@
 
 
 namespace TTe {
-class vk_cmdBuffer_OBJ {
+class CmdBufferRessource {
    public:
-    virtual ~vk_cmdBuffer_OBJ() = default;
+    virtual ~CmdBufferRessource() = default;
 };
 }

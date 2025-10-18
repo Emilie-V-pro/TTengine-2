@@ -21,23 +21,23 @@
 
 namespace TTe {
 
-void App::init(Device *device, DynamicRenderPass *deferredRenderPass, DynamicRenderPass *shadingRenderPass, Window *window) {
-    this->device = device;
-    this->deferredRenderPass = deferredRenderPass;
-    this->shadingRenderPass = shadingRenderPass;
-    movementController.setCursors(window);
+void App::init(Device *p_device, DynamicRenderPass *p_deferred_renderpass, DynamicRenderPass *p_shading_renderpass, Window *p_window) {
+    this->m_device = p_device;
+    this->m_deferred_renderpass = p_deferred_renderpass;
+    this->m_shading_renderpass = p_shading_renderpass;
+    m_movement_controller.setCursors(p_window);
 
-    GLTFLoader gltfLoader(device);
+    GLTFLoader gltf_loader(m_device);
     // gltfLoader.load("gltf/ABeautifulGame/glTF/ABeautifulGame.gltf");
     auto start = std::chrono::high_resolution_clock::now();
-    gltfLoader.load("gltf/Sponza/glTF/Sponza.gltf");
+    gltf_loader.load("gltf/Sponza/glTF/Sponza.gltf");
 
     // gltfLoader.load("gltf/mc2/mc.gltf");
 
     // gltfLoader.load("gltf/mc/mc.gltf");
-    s = gltfLoader.getScene();
+    s = gltf_loader.getScene();
     // s = new Scene(device);
-    s->initSceneData(deferredRenderPass, shadingRenderPass);
+    s->initSceneData(m_deferred_renderpass, m_shading_renderpass);
     s->computeBoundingBox();
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
@@ -55,8 +55,8 @@ void App::init(Device *device, DynamicRenderPass *deferredRenderPass, DynamicRen
         l->color = glm::vec3{distribution3(gen), distribution3(gen), distribution3(gen)};
         l->intensity = 100.f;
         s->addNode(-1, l);
-        lightAccelerations.push_back(glm::vec3(0, 0, 0));
-        lightSpeeds.push_back(glm::vec3(0, 0, 0));
+        m_light_accelerations.push_back(glm::vec3(0, 0, 0));
+        m_light_speeds.push_back(glm::vec3(0, 0, 0));
     }
     s->updateLightBuffer();
     std::vector<std::shared_ptr<Light>> &P = s->getLights();
@@ -64,7 +64,7 @@ void App::init(Device *device, DynamicRenderPass *deferredRenderPass, DynamicRen
         P[i]->updateOnchangeFunc();
     }
 
-    // movementController.setCursors(window);
+    // m_movement_controller.setCursors(window);
 
     // add sphere for show hit
 
@@ -72,26 +72,26 @@ void App::init(Device *device, DynamicRenderPass *deferredRenderPass, DynamicRen
 
     // scene2->getMainCamera()->setParent(skeleton.get());
 
-    // movementController.init(device, scene2.get());
+    // m_movement_controller.init(device, scene2.get());
 }
 
 App::~App() { delete s; }
 
-void App::resize(int width, int height) {
+void App::resize(int p_width, int p_height) {
     s->updateRenderPassDescriptorSets();
-    s->getMainCamera()->extent = {(uint32_t)width, (uint32_t)height};
+    s->getMainCamera()->extent = {(uint32_t)p_width, (uint32_t)p_height};
 }
 
-void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
-    movementController.moveInPlaneXZ(&windowObj, deltaTime, s->getMainCamera());
+void App::update(float p_delta_time, CommandBuffer &p_cmd_buffer, Window &p_window_obj) {
+    m_movement_controller.moveInPlaneXZ(&p_window_obj, p_delta_time, s->getMainCamera());
     std::default_random_engine gen;
     std::uniform_real_distribution<double> distribution3(-0.1, 0.1);
 
     std::vector<std::shared_ptr<Light>> &P = s->getLights();
     for (int i = 0; i < MAX_LIGHTS; ++i) {
-        lightAccelerations[i] = glm::vec3(distribution3(gen), distribution3(gen), distribution3(gen));
-        lightSpeeds[i] = (lightSpeeds[i] + deltaTime * lightAccelerations[i]) * 1.f;
-        P[i]->transform.pos = P[i]->transform.pos + deltaTime * lightSpeeds[i];
+        m_light_accelerations[i] = glm::vec3(distribution3(gen), distribution3(gen), distribution3(gen));
+        m_light_speeds[i] = (m_light_speeds[i] + p_delta_time * m_light_accelerations[i]) * 1.f;
+        P[i]->transform.pos = P[i]->transform.pos + p_delta_time * m_light_speeds[i];
 
         if (P[i]->transform.pos->x > 200 || P[i]->transform.pos->x < -200) {
             P[i]->transform.pos->x = -P[i]->transform.pos->x;
@@ -108,56 +108,54 @@ void App::update(float deltaTime, CommandBuffer &cmdBuffer, Window &windowObj) {
     }
     s->updateLightBuffer();
 
-    if (glfwGetKey(windowObj, GLFW_KEY_P) == GLFW_PRESS) {
-        CommandBuffer renderCmdBuffer =
+    if (glfwGetKey(p_window_obj, GLFW_KEY_P) == GLFW_PRESS) {
+        CommandBuffer render_cmd_buffer =
 
-            std::move(CommandPoolHandler::getCommandPool(device, device->getRenderQueue())->createCommandBuffer(1)[0]);
-        renderCmdBuffer.beginCommandBuffer();
+            std::move(CommandPoolHandler::getCommandPool(m_device, m_device->getRenderQueue())->createCommandBuffer(1)[0]);
+        render_cmd_buffer.beginCommandBuffer();
 
         DynamicRenderPass temp =
-            DynamicRenderPass(device, {4096, 4096}, {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM}, 1, DEPTH, nullptr, nullptr);
+            DynamicRenderPass(m_device, {4096, 4096}, {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM}, 1, DEPTH, nullptr, nullptr);
         RenderData r;
         r.frameIndex = 0;
         r.cameraId = 0;
         r.renderPass = &temp;
         // s->getMainCamera()->extent = {1,1};
-        temp.beginRenderPass(renderCmdBuffer, 0);
-        s->renderDeffered(renderCmdBuffer, r);
-        temp.endRenderPass(renderCmdBuffer);
-        renderCmdBuffer.endCommandBuffer();
-        renderCmdBuffer.submitCommandBuffer({}, {}, nullptr, true);
+        temp.beginRenderPass(render_cmd_buffer, 0);
+        s->renderDeffered(render_cmd_buffer, r);
+        temp.endRenderPass(render_cmd_buffer);
+        render_cmd_buffer.endCommandBuffer();
+        render_cmd_buffer.submitCommandBuffer({}, {}, nullptr, true);
 
-        glm::mat4 view = s->getMainCamera()->getViewMatrix();
-        glm::mat4 proj = s->getMainCamera()->getProjectionMatrix();
+
         temp.savedRenderPass(0);
     }
 }
 
-void App::renderDeferredFrame(float deltatTime, CommandBuffer &cmdBuffer, uint32_t render_index, uint32_t swapchainIndex) {
+void App::renderDeferredFrame(float p_deltat_time, CommandBuffer &p_cmd_buffer, uint32_t p_render_index, uint32_t p_swapchain_index) {
     RenderData r;
-    r.frameIndex = render_index;
+    r.frameIndex = p_render_index;
     r.cameraId = 0;
-    r.renderPass = shadingRenderPass;
+    r.renderPass = m_shading_renderpass;
 
-    s->updateCameraBuffer(render_index);
+    s->updateCameraBuffer(p_render_index);
 
-    deferredRenderPass->beginRenderPass(cmdBuffer, swapchainIndex);
-    s->renderDeffered(cmdBuffer, r);
-    deferredRenderPass->endRenderPass(cmdBuffer);
+    m_deferred_renderpass->beginRenderPass(p_cmd_buffer, p_swapchain_index);
+    s->renderDeffered(p_cmd_buffer, r);
+    m_deferred_renderpass->endRenderPass(p_cmd_buffer);
 
-    // returnTOWorld /= returnTOWorld.w;
 }
 
-void App::renderShadedFrame(float deltatTime, CommandBuffer &cmdBuffer, uint32_t render_index, uint32_t swapchainIndex) {
-    // shadingRenderPass->setClearColor({1.0,0.0,.0});
-    // shadingRenderPass->setClearEnable(true);
-    // shadingRenderPass->beginRenderPass(cmdBuffer, swapchainIndex);
-    // shadingRenderPass->endRenderPass(cmdBuffer);
+void App::renderShadedFrame(float p_deltat_time, CommandBuffer &p_cmd_buffer, uint32_t p_render_index, uint32_t p_swapchain_index) {
+    // m_shading_renderpass->setClearColor({1.0,0.0,.0});
+    // m_shading_renderpass->setClearEnable(true);
+    // m_shading_renderpass->beginRenderPass(p_cmd_buffer, p_swapchain_index);
+    // m_shading_renderpass->endRenderPass(p_cmd_buffer);
     RenderData r;
-    r.frameIndex = render_index;
+    r.frameIndex = p_render_index;
     r.cameraId = 0;
-    r.swapchainIndex = swapchainIndex;
-    r.renderPass = shadingRenderPass;
-    s->renderShading(cmdBuffer, r);
+    r.swapchainIndex = p_swapchain_index;
+    r.renderPass = m_shading_renderpass;
+    s->renderShading(p_cmd_buffer, r);
 }
 }  // namespace TTe
