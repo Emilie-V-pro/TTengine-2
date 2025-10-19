@@ -5,6 +5,6 @@ namespace TTe {
 
 
 
-std::unordered_map<std::pair<std::thread::id, VkQueue>, CommandBufferPool*, CommandPoolHandler::PairHash> CommandPoolHandler::commandPools;
+std::unordered_map<std::pair<std::thread::id, VkQueue>, CommandBufferPool*, CommandPoolHandler::PairHash> CommandPoolHandler::s_command_pools;
 
 }

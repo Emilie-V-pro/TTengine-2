@@ -7,107 +7,107 @@
 #include <vector>
 
 #include "structs_vk.hpp"
-#include "../utils.hpp"
+#include "utils.hpp"
 
 namespace TTe {
-std::unordered_map<std::vector<uint32_t>, std::weak_ptr<DescriptorSetLayout>> DescriptorSetLayout::descriptorSetLayoutCache;
+std::unordered_map<std::vector<uint32_t>, std::weak_ptr<DescriptorSetLayout>> DescriptorSetLayout::s_descriptor_set_layout_cache;
 
 DescriptorSetLayout::DescriptorSetLayout(
-    Device *device, std::map<uint32_t, VkDescriptorSetLayoutBinding> layoutBindings, std::vector<uint32_t> id)
-    : device(device), layoutBindings(layoutBindings), id(id) {
-    std::vector<VkDescriptorSetLayoutBinding> bindingsVector;
+    Device *p_device, std::map<uint32_t, VkDescriptorSetLayoutBinding> p_layout_bindings, std::vector<uint32_t> p_id)
+    : m_device(p_device), m_layout_bindings(p_layout_bindings), m_id(p_id) {
+    std::vector<VkDescriptorSetLayoutBinding> bindings_vector;
 
-    std::vector<VkDescriptorBindingFlags> binsFlag;
+    std::vector<VkDescriptorBindingFlags> bins_flag;
 
-    for (auto &binding : layoutBindings) {
-        bindingsVector.push_back(binding.second);
-        binsFlag.push_back(VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT);
+    for (auto &binding : m_layout_bindings) {
+        bindings_vector.push_back(binding.second);
+        bins_flag.push_back(VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT);
     }
 
-    auto extendedInfo = make<VkDescriptorSetLayoutBindingFlagsCreateInfo>();
+    auto extended_info = make<VkDescriptorSetLayoutBindingFlagsCreateInfo>();
 
-    extendedInfo.bindingCount = binsFlag.size();
-    extendedInfo.pBindingFlags = binsFlag.data();
+    extended_info.bindingCount = bins_flag.size();
+    extended_info.pBindingFlags = bins_flag.data();
 
-    auto descriptorSetLayoutInfo = make<VkDescriptorSetLayoutCreateInfo>();
-    descriptorSetLayoutInfo.bindingCount = layoutBindings.size();
-    descriptorSetLayoutInfo.pBindings = bindingsVector.data();
-    descriptorSetLayoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
-    descriptorSetLayoutInfo.pNext = &extendedInfo;
+    auto descriptor_set_layout_info = make<VkDescriptorSetLayoutCreateInfo>();
+    descriptor_set_layout_info.bindingCount = m_layout_bindings.size();
+    descriptor_set_layout_info.pBindings = bindings_vector.data();
+    descriptor_set_layout_info.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    descriptor_set_layout_info.pNext = &extended_info;
 
-    if (vkCreateDescriptorSetLayout(*device, &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
+    if (vkCreateDescriptorSetLayout(*p_device, &descriptor_set_layout_info, nullptr, &m_descriptor_set_layout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptorSetLayout");
     }
     getLayoutSizeAndOffsets();
 }
 
 DescriptorSetLayout::~DescriptorSetLayout() {
-    vkDestroyDescriptorSetLayout(*device, descriptorSetLayout, nullptr);
-    descriptorSetLayoutCache.erase(id);
+    vkDestroyDescriptorSetLayout(*m_device, m_descriptor_set_layout, nullptr);
+    s_descriptor_set_layout_cache.erase(m_id);
 }
 
 std::shared_ptr<DescriptorSetLayout> DescriptorSetLayout::createDescriptorSetLayout(
-    Device *device, std::map<uint32_t, VkDescriptorSetLayoutBinding> layoutBindings, uint32_t setid) {
-    std::shared_ptr<DescriptorSetLayout> returnValue;
+    Device *p_device, std::map<uint32_t, VkDescriptorSetLayoutBinding> p_layout_bindings, uint32_t p_set_id) {
+    std::shared_ptr<DescriptorSetLayout> return_value;
     std::vector<uint32_t> id;
-    id.push_back(setid);
-    for (auto &binding : layoutBindings) {
+    id.push_back(p_set_id);
+    for (auto &binding : p_layout_bindings) {
         id.push_back(binding.second.binding);
         id.push_back(binding.second.descriptorCount);
 
         id.push_back(binding.second.stageFlags);
         id.push_back(binding.second.descriptorType);
     }
-    if (descriptorSetLayoutCache.find(id) == descriptorSetLayoutCache.end()) {
-        std::shared_ptr<DescriptorSetLayout> returnValue = std::make_shared<DescriptorSetLayout>(device, layoutBindings, id);
-        descriptorSetLayoutCache[id] = returnValue;
-        return returnValue;
+    if (s_descriptor_set_layout_cache.find(id) == s_descriptor_set_layout_cache.end()) {
+        std::shared_ptr<DescriptorSetLayout> return_value = std::make_shared<DescriptorSetLayout>(p_device, p_layout_bindings, id);
+        s_descriptor_set_layout_cache[id] = return_value;
+        return return_value;
     }
 
-    return descriptorSetLayoutCache[id].lock();
+    return s_descriptor_set_layout_cache[id].lock();
 }
 
 void DescriptorSetLayout::getLayoutSizeAndOffsets() {
-    vkGetDescriptorSetLayoutSizeEXT(*device, descriptorSetLayout, &layoutSize);
-    layoutSize = alignedVkSize(layoutSize, device->getDeviceDescProps().descriptorBufferOffsetAlignment);
-    for (auto &binding : layoutBindings) {
+    vkGetDescriptorSetLayoutSizeEXT(*m_device, m_descriptor_set_layout, &m_layout_size);
+    m_layout_size = alignedVkSize(m_layout_size, m_device->getDeviceDescProps().descriptorBufferOffsetAlignment);
+    for (auto &binding : m_layout_bindings) {
         VkDeviceSize offset = 0;
-        vkGetDescriptorSetLayoutBindingOffsetEXT(*device, descriptorSetLayout, binding.first, &offset);
-        layoutOffsets[binding.first] = offset;
+        vkGetDescriptorSetLayoutBindingOffsetEXT(*m_device, m_descriptor_set_layout, binding.first, &offset);
+        m_layout_offsets[binding.first] = offset;
     }
 }
 
-const size_t &DescriptorSetLayout::getSizeOfDescriptorType(VkDescriptorType descriptorType) {
-    switch (descriptorType) {
+const size_t &DescriptorSetLayout::getSizeOfDescriptorType(VkDescriptorType p_descriptor_type) {
+    switch (p_descriptor_type) {
         case VK_DESCRIPTOR_TYPE_SAMPLER:
-            return device->getDeviceDescProps().samplerDescriptorSize;
+            return m_device->getDeviceDescProps().samplerDescriptorSize;
         case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-            return device->getDeviceDescProps().combinedImageSamplerDescriptorSize;
+            return m_device->getDeviceDescProps().combinedImageSamplerDescriptorSize;
         case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-            return device->getDeviceDescProps().sampledImageDescriptorSize;
+            return m_device->getDeviceDescProps().sampledImageDescriptorSize;
         case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
-            return device->getDeviceDescProps().storageImageDescriptorSize;
+            return m_device->getDeviceDescProps().storageImageDescriptorSize;
         case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
-            return device->getDeviceDescProps().uniformTexelBufferDescriptorSize;
+            return m_device->getDeviceDescProps().uniformTexelBufferDescriptorSize;
         case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
-            return device->getDeviceDescProps().storageTexelBufferDescriptorSize;
+            return m_device->getDeviceDescProps().storageTexelBufferDescriptorSize;
         case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-            return device->getDeviceDescProps().uniformBufferDescriptorSize;
+            return m_device->getDeviceDescProps().uniformBufferDescriptorSize;
         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-            return device->getDeviceDescProps().storageBufferDescriptorSize;
+            return m_device->getDeviceDescProps().storageBufferDescriptorSize;
         case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
-            return device->getDeviceDescProps().uniformBufferDescriptorSize;
+            return m_device->getDeviceDescProps().uniformBufferDescriptorSize;
         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
-            return device->getDeviceDescProps().storageBufferDescriptorSize;
+            return m_device->getDeviceDescProps().storageBufferDescriptorSize;
         case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
-            return device->getDeviceDescProps().inputAttachmentDescriptorSize;
+            return m_device->getDeviceDescProps().inputAttachmentDescriptorSize;
         case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
-            return device->getDeviceDescProps().uniformBufferDescriptorSize;
+            return m_device->getDeviceDescProps().uniformBufferDescriptorSize;
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
-            return device->getDeviceDescProps().accelerationStructureDescriptorSize;
+            return m_device->getDeviceDescProps().accelerationStructureDescriptorSize;
 
         default:
-            throw std::runtime_error("Unknown descriptor type");
+            throw std::runtime_error("Unknown descriptor m_type");
     }
 }
 

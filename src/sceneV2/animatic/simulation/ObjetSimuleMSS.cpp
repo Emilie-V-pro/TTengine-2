@@ -21,7 +21,7 @@
  */
 
 /** \file ObjetSimuleMSS.cpp
- \brief Methodes specifiques aux objets a simuler de type MSS.
+ \brief Methodes specifiques aux objets a simuler de m_type MSS.
  */
 
 /** Librairies **/
@@ -300,7 +300,7 @@ void ObjetSimuleMSS::setNormals() {
 }
 
 /**
- * \brief Creation du maillage (pour l affichage) de l objet simule de type MSS.
+ * \brief Creation du maillage (pour l affichage) de l objet simule de m_type MSS.
  * Methode invoquee par le graphe de scene.
  */
 void ObjetSimuleMSS::initMeshObjet() {

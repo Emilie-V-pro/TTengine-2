@@ -64,7 +64,7 @@ static const int IcoIndex[] = {2, 6,  4,  // Top
                                0, 1,  3,  // Bottom
                                3, 5,  7, 7,  9,  11, 11, 13, 15, 15, 17, 19};
 
-IndexVertex init_sphere(Device *d, uint res, Buffer::BufferType type) {
+IndexVertex init_sphere(Device *d, uint res, Buffer::BufferType m_type) {
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
 
@@ -157,7 +157,7 @@ IndexVertex init_sphere(Device *d, uint res, Buffer::BufferType type) {
     return {indices, vertices};
 }
 
-IndexVertex init_cone(Device *d, uint res, Buffer::BufferType type) {
+IndexVertex init_cone(Device *d, uint res, Buffer::BufferType m_type) {
     const int div = 25;
     float step = 2.0 * M_PI / div;
     std::vector<Vertex> vertices;
@@ -193,7 +193,7 @@ IndexVertex init_cone(Device *d, uint res, Buffer::BufferType type) {
     return {indices, vertices};
 }
 
-IndexVertex init_cylinder(Device *d, uint res, Buffer::BufferType type) {
+IndexVertex init_cylinder(Device *d, uint res, Buffer::BufferType m_type) {
     const int div = 25;
     float step = 2.0 * M_PI / div;
     std::vector<Vertex> vertices;
@@ -229,7 +229,7 @@ IndexVertex init_cylinder(Device *d, uint res, Buffer::BufferType type) {
     return {indices, vertices};
 }
 
-IndexVertex init_cube(Device *d, uint res, Buffer::BufferType type) {
+IndexVertex init_cube(Device *d, uint res, Buffer::BufferType m_type) {
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
 
@@ -316,7 +316,7 @@ IndexVertex init_cube(Device *d, uint res, Buffer::BufferType type) {
     return {indices, vertices};
 }
 
-IndexVertex init_plane(Device *d, uint res, Buffer::BufferType type) {
+IndexVertex init_plane(Device *d, uint res, Buffer::BufferType m_type) {
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
 
@@ -336,23 +336,23 @@ IndexVertex init_plane(Device *d, uint res, Buffer::BufferType type) {
     return {indices, vertices};
 }
 
-Mesh::Mesh(Device *device, const BasicShape &b, uint resolution, Buffer::BufferType type) : device(device), type(type) {
+Mesh::Mesh(Device *device, const BasicShape &b, uint resolution, Buffer::BufferType m_type) : device(device), m_type(m_type) {
     IndexVertex IV;
     switch (b) {
         case BasicShape::Sphere:
-            IV = init_sphere(device, resolution, type);
+            IV = init_sphere(device, resolution, m_type);
             break;
         case BasicShape::Cube:
-            IV = init_cube(device, resolution, type);
+            IV = init_cube(device, resolution, m_type);
             break;
         case BasicShape::Plane:
-            IV = init_plane(device, resolution, type);
+            IV = init_plane(device, resolution, m_type);
             break;
         default:
             assert("Invalid shape");
             break;
     }
-    *this = Mesh(device, IV.indices, IV.vertices, type);
+    *this = Mesh(device, IV.indices, IV.vertices, m_type);
 }
 
 Mesh::Mesh(
@@ -360,13 +360,13 @@ Mesh::Mesh(
     IndexVertex IV;
     switch (b) {
         case BasicShape::Sphere:
-            IV = init_sphere(device, resolution, type);
+            IV = init_sphere(device, resolution, m_type);
             break;
         case BasicShape::Cube:
-            IV = init_cube(device, resolution, type);
+            IV = init_cube(device, resolution, m_type);
             break;
         case BasicShape::Plane:
-            IV = init_plane(device, resolution, type);
+            IV = init_plane(device, resolution, m_type);
             break;
         default:
             assert("Invalid shape");

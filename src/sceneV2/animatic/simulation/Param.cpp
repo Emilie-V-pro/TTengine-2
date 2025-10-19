@@ -130,7 +130,7 @@ void SimulateObj::Param_mesh(std::filesystem::path Fichier_Param)
 
 
 /**
- * Lecture des parametres de l execution relatfs au fluide de type SPH.
+ * Lecture des parametres de l execution relatfs au fluide de m_type SPH.
  */
 // void ObjetSimuleSPH::Param_sph(std::string Fichier_Param)
 // {

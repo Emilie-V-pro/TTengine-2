@@ -44,10 +44,10 @@ void Scene::initSceneData(DynamicRenderPass *defferedRenderpass, DynamicRenderPa
     skyboxImageCreateInfo.filename.push_back(skyboxPath / "negy.jpg");
     skyboxImageCreateInfo.filename.push_back(skyboxPath / "posz.jpg");
     skyboxImageCreateInfo.filename.push_back(skyboxPath / "negz.jpg");
-    skyboxImageCreateInfo.usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT;
-    skyboxImageCreateInfo.isCubeTexture = true;
-    skyboxImageCreateInfo.enableMipMap = true;
-    skyboxImageCreateInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    skyboxImageCreateInfo.usage_flags = VK_IMAGE_USAGE_SAMPLED_BIT;
+    skyboxImageCreateInfo.is_cube_texture = true;
+    skyboxImageCreateInfo.enable_mipmap = true;
+    skyboxImageCreateInfo.image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     skyboxImage = Image(device, skyboxImageCreateInfo);
 
     Mesh cubeMesh(device, Mesh::BasicShape::Cube, 1);
@@ -340,7 +340,7 @@ void Scene::updateLightBuffer() {
         Light l;
         l.color = glm::vec3(0);
         l.intensity = 0;
-        l.type = Light::POINT;
+        l.m_type = Light::POINT;
         addNode(-1, std::make_shared<Light>(l));
     }
 
@@ -360,7 +360,7 @@ void Scene::updateLightBuffer() {
             l.color = glm::vec4(light->color, light->intensity);
             l.pos = light->wMatrix() * glm::vec4(0, 0, 0, 1);
             l.orienation = light->getParent()->wNormalMatrix() * light->transform.rot.value;
-            l.Type = light->type;
+            l.Type = light->m_type;
             light->uploadedToGPU = true;
             lightBuffer.writeToBuffer(&l, sizeof(LightGPU), sizeof(LightGPU) * i);
         }
@@ -403,8 +403,8 @@ void Scene::updateDescriptorSets() {
         defaultImageCreateInfo.width = 1;
         defaultImageCreateInfo.height = 1;
         defaultImageCreateInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
-        defaultImageCreateInfo.usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT;
-        defaultImageCreateInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        defaultImageCreateInfo.usage_flags = VK_IMAGE_USAGE_SAMPLED_BIT;
+        defaultImageCreateInfo.image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         defaultImageCreateInfo.datas.push_back(defaultPixel);
         Image defaultImage = Image(device, defaultImageCreateInfo);
         images.push_back(defaultImage);

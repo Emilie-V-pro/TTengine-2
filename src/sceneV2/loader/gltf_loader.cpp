@@ -229,9 +229,9 @@ void GLTFLoader::loadTexture(cgltf_data* data) {
 
         ImageCreateInfo imageCreateInfo;
         imageCreateInfo.format = isAlbedoTex[i] ? VK_FORMAT_R8G8B8A8_SRGB : VK_FORMAT_R8G8B8A8_UNORM;
-        imageCreateInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageCreateInfo.usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-        imageCreateInfo.enableMipMap = false;
+        imageCreateInfo.image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageCreateInfo.usage_flags = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        imageCreateInfo.enable_mipmap = false;
         if (image->uri) {
             imageCreateInfo.filename.push_back(dataPath.parent_path() / image->uri);
         } else {
@@ -300,10 +300,10 @@ void GLTFLoader::loadNode(cgltf_data* data) {
                 light_node->color = glm::vec3(node->light->color[0], node->light->color[1], node->light->color[2]);
                 light_node->intensity = node->light->intensity;
                 if (node->light->type == cgltf_light_type_directional) {
-                    light_node->type = Light::LightType::DIRECTIONAL;
+                    light_node->m_type = Light::LightType::DIRECTIONAL;
                     engin_node = light_node;
                 } else if (node->light->type == cgltf_light_type_point) {
-                    light_node->type = Light::LightType::POINT;
+                    light_node->m_type = Light::LightType::POINT;
                     engin_node = light_node;
                 }
             }

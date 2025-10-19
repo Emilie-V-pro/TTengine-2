@@ -98,7 +98,7 @@ class Device {
     vkb::PhysicalDevice m_vkb_physical_device;
     vkb::Device m_vkb_device;
 
-    // disable validation on release build type to get full performance
+    // disable validation on release build m_type to get full performance
 #ifdef NDEBUG
     const bool enableValidationLayers = false;
 #else

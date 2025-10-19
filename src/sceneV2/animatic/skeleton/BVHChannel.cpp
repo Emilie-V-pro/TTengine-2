@@ -8,8 +8,8 @@ using namespace std;
 namespace TTe {
 
 //=============================================================================
-BVHChannel::BVHChannel(BVHChannel::TYPE type, AXIS axis)
-		: m_type(type)
+BVHChannel::BVHChannel(BVHChannel::TYPE m_type, AXIS axis)
+		: m_type(m_type)
 		, m_axis(axis)
 {
 }
@@ -29,9 +29,9 @@ BVHChannel::TYPE BVHChannel::getType(void) const
 	return m_type;
 }
 //-----------------------------------------------------------------------------
-void BVHChannel::setType(BVHChannel::TYPE type)
+void BVHChannel::setType(BVHChannel::TYPE m_type)
 {
-	m_type = type;
+	m_type = m_type;
 }
 //-----------------------------------------------------------------------------
 AXIS BVHChannel::getAxis(void) const

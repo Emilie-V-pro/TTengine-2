@@ -10,34 +10,34 @@
 namespace TTe {
 class CommandPoolHandler {
    public:
-    static CommandBufferPool *getCommandPool(Device *device, const VkQueue &queue) {
+    static CommandBufferPool *getCommandPool(Device *p_device, const VkQueue &p_queue) {
         std::thread::id this_id = std::this_thread::get_id();
-        if (commandPools.find({this_id, queue}) == commandPools.end()) {
-            commandPools[{this_id, queue}] = new CommandBufferPool(device, queue);
+        if (s_command_pools.find({this_id, p_queue}) == s_command_pools.end()) {
+            s_command_pools[{this_id, p_queue}] = new CommandBufferPool(p_device, p_queue);
         }
-        return commandPools[{this_id, queue}];
+        return s_command_pools[{this_id, p_queue}];
     }
 
     static void cleanUnusedPools(){
-        std::vector<std::pair<std::thread::id, VkQueue>> toDelete;
-        for (auto &it : commandPools) {
-            if( it.second->cmdBufferCount == 0){
+        std::vector<std::pair<std::thread::id, VkQueue>> to_delete;
+        for (auto &it : s_command_pools) {
+            if( it.second->cmd_buffer_count == 0){
                 delete it.second;
-                toDelete.push_back(it.first);
+                to_delete.push_back(it.first);
             }
         }
-        for(auto &it : toDelete){
-            commandPools.erase(it);
+        for(auto &it : to_delete){
+            s_command_pools.erase(it);
         }
     }
 
     static void destroyCommandPools() {
-        for (auto &it : commandPools) {
+        for (auto &it : s_command_pools) {
             
             delete it.second;
             
         }
-        commandPools.clear();
+        s_command_pools.clear();
     }
      struct PairHash {
         template <typename T1, typename T2>
@@ -48,7 +48,7 @@ class CommandPoolHandler {
             return hash1 ^ (hash2 + 0x9e3779b9 + (hash1 << 6) + (hash1 >> 2));
         }
     };
-    static std::unordered_map<std::pair<std::thread::id, VkQueue>, CommandBufferPool *, PairHash> commandPools;
+    static std::unordered_map<std::pair<std::thread::id, VkQueue>, CommandBufferPool *, PairHash> s_command_pools;
    private:
    
 };

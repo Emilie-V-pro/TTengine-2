@@ -1,6 +1,6 @@
 
 /** \file ObjetSimuleMSS.h
- \brief Structures de donnes relatives aux objets simules de type masses-ressorts.
+ \brief Structures de donnes relatives aux objets simules de m_type masses-ressorts.
  */
 
 #ifndef OBJET_SIMULE_MSS_H

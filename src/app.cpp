@@ -50,7 +50,7 @@ void App::init(Device *p_device, DynamicRenderPass *p_deferred_renderpass, Dynam
 
     for (int i = 0; i < MAX_LIGHTS; i++) {
         auto l = std::make_shared<Light>();
-        l->type = Light::POINT;
+        l->m_type = Light::POINT;
         l->transform.pos = glm::vec3{distribution(gen), distribution2(gen), distribution(gen)};
         l->color = glm::vec3{distribution3(gen), distribution3(gen), distribution3(gen)};
         l->intensity = 100.f;

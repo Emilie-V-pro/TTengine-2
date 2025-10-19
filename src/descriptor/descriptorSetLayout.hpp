@@ -12,12 +12,12 @@
 namespace TTe {
 class DescriptorSetLayout {
    public:
-    DescriptorSetLayout(Device *device, std::map<uint32_t, VkDescriptorSetLayoutBinding> layoutBindings, std::vector<uint32_t> id);
+    DescriptorSetLayout(Device *p_device, std::map<uint32_t, VkDescriptorSetLayoutBinding> p_layout_bindings, std::vector<uint32_t> p_id);
 
     static std::shared_ptr<DescriptorSetLayout> createDescriptorSetLayout(
-        Device *device,
-        std::map<uint32_t, VkDescriptorSetLayoutBinding> layoutBindings,
-        uint32_t setid);
+        Device *p_device,
+        std::map<uint32_t, VkDescriptorSetLayoutBinding> p_layout_bindings,
+        uint32_t p_set_id);
     
     // delete copy constructor
     DescriptorSetLayout(const DescriptorSetLayout &) = delete;
@@ -30,31 +30,31 @@ class DescriptorSetLayout {
     ~DescriptorSetLayout();
     
     // Getters
-    operator const VkDescriptorSetLayout&() const { return descriptorSetLayout; }
+    operator const VkDescriptorSetLayout&() const { return m_descriptor_set_layout; }
     
-    std::map<uint32_t, VkDescriptorSetLayoutBinding> getLayoutBindings() const { return layoutBindings; }
-    std::vector<uint32_t> getId() const { return id; }
-    const VkDeviceSize& getLayoutSize() const { return layoutSize; }
-    std::unordered_map<uint32_t, VkDeviceSize> &getLayoutOffsets() { return layoutOffsets; }
+    std::map<uint32_t, VkDescriptorSetLayoutBinding> getLayoutBindings() const { return m_layout_bindings; }
+    std::vector<uint32_t> getId() const { return m_id; }
+    const VkDeviceSize& getLayoutSize() const { return m_layout_size; }
+    std::unordered_map<uint32_t, VkDeviceSize> &getLayoutOffsets() { return m_layout_offsets; }
     
     
-    const size_t &getSizeOfDescriptorType(VkDescriptorType descriptorType);
-    const size_t &getSizeOfDescriptorType(uint32_t binding) { return getSizeOfDescriptorType(layoutBindings[binding].descriptorType); }
+    const size_t &getSizeOfDescriptorType(VkDescriptorType p_descriptor_type);
+    const size_t &getSizeOfDescriptorType(uint32_t p_binding) { return getSizeOfDescriptorType(m_layout_bindings[p_binding].descriptorType); }
 
    private:
 
-    static std::unordered_map<std::vector<uint32_t>, std::weak_ptr<DescriptorSetLayout>> descriptorSetLayoutCache;
+    static std::unordered_map<std::vector<uint32_t>, std::weak_ptr<DescriptorSetLayout>> s_descriptor_set_layout_cache;
 
     void getLayoutSizeAndOffsets();
     
-    Device *device;
+    Device *m_device;
 
-    VkDescriptorSetLayout descriptorSetLayout;
+    VkDescriptorSetLayout m_descriptor_set_layout;
 
-    std::map<uint32_t, VkDescriptorSetLayoutBinding> layoutBindings;
-    std::vector<uint32_t> id;
+    std::map<uint32_t, VkDescriptorSetLayoutBinding> m_layout_bindings;
+    std::vector<uint32_t> m_id;
 
-    VkDeviceSize layoutSize = 0;
-    std::unordered_map<uint32_t, VkDeviceSize> layoutOffsets;
+    VkDeviceSize m_layout_size = 0;
+    std::unordered_map<uint32_t, VkDeviceSize> m_layout_offsets;
 };
 }  // namespace TTe

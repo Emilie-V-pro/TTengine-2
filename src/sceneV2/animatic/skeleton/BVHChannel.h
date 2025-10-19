@@ -14,7 +14,7 @@ namespace TTe {
 /** @brief Motion capture bone dof evolution
 
 	@remark
-		Contains the evolution of a transformation type
+		Contains the evolution of a transformation m_type
 		on an axis (degree of freedom) during the animation.
 */
 class BVHChannel
@@ -28,7 +28,7 @@ public:
 	};
 
 	//! Constructor
-	BVHChannel(TYPE type, AXIS axis);
+	BVHChannel(TYPE m_type, AXIS axis);
 	//! Destructor
 	~BVHChannel() {}
 
@@ -36,10 +36,10 @@ public:
 	bool isRotation(void) const;
 	//! Check if the channel is a translation
 	bool isTranslation(void) const;
-	//! Return the channel type
+	//! Return the channel m_type
 	TYPE getType(void) const;
-	//! Modify the channel type
-	void setType(TYPE type);
+	//! Modify the channel m_type
+	void setType(TYPE m_type);
 
 	//! Return the axis of the channel
 	AXIS getAxis(void) const;

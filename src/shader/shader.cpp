@@ -36,12 +36,12 @@ void addSamplerBinding(
     VkShaderStageFlags descriptorStage) {
     for (const spirv_cross::Resource &resource : separate_samplers) {
         VkDescriptorSetLayoutBinding binding = make<VkDescriptorSetLayoutBinding>();
-        const spirv_cross::SPIRType &type = comp.get_type(resource.type_id);
+        const spirv_cross::SPIRType &m_type = comp.get_type(resource.type_id);
         uint32_t set = comp.get_decoration(resource.id, spv::DecorationDescriptorSet);
         binding.binding = comp.get_decoration(resource.id, spv::DecorationBinding);
 
-        if (type.array.size() > 0) {
-            binding.descriptorCount = type.array[0];
+        if (m_type.array.size() > 0) {
+            binding.descriptorCount = m_type.array[0];
             if (binding.descriptorCount == 1) {
                 binding.descriptorCount = 1000;
             }
@@ -61,12 +61,12 @@ void addSampledImagesBinding(
     VkShaderStageFlags descriptorStage) {
     for (const spirv_cross::Resource &resource : sampled_images) {
         VkDescriptorSetLayoutBinding binding = make<VkDescriptorSetLayoutBinding>();
-        const spirv_cross::SPIRType &type = comp.get_type(resource.type_id);
+        const spirv_cross::SPIRType &m_type = comp.get_type(resource.type_id);
         uint32_t set = comp.get_decoration(resource.id, spv::DecorationDescriptorSet);
         binding.binding = comp.get_decoration(resource.id, spv::DecorationBinding);
 
-        if (type.array.size() > 0) {
-            binding.descriptorCount = type.array[0];
+        if (m_type.array.size() > 0) {
+            binding.descriptorCount = m_type.array[0];
             if (binding.descriptorCount == 1) {
                 binding.descriptorCount = 1000;
             }
@@ -87,12 +87,12 @@ void addSeparateImagesBinding(
     for (const spirv_cross::Resource &resource : separate_images) {
         if (comp.get_type(resource.type_id).image.dim != spv::DimBuffer) {
             VkDescriptorSetLayoutBinding binding = make<VkDescriptorSetLayoutBinding>();
-            const spirv_cross::SPIRType &type = comp.get_type(resource.type_id);
+            const spirv_cross::SPIRType &m_type = comp.get_type(resource.type_id);
             uint32_t set = comp.get_decoration(resource.id, spv::DecorationDescriptorSet);
             binding.binding = comp.get_decoration(resource.id, spv::DecorationBinding);
 
-            if (type.array.size() > 0) {
-                binding.descriptorCount = type.array[0];
+            if (m_type.array.size() > 0) {
+                binding.descriptorCount = m_type.array[0];
                 if (binding.descriptorCount == 1) {
                     binding.descriptorCount = 1000;
                 }
@@ -114,12 +114,12 @@ void addStorageImagesBinding(
     for (const spirv_cross::Resource &resource : storage_images) {
         if (comp.get_type(resource.type_id).image.dim != spv::DimBuffer) {
             VkDescriptorSetLayoutBinding binding = make<VkDescriptorSetLayoutBinding>();
-            const spirv_cross::SPIRType &type = comp.get_type(resource.type_id);
+            const spirv_cross::SPIRType &m_type = comp.get_type(resource.type_id);
             uint32_t set = comp.get_decoration(resource.id, spv::DecorationDescriptorSet);
             binding.binding = comp.get_decoration(resource.id, spv::DecorationBinding);
 
-            if (type.array.size() > 0) {
-                binding.descriptorCount = type.array[0];
+            if (m_type.array.size() > 0) {
+                binding.descriptorCount = m_type.array[0];
                 if (binding.descriptorCount == 1) {
                     binding.descriptorCount = 1000;
                 }
@@ -141,12 +141,12 @@ void addUniformTexelBufferBinding(
     for (const spirv_cross::Resource &resource : separate_images) {
         if (comp.get_type(resource.type_id).image.dim == spv::DimBuffer) {
             VkDescriptorSetLayoutBinding binding = make<VkDescriptorSetLayoutBinding>();
-            const spirv_cross::SPIRType &type = comp.get_type(resource.type_id);
+            const spirv_cross::SPIRType &m_type = comp.get_type(resource.type_id);
             uint32_t set = comp.get_decoration(resource.id, spv::DecorationDescriptorSet);
             binding.binding = comp.get_decoration(resource.id, spv::DecorationBinding);
 
-            if (type.array.size() > 0) {
-                binding.descriptorCount = type.array[0];
+            if (m_type.array.size() > 0) {
+                binding.descriptorCount = m_type.array[0];
                 if (binding.descriptorCount == 1) {
                     binding.descriptorCount = 1000;
                 }
@@ -168,12 +168,12 @@ void addStorageTexelBufferBinding(
     for (const spirv_cross::Resource &resource : storage_images) {
         if (comp.get_type(resource.type_id).image.dim == spv::DimBuffer) {
             VkDescriptorSetLayoutBinding binding = make<VkDescriptorSetLayoutBinding>();
-            const spirv_cross::SPIRType &type = comp.get_type(resource.type_id);
+            const spirv_cross::SPIRType &m_type = comp.get_type(resource.type_id);
             uint32_t set = comp.get_decoration(resource.id, spv::DecorationDescriptorSet);
             binding.binding = comp.get_decoration(resource.id, spv::DecorationBinding);
 
-            if (type.array.size() > 0) {
-                binding.descriptorCount = type.array[0];
+            if (m_type.array.size() > 0) {
+                binding.descriptorCount = m_type.array[0];
                 if (binding.descriptorCount == 1) {
                     binding.descriptorCount = 1000;
                 }
@@ -195,12 +195,12 @@ void addUniformBufferBinding(
     for (const spirv_cross::Resource &resource : uniform_buffers) {
         VkDescriptorSetLayoutBinding binding = make<VkDescriptorSetLayoutBinding>();
 
-        const spirv_cross::SPIRType &type = comp.get_type(resource.type_id);
+        const spirv_cross::SPIRType &m_type = comp.get_type(resource.type_id);
         uint32_t set = comp.get_decoration(resource.id, spv::DecorationDescriptorSet);
         binding.binding = comp.get_decoration(resource.id, spv::DecorationBinding);
 
-        if (type.array.size() > 0) {
-            binding.descriptorCount = type.array[0];
+        if (m_type.array.size() > 0) {
+            binding.descriptorCount = m_type.array[0];
             if (binding.descriptorCount == 1) {
                 binding.descriptorCount = 1000;
             }
@@ -220,12 +220,12 @@ void addStorageBufferBinding(
     VkShaderStageFlags descriptorStage) {
     for (const spirv_cross::Resource &resource : storage_buffers) {
         VkDescriptorSetLayoutBinding binding = make<VkDescriptorSetLayoutBinding>();
-        const spirv_cross::SPIRType &type = comp.get_type(resource.type_id);
+        const spirv_cross::SPIRType &m_type = comp.get_type(resource.type_id);
         uint32_t set = comp.get_decoration(resource.id, spv::DecorationDescriptorSet);
         binding.binding = comp.get_decoration(resource.id, spv::DecorationBinding);
 
-        if (type.array.size() > 0) {
-            binding.descriptorCount = type.array[0];
+        if (m_type.array.size() > 0) {
+            binding.descriptorCount = m_type.array[0];
             if (binding.descriptorCount == 1) {
                 binding.descriptorCount = 1000;
             }
@@ -245,12 +245,12 @@ void addAccelerationStructureBinding(
     VkShaderStageFlags descriptorStage) {
     for (const spirv_cross::Resource &resource : acceleration_structures) {
         VkDescriptorSetLayoutBinding binding = make<VkDescriptorSetLayoutBinding>();
-        const spirv_cross::SPIRType &type = comp.get_type(resource.type_id);
+        const spirv_cross::SPIRType &m_type = comp.get_type(resource.type_id);
         uint32_t set = comp.get_decoration(resource.id, spv::DecorationDescriptorSet);
         binding.binding = comp.get_decoration(resource.id, spv::DecorationBinding);
 
-        if (type.array.size() > 0) {
-            binding.descriptorCount = type.array[0];
+        if (m_type.array.size() > 0) {
+            binding.descriptorCount = m_type.array[0];
             if (binding.descriptorCount == 1) {
                 binding.descriptorCount = 1000;
             }
@@ -550,8 +550,8 @@ void Shader::createPushConstant(VkShaderStageFlags descriptorStage) {
     pushConstants.stageFlags = descriptorStage;
     auto ranges = comp.get_shader_resources().push_constant_buffers;
     for (auto &res : ranges) {
-        auto &type = comp.get_type(res.base_type_id);
-        uint32_t size = comp.get_declared_struct_size(type);
+        auto &m_type = comp.get_type(res.base_type_id);
+        uint32_t size = comp.get_declared_struct_size(m_type);
         pushConstants.size = size;
     }
 }
@@ -666,7 +666,7 @@ VkShaderStageFlagBits Shader::getShaderStageFlagsBitFromFileName(std::filesystem
             return VK_SHADER_STAGE_CALLABLE_BIT_KHR;
             break;
         default:
-            throw std::runtime_error("not supported shader type");
+            throw std::runtime_error("not supported shader m_type");
     }
 }
 

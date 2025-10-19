@@ -189,54 +189,54 @@ void BVHJoint::initChannel(std::ifstream& stream)
 	for (int i=0; i<numChannels; ++i)
 	{
 		std::string typeStr;
-		BVHChannel::TYPE type;
+		BVHChannel::TYPE m_type;
 		AXIS axis;
 
 		stream >> typeStr;
 
 		if (typeStr == "Xposition")
 		{
-			type = BVHChannel::TYPE_TRANSLATION;
+			m_type = BVHChannel::TYPE_TRANSLATION;
 			axis = AXIS_X;
 		}
 		else if (typeStr == "Yposition")
 		{
-			type = BVHChannel::TYPE_TRANSLATION;
+			m_type = BVHChannel::TYPE_TRANSLATION;
 			axis = AXIS_Y;
 		}
 		else if (typeStr == "Zposition")
 		{
-			type = BVHChannel::TYPE_TRANSLATION;
+			m_type = BVHChannel::TYPE_TRANSLATION;
 			axis = AXIS_Z;
 		}
 		else if (typeStr == "Xrotation")
 		{
-			type = BVHChannel::TYPE_ROTATION;
+			m_type = BVHChannel::TYPE_ROTATION;
 			axis = AXIS_X;
 		}
 		else if (typeStr == "Yrotation")
 		{
-			type = BVHChannel::TYPE_ROTATION;
+			m_type = BVHChannel::TYPE_ROTATION;
 			axis = AXIS_Y;
 		}
 		else if (typeStr == "Zrotation")
 		{
-			type = BVHChannel::TYPE_ROTATION;
+			m_type = BVHChannel::TYPE_ROTATION;
 			axis = AXIS_Z;
 		}
 		else if (typeStr == "Wrotation")
 		{
-			type = BVHChannel::TYPE_ROTATION;
+			m_type = BVHChannel::TYPE_ROTATION;
 			axis = AXIS_W;
 		}
 		else
 		{
-			std::cerr << "ERROR : bad channel type : '" << typeStr << "'." << std::endl;
+			std::cerr << "ERROR : bad channel m_type : '" << typeStr << "'." << std::endl;
 			result = false;
 			continue;
 		}
 
-		addChannel(BVHChannel(type, axis));
+		addChannel(BVHChannel(m_type, axis));
 	}
 
 	if (!result)

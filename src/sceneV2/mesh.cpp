@@ -23,8 +23,8 @@
 
 namespace TTe {
 
-Mesh::Mesh(Device* device, const std::vector<uint32_t>& indicies, const std::vector<Vertex>& verticies, Buffer::BufferType type)
-    : device(device), indicies(indicies), verticies(verticies), type(type) {
+Mesh::Mesh(Device* device, const std::vector<uint32_t>& indicies, const std::vector<Vertex>& verticies, Buffer::BufferType m_type)
+    : device(device), indicies(indicies), verticies(verticies), m_type(m_type) {
     createBVH();
     uploadToGPU();
 }
@@ -44,7 +44,7 @@ Mesh::Mesh(
       first_vertex(first_vertex),
       indexBuffer(indexBuffer),
       vertexBuffer(vertexBuffer),
-      type(vertexBuffer.getType()) {
+      m_type(vertexBuffer.getType()) {
     createBVH();
     uploadToGPU();
 }
@@ -225,12 +225,12 @@ void Mesh::uploadToGPU(CommandBuffer* ext_cmd) {
     if ((vertexBuffer == VK_NULL_HANDLE || indexBuffer == VK_NULL_HANDLE) ||
         (vertexBuffer.getInstancesCount() < verticies.size() || indexBuffer.getInstancesCount() < indicies.size())) {
         vertexBuffer =
-            Buffer(device, sizeof(Vertex), verticies.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, type);
+            Buffer(device, sizeof(Vertex), verticies.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, m_type);
         indexBuffer =
-            Buffer(device, sizeof(uint32_t), indicies.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, type);
+            Buffer(device, sizeof(uint32_t), indicies.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, m_type);
     }
 
-    if (type == Buffer::BufferType::DYNAMIC) {
+    if (m_type == Buffer::BufferType::DYNAMIC) {
         vertexBuffer.writeToBuffer(verticies.data(), verticies.size() * sizeof(Vertex), first_vertex * sizeof(Vertex));
         indexBuffer.writeToBuffer(indicies.data(), indicies.size() * sizeof(uint32_t), first_index * sizeof(uint32_t));
     } else {

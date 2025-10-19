@@ -17,12 +17,12 @@ class Buffer : public CmdBufferRessource {
     enum struct BufferType { GPU_ONLY, STAGING, READBACK, DYNAMIC, OTHER };
     // Constructors
     Buffer(
-        Device* device,
-        VkDeviceSize instance_size,
-        uint32_t instance_count,
-        VkBufferUsageFlags usage,
-        BufferType bufferType,
-        VkMemoryPropertyFlags requiredProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        Device* p_device,
+        VkDeviceSize p_instance_size,
+        uint32_t p_instance_count,
+        VkBufferUsageFlags p_usage,
+        BufferType p_buffer_type,
+        VkMemoryPropertyFlags p_required_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     Buffer();
     // Destructor
@@ -34,74 +34,74 @@ class Buffer : public CmdBufferRessource {
     Buffer(Buffer&& other);
     Buffer& operator=(Buffer&& other);
 
-    operator VkBuffer() const { return vk_buffer; }
+    operator VkBuffer() const { return m_vk_buffer; }
     operator uint64_t() const { return getBufferDeviceAddress(); }
     operator VkDescriptorAddressInfoEXT() const {
-        auto addressInfo = make<VkDescriptorAddressInfoEXT>();
-        addressInfo.address = getBufferDeviceAddress();
-        addressInfo.range = total_size;
-        return addressInfo;
+        auto address_info = make<VkDescriptorAddressInfoEXT>();
+        address_info.address = getBufferDeviceAddress();
+        address_info.range = m_total_size;
+        return address_info;
     }
     
     VkDeviceAddress getBufferDeviceAddress(uint32_t offset = 0) const;
 
-    uint32_t getInstancesCount() const { return instance_count; }
+    uint32_t getInstancesCount() const { return m_instance_count; }
 
-    BufferType getType() const { return type; }
+    BufferType getType() const { return m_type; }
 
     void* mapMemory()  {
-        if(mappedMemory == nullptr)
-            vmaMapMemory(device->getAllocator(), allocation, &mappedMemory);
-        return mappedMemory;
+        if(m_mapped_memory == nullptr)
+            vmaMapMemory(m_device->getAllocator(), m_allocation, &m_mapped_memory);
+        return m_mapped_memory;
     };
 
     void unmapMemory() { 
-        vmaUnmapMemory(device->getAllocator(), allocation); 
-        mappedMemory = nullptr;
+        vmaUnmapMemory(m_device->getAllocator(), m_allocation); 
+        m_mapped_memory = nullptr;
         }
 
 
-    void writeToBuffer(void* data, VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
-    void readFromBuffer(void* data, VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+    void writeToBuffer(void* p_data, VkDeviceSize p_size = VK_WHOLE_SIZE, VkDeviceSize p_offset = 0);
+    void readFromBuffer(void* p_data, VkDeviceSize p_size = VK_WHOLE_SIZE, VkDeviceSize p_offset = 0);
 
     void copyToImage(
-        Device* device, VkImage image, uint32_t width, uint32_t height, uint32_t layer = 1, CommandBuffer* extCmdBuffer = nullptr);
+        Device* p_device, VkImage p_image, uint32_t p_width, uint32_t p_height, uint32_t p_layer = 1, CommandBuffer* p_ext_cmd_buffer = nullptr);
     
     void copyFromImage(
-        Device* device, VkImage image, uint32_t width, uint32_t height, uint32_t layer = 1, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, CommandBuffer* extCmdBuffer = nullptr);
+        Device* p_device, VkImage p_image, uint32_t p_width, uint32_t p_height, uint32_t p_layer = 1, VkImageAspectFlags p_aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, CommandBuffer* p_extCmdBuffer = nullptr);
 
     static void copyBuffer(
-        Device* device,
-        const Buffer& src_buffer,
-        const Buffer& dst_buffer,
-        CommandBuffer* cmdBuffer = nullptr,
-        VkDeviceSize size = VK_WHOLE_SIZE,
-        VkDeviceSize src_offset = 0,
-        VkDeviceSize dst_offset = 0);
+        Device* p_device,
+        const Buffer& p_src_buffer,
+        const Buffer& p_dst_buffer,
+        CommandBuffer* p_cmd_buffer = nullptr,
+        VkDeviceSize p_size = VK_WHOLE_SIZE,
+        VkDeviceSize p_src_offset = 0,
+        VkDeviceSize p_dst_offset = 0);
 
-    void addBufferMemoryBarrier(const CommandBuffer& extCmdBuffer, VkPipelineStageFlags2 srcStageMask, VkPipelineStageFlags2 dstStageMask);
+    void addBufferMemoryBarrier(const CommandBuffer& p_ext_cmd_buffer, VkPipelineStageFlags2 p_src_stage_mask, VkPipelineStageFlags2 p_dst_stage_mask);
 
-    void transferQueueOwnership(const CommandBuffer& extCmdBuffer, uint32_t queueIndex);
+    void transferQueueOwnership(const CommandBuffer& p_ext_cmd_buffer, uint32_t p_queue_index);
 
    private:
-    VkBufferUsageFlags getBufferUsageFlags(BufferType bufferType) const;
-    VmaAllocationCreateFlags getAllocationFlags(BufferType bufferType) const;
+    VkBufferUsageFlags getBufferUsageFlags(BufferType p_buffer_type) const;
+    VmaAllocationCreateFlags getAllocationFlags(BufferType p_buffer_type) const;
     void destruction();
 
-    VmaAllocationCreateInfo allocInfo = {};
-    VkBufferCreateInfo bufferInfo = {};
-    BufferType type = BufferType::GPU_ONLY;
+    VmaAllocationCreateInfo m_alloc_info = {};
+    VkBufferCreateInfo m_buffer_info = {};
+    BufferType m_type = BufferType::GPU_ONLY;
 
-    VkDeviceSize instance_size = 0;
-    uint32_t instance_count = 0;
-    VkDeviceSize total_size = 0;
+    VkDeviceSize m_instance_size = 0;
+    uint32_t m_instance_count = 0;
+    VkDeviceSize m_total_size = 0;
 
-    VmaAllocation allocation = VK_NULL_HANDLE;
-    VkBuffer vk_buffer = VK_NULL_HANDLE;
-    Device* device = nullptr;
-    void *mappedMemory = nullptr;
+    VmaAllocation m_allocation = VK_NULL_HANDLE;
+    VkBuffer m_vk_buffer = VK_NULL_HANDLE;
+    Device* m_device = nullptr;
+    void *m_mapped_memory = nullptr;
 
     // TODO REMPLACER PAR MUTABLE
-    std::atomic<std::shared_ptr<int>> refCount;
+    std::atomic<std::shared_ptr<int>> m_ref_count;
 };
 }  // namespace TTe

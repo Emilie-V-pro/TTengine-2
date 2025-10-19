@@ -21,12 +21,12 @@ class Mesh {
     enum BasicShape { Sphere, Cone, Cylinder, Cube, Plane };
 
     Mesh() {};
-    Mesh(Device *device, Buffer::BufferType type = Buffer::BufferType::DYNAMIC) : device(device), type(type) {};
+    Mesh(Device *device, Buffer::BufferType m_type = Buffer::BufferType::DYNAMIC) : device(device), m_type(m_type) {};
     Mesh(
         Device *device,
         const std::vector<unsigned int> &indicies,
         const std::vector<Vertex> &verticies,
-        Buffer::BufferType type = Buffer::BufferType::DYNAMIC);
+        Buffer::BufferType m_type = Buffer::BufferType::DYNAMIC);
 
     Mesh(
         Device *device,
@@ -37,7 +37,7 @@ class Mesh {
         Buffer indexBuffer,
         Buffer vertexBuffer);
 
-    Mesh(Device *device, const BasicShape &b, uint resolution, Buffer::BufferType type);
+    Mesh(Device *device, const BasicShape &b, uint resolution, Buffer::BufferType m_type);
 
     Mesh(Device *device, const BasicShape &b, uint resolution);
 
@@ -114,7 +114,7 @@ class Mesh {
     // Storage data
     Buffer vertexBuffer;
     Buffer indexBuffer;
-    Buffer::BufferType type = Buffer::BufferType::GPU_ONLY;
+    Buffer::BufferType m_type = Buffer::BufferType::GPU_ONLY;
 
     // Draw data
     uint32_t first_index = 0;
