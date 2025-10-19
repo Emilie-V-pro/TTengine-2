@@ -1,8 +1,7 @@
 #include <cmath>
-#include <iostream>
 
-inline float yFOV_to_FOV(float yFOV_deg, float aspectRatio) {
-    float yFOV_rad = yFOV_deg * M_PI / 180.0f;
-    float xFOV_rad = 2.0f * atan(tan(yFOV_rad / 2.0f) * aspectRatio);
-    return  xFOV_rad * 180.0f / M_PI;
+inline float yFOV_to_FOV(float y_FOV_deg, float aspect_ratio) {
+    float y_FOV_rad = y_FOV_deg * M_PI / 180.0f;
+    float x_FOV_rad = 2.0f * atan(tan(y_FOV_rad / 2.0f) * aspect_ratio);
+    return  x_FOV_rad * 180.0f / M_PI;
 }

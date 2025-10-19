@@ -402,11 +402,6 @@ void Image::generateMipmaps(CommandBuffer *p_ext_cmd_buffer) {
         image_blit.dstOffsets[1].y = int32_t(this->m_height >> i);
         image_blit.dstOffsets[1].z = 1;
 
-        VkImageSubresourceRange mip_sub_range = {};
-        mip_sub_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        mip_sub_range.baseMipLevel = i;
-        mip_sub_range.levelCount = 1;
-        mip_sub_range.layerCount = m_layer;
 
         // Prepare current mip level as image blit destination
         transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, i, 1, cmd);

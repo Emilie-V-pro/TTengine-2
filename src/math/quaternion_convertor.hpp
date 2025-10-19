@@ -1,5 +1,5 @@
 #pragma once
-#include <iostream>
+
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/quaternion_common.hpp>
