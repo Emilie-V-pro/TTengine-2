@@ -1,6 +1,7 @@
 
 #include "scene.hpp"
 
+#include <cstddef>
 #include <cstdint>
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
@@ -27,44 +28,44 @@
 
 namespace TTe {
 
-Scene::Scene(Device *device) : device(device) {
+Scene::Scene(Device *p_device) : m_device(p_device) {
     createPipelines();
     createDescriptorSets();
 }
 
 Scene::~Scene() {}
 
-void Scene::initSceneData(DynamicRenderPass *defferedRenderpass, DynamicRenderPass *m_shading_renderpass, std::filesystem::path skyboxPath) {
-    this->defferedRenderpass = defferedRenderpass;
-    this->m_shading_renderpass = m_shading_renderpass;
-    ImageCreateInfo skyboxImageCreateInfo;
-    skyboxImageCreateInfo.filename.push_back(skyboxPath / "posx.jpg");
-    skyboxImageCreateInfo.filename.push_back(skyboxPath / "negx.jpg");
-    skyboxImageCreateInfo.filename.push_back(skyboxPath / "posy.jpg");
-    skyboxImageCreateInfo.filename.push_back(skyboxPath / "negy.jpg");
-    skyboxImageCreateInfo.filename.push_back(skyboxPath / "posz.jpg");
-    skyboxImageCreateInfo.filename.push_back(skyboxPath / "negz.jpg");
-    skyboxImageCreateInfo.usage_flags = VK_IMAGE_USAGE_SAMPLED_BIT;
-    skyboxImageCreateInfo.is_cube_texture = true;
-    skyboxImageCreateInfo.enable_mipmap = true;
-    skyboxImageCreateInfo.image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    skyboxImage = Image(device, skyboxImageCreateInfo);
+void Scene::initSceneData(DynamicRenderPass *p_deffered_renderpass, DynamicRenderPass *p_shading_renderpass, std::filesystem::path p_skybox_path) {
+    this->m_deffered_renderpass = p_deffered_renderpass;
+    this->m_shading_renderpass = p_shading_renderpass;
+    ImageCreateInfo skybox_image_create_info;
+    skybox_image_create_info.filename.push_back(p_skybox_path / "posx.jpg");
+    skybox_image_create_info.filename.push_back(p_skybox_path / "negx.jpg");
+    skybox_image_create_info.filename.push_back(p_skybox_path / "posy.jpg");
+    skybox_image_create_info.filename.push_back(p_skybox_path / "negy.jpg");
+    skybox_image_create_info.filename.push_back(p_skybox_path / "posz.jpg");
+    skybox_image_create_info.filename.push_back(p_skybox_path / "negz.jpg");
+    skybox_image_create_info.usage_flags = VK_IMAGE_USAGE_SAMPLED_BIT;
+    skybox_image_create_info.is_cube_texture = true;
+    skybox_image_create_info.enable_mipmap = true;
+    skybox_image_create_info.image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    m_skybox_image = Image(m_device, skybox_image_create_info);
 
-    Mesh cubeMesh(device, Mesh::BasicShape::Cube, 1);
-    addStaticMesh(cubeMesh);
-    basicMeshes[Mesh::BasicShape::Cube] = &meshes.at(nb_meshes - 1);
+    Mesh cube_mesh(m_device, Mesh::BasicShape::Cube, 1);
+    addStaticMesh(cube_mesh);
+    m_basic_meshes[Mesh::BasicShape::Cube] = &meshes.at(nb_meshes - 1);
 
-    // Mesh sphereMesh(device, Mesh::BasicShape::Sphere, 1);
+    // Mesh sphereMesh(m_device, Mesh::BasicShape::Sphere, 1);
     // addStaticMesh(sphereMesh);
-    // basicMeshes[Mesh::BasicShape::Sphere] = &meshes.at(nb_meshes - 1);
+    // m_basic_meshes[Mesh::BasicShape::Sphere] = &meshes.at(nb_meshes - 1);
 
-    // Mesh planeMesh(device, Mesh::BasicShape::Plane, 1);
+    // Mesh planeMesh(m_device, Mesh::BasicShape::Plane, 1);
     // addStaticMesh(planeMesh);
-    // basicMeshes[Mesh::BasicShape::Plane] = &meshes.back();
+    // m_basic_meshes[Mesh::BasicShape::Plane] = &meshes.back();
 
-    vkDeviceWaitIdle(*device);
+    vkDeviceWaitIdle(*m_device);
 
-    if (cameras.size() == 0) {
+    if (m_cameras.size() == 0) {
         addNode(-1, std::make_shared<CameraV2>());
     }
     createDrawIndirectBuffers();
@@ -76,236 +77,232 @@ void Scene::initSceneData(DynamicRenderPass *defferedRenderpass, DynamicRenderPa
     updateRenderPassDescriptorSets();
 }
 
-void Scene::renderDeffered(CommandBuffer &cmd, RenderData &renderData) {
-    renderData.basicMeshes = basicMeshes;
-    renderData.cameras = &cameras;
-    skyboxPipeline.bindPipeline(cmd);
-    std::vector<DescriptorSet *> descriptorSets = {&sceneDescriptorSet};
+void Scene::renderDeffered(CommandBuffer &p_cmd, RenderData &p_render_data) {
+    p_render_data.m_basic_meshes = m_basic_meshes;
+    p_render_data.m_cameras = &m_cameras;
+    m_skybox_pipeline.bindPipeline(p_cmd);
+    std::vector<DescriptorSet *> descriptor_sets = {&scene_descriptor_set};
 
-    DescriptorSet::bindDescriptorSet(cmd, descriptorSets, skyboxPipeline.getPipelineLayout(), VK_PIPELINE_BIND_POINT_GRAPHICS);
+    DescriptorSet::bindDescriptorSet(p_cmd, descriptor_sets, m_skybox_pipeline.getPipelineLayout(), VK_PIPELINE_BIND_POINT_GRAPHICS);
 
-    basicMeshes[Mesh::Cube]->bindMesh(cmd);
-    renderData.renderPass->setDepthAndStencil(cmd, false);
+    m_basic_meshes[Mesh::Cube]->bindMesh(p_cmd);
+    p_render_data.renderPass->setDepthAndStencil(p_cmd, false);
 
     PushConstantStruct tp{
-        objectBuffer.getBufferDeviceAddress(), materialBuffer.getBufferDeviceAddress(),
-        cameraBuffer[renderData.frameIndex].getBufferDeviceAddress(), lightBuffer.getBufferDeviceAddress(), 0, static_cast<uint32_t>(lightObjects.size())};
-    renderData.pushConstant = tp;
+        m_object_buffer.getBufferDeviceAddress(), material_buffer.getBufferDeviceAddress(),
+        camera_buffer[p_render_data.frameIndex].getBufferDeviceAddress(), m_light_buffer.getBufferDeviceAddress(), 0, static_cast<uint32_t>(m_light_objects.size())};
+    p_render_data.pushConstant = tp;
     // // set push_constant for cam_id
-    vkCmdPushConstants(cmd, skyboxPipeline.getPipelineLayout(), skyboxPipeline.getPushConstantStage(), 0, sizeof(PushConstantStruct), &tp);
+    vkCmdPushConstants(p_cmd, m_skybox_pipeline.getPipelineLayout(), m_skybox_pipeline.getPushConstantStage(), 0, sizeof(PushConstantStruct), &tp);
 
-    vkCmdSetCullMode(cmd, VK_CULL_MODE_NONE);
+    vkCmdSetCullMode(p_cmd, VK_CULL_MODE_NONE);
     vkCmdDrawIndexed(
-        cmd, basicMeshes[Mesh::Cube]->nbIndicies(), 1, basicMeshes[Mesh::Cube]->getFirstIndex(), basicMeshes[Mesh::Cube]->getFirstVertex(),
+        p_cmd, m_basic_meshes[Mesh::Cube]->nbIndicies(), 1, m_basic_meshes[Mesh::Cube]->getFirstIndex(), m_basic_meshes[Mesh::Cube]->getFirstVertex(),
         0);
-    vkCmdSetCullMode(cmd, VK_CULL_MODE_BACK_BIT);
-    renderData.renderPass->setDepthAndStencil(cmd, true);
+    vkCmdSetCullMode(p_cmd, VK_CULL_MODE_BACK_BIT);
+    p_render_data.renderPass->setDepthAndStencil(p_cmd, true);
     ;
 
-    meshPipeline.bindPipeline(cmd);
-    DescriptorSet::bindDescriptorSet(cmd, descriptorSets, meshPipeline.getPipelineLayout(), VK_PIPELINE_BIND_POINT_GRAPHICS);
+    m_mesh_pipeline.bindPipeline(p_cmd);
+    DescriptorSet::bindDescriptorSet(p_cmd, descriptor_sets, m_mesh_pipeline.getPipelineLayout(), VK_PIPELINE_BIND_POINT_GRAPHICS);
 
-    // renderData.basicMeshes = &basicMeshes;
+    // renderData.m_basic_meshes = &m_basic_meshes;
     // renderData.meshes = &meshes;
-    // renderData.default_pipeline = &meshPipeline;
-    // renderData.binded_pipeline = &meshPipeline;
-    // renderData.binded_mesh = &basicMeshes[Mesh::Cube];
-    // renderData.descriptorSets.push(sceneDescriptorSet);
+    // renderData.default_pipeline = &m_mesh_pipeline;
+    // renderData.binded_pipeline = &m_mesh_pipeline;
+    // renderData.binded_mesh = &m_basic_meshes[Mesh::Cube];
+    // renderData.descriptorSets.push(scene_descriptor_set);
 
-    for (auto &renderable : indirectRenderables) {
-        renderable->render(cmd, renderData);
+    for (auto &renderable : m_indirect_renderables) {
+        renderable->render(p_cmd, p_render_data);
     }
 
-    drawIndirectBuffers[renderData.frameIndex].writeToBuffer(
-        renderData.drawCommands.data(), renderData.drawCommands.size() * sizeof(VkDrawIndexedIndirectCommand), 0);
+    m_draw_indirect_buffers[p_render_data.frameIndex].writeToBuffer(
+        p_render_data.drawCommands.data(), p_render_data.drawCommands.size() * sizeof(VkDrawIndexedIndirectCommand), 0);
 
-    uint32_t drawcount = renderData.drawCommands.size();
-    countIndirectBuffers[renderData.frameIndex].writeToBuffer(&drawcount, sizeof(uint32_t), 0);
+    uint32_t drawcount = p_render_data.drawCommands.size();
+    m_count_indirect_buffers[p_render_data.frameIndex].writeToBuffer(&drawcount, sizeof(uint32_t), 0);
 
     vkCmdDrawIndexedIndirectCount(
-        cmd, drawIndirectBuffers[renderData.frameIndex], 0, countIndirectBuffers[renderData.frameIndex], 0, drawcount,
+        p_cmd, m_draw_indirect_buffers[p_render_data.frameIndex], 0, m_count_indirect_buffers[p_render_data.frameIndex], 0, drawcount,
         sizeof(VkDrawIndexedIndirectCommand));
 
-    for (auto &renderable : renderables) {
-        renderable->render(cmd, renderData);
+    for (auto &renderable : m_renderables) {
+        renderable->render(p_cmd, p_render_data);
     }
-
-    int x = 0;
 }
 
-void Scene::renderShading(CommandBuffer &cmd, RenderData &renderData) {
-    renderData.basicMeshes = basicMeshes;
-    renderData.cameras = &cameras;
-    defferedRenderpass->transitionAttachment(renderData.swapchainIndex, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, cmd);
-    m_shading_renderpass->transitionColorAttachment(renderData.swapchainIndex, VK_IMAGE_LAYOUT_GENERAL, cmd);
+void Scene::renderShading(CommandBuffer &p_cmd, RenderData &p_renderData) {
+    p_renderData.m_basic_meshes = m_basic_meshes;
+    p_renderData.m_cameras = &m_cameras;
+    m_deffered_renderpass->transitionAttachment(p_renderData.swapchainIndex, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, p_cmd);
+    m_shading_renderpass->transitionColorAttachment(p_renderData.swapchainIndex, VK_IMAGE_LAYOUT_GENERAL, p_cmd);
 
-    shadingPipeline.bindPipeline(cmd);
+    m_shading_pipeline.bindPipeline(p_cmd);
 
-    std::vector<DescriptorSet *> descriptorSets = {&deferreDescriptorSet[renderData.swapchainIndex]};
-    DescriptorSet::bindDescriptorSet(cmd, descriptorSets, shadingPipeline.getPipelineLayout(), VK_PIPELINE_BIND_POINT_COMPUTE);
+    std::vector<DescriptorSet *> descriptor_sets = {&m_deferred_descriptor_set[p_renderData.swapchainIndex]};
+    DescriptorSet::bindDescriptorSet(p_cmd, descriptor_sets, m_shading_pipeline.getPipelineLayout(), VK_PIPELINE_BIND_POINT_COMPUTE);
     PushConstantStruct tp{
-        objectBuffer.getBufferDeviceAddress(), materialBuffer.getBufferDeviceAddress(),
-        cameraBuffer[renderData.frameIndex].getBufferDeviceAddress(), lightBuffer.getBufferDeviceAddress(), 0, static_cast<uint32_t>(lightObjects.size())};
-    renderData.pushConstant = tp;
+        m_object_buffer.getBufferDeviceAddress(), material_buffer.getBufferDeviceAddress(),
+        camera_buffer[p_renderData.frameIndex].getBufferDeviceAddress(), m_light_buffer.getBufferDeviceAddress(), 0, static_cast<uint32_t>(m_light_objects.size())};
+    p_renderData.pushConstant = tp;
     // // set push_constant for cam_id
     vkCmdPushConstants(
-        cmd, shadingPipeline.getPipelineLayout(), shadingPipeline.getPushConstantStage(), 0, sizeof(PushConstantStruct), &tp);
+        p_cmd, m_shading_pipeline.getPipelineLayout(), m_shading_pipeline.getPushConstantStage(), 0, sizeof(PushConstantStruct), &tp);
 
-    shadingPipeline.dispatch(cmd, renderData.renderPass->getFrameSize().width, renderData.renderPass->getFrameSize().height);
+    m_shading_pipeline.dispatch(p_cmd, p_renderData.renderPass->getFrameSize().width, p_renderData.renderPass->getFrameSize().height);
 
-    defferedRenderpass->transitionColorAttachment(renderData.swapchainIndex, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, cmd);
-    defferedRenderpass->transitionDepthAttachment(renderData.swapchainIndex, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, cmd);
-    m_shading_renderpass->transitionColorAttachment(renderData.swapchainIndex, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, cmd);
+    m_deffered_renderpass->transitionColorAttachment(p_renderData.swapchainIndex, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, p_cmd);
+    m_deffered_renderpass->transitionDepthAttachment(p_renderData.swapchainIndex, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, p_cmd);
+    m_shading_renderpass->transitionColorAttachment(p_renderData.swapchainIndex, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, p_cmd);
 
     m_shading_renderpass->setClearEnable(false);
-    m_shading_renderpass->beginRenderPass(cmd, renderData.swapchainIndex);
-    for (auto &renderable : renderables) {
-        renderable->render(cmd, renderData);
+    m_shading_renderpass->beginRenderPass(p_cmd, p_renderData.swapchainIndex);
+    for (auto &renderable : m_renderables) {
+        renderable->render(p_cmd, p_renderData);
     }
-    m_shading_renderpass->endRenderPass(cmd);
+    m_shading_renderpass->endRenderPass(p_cmd);
     m_shading_renderpass->setClearEnable(true);
 }
 
 uint32_t Scene::getNewID() {
-    if (!freeIDs.empty()) {
-        uint32_t id = freeIDs.back();
-        freeIDs.pop_back();
+    if (!m_free_ids.empty()) {
+        uint32_t id = m_free_ids.back();
+        m_free_ids.pop_back();
         return id;
     }
-    return nextID++;
-
-    Device *device = nullptr;
+    return m_next_id++;
 };
 
-uint32_t Scene::addNode(uint32_t Parent_id, std::shared_ptr<Node> node) {
-    if (dynamic_cast<IRenderable *>(node.get())) {
-        renderables.push_back(std::dynamic_pointer_cast<IRenderable>(node));
+uint32_t Scene::addNode(uint32_t p_parent_id, std::shared_ptr<Node> p_node) {
+    if (dynamic_cast<IRenderable *>(p_node.get())) {
+        m_renderables.push_back(std::dynamic_pointer_cast<IRenderable>(p_node));
     }
-    if (dynamic_cast<IIndirectRenderable *>(node.get())) {
-        indirectRenderables.push_back(std::dynamic_pointer_cast<IIndirectRenderable>(node));
+    if (dynamic_cast<IIndirectRenderable *>(p_node.get())) {
+        m_indirect_renderables.push_back(std::dynamic_pointer_cast<IIndirectRenderable>(p_node));
     }
 
-    if (dynamic_cast<CameraV2 *>(node.get())) {
-        cameras.push_back(std::dynamic_pointer_cast<CameraV2>(node));
-        if (cameras.size() == 1) {
-            mainCamera = cameras[0];
+    if (dynamic_cast<CameraV2 *>(p_node.get())) {
+        m_cameras.push_back(std::dynamic_pointer_cast<CameraV2>(p_node));
+        if (m_cameras.size() == 1) {
+            m_main_camera = m_cameras[0];
         }
     }
 
-    if (dynamic_cast<IAnimatic *>(node.get())) {
-        animaticObjs.push_back(std::dynamic_pointer_cast<IAnimatic>(node));
+    if (dynamic_cast<IAnimatic *>(p_node.get())) {
+        m_animatic_objs.push_back(std::dynamic_pointer_cast<IAnimatic>(p_node));
     }
 
-    if (dynamic_cast<ICollider *>(node.get())) {
-        collisionObjects.push_back(std::dynamic_pointer_cast<ICollider>(node));
+    if (dynamic_cast<ICollider *>(p_node.get())) {
+        m_collision_objects.push_back(std::dynamic_pointer_cast<ICollider>(p_node));
     }
 
-    if (dynamic_cast<IInputController *>(node.get())) {
-        controlledObjects.push_back(std::dynamic_pointer_cast<IInputController>(node));
+    if (dynamic_cast<IInputController *>(p_node.get())) {
+        m_controlled_objects.push_back(std::dynamic_pointer_cast<IInputController>(p_node));
     }
 
-    if (dynamic_cast<Light *>(node.get())) {
-        lightObjects.push_back(std::dynamic_pointer_cast<Light>(node));
+    if (dynamic_cast<Light *>(p_node.get())) {
+        m_light_objects.push_back(std::dynamic_pointer_cast<Light>(p_node));
     }
     
 
-    if (Parent_id == -1) {
-        this->addChild(node);
+    if (p_parent_id == uint32_t(-1)) {
+        this->addChild(p_node);
     } else {
-        objects[Parent_id]->addChild(node);
+        m_objects[p_parent_id]->addChild(p_node);
     }
-    node->setId(getNewID());
-    objects[node->getId()] = node;
-    return node->getId();
+    p_node->setId(getNewID());
+    m_objects[p_node->getId()] = p_node;
+    return p_node->getId();
 }
 
-void Scene::removeNode(uint32_t id) {}
+void Scene::removeNode(uint32_t p_id) {}
 
-uint32_t Scene::addMaterial(Material material) {
-    materials.push_back(material);
-    return materials.size() - 1;
+uint32_t Scene::addMaterial(Material p_material) {
+    m_materials.push_back(p_material);
+    return m_materials.size() - 1;
 }
 
-void Scene::addStaticMesh(Mesh &mesh) {
-    bool needGPUUpload = false;
-    if (mesh.indicies.size() + firstIndexAvailable > indexBuffer.getInstancesCount()) {
-        needGPUUpload = true;
-        indexBuffer = Buffer(
-            device, sizeof(uint32_t), (mesh.indicies.size() + indexBuffer.getInstancesCount()) * 1.5,
+void Scene::addStaticMesh(Mesh &p_mesh) {
+    bool need_GPU_upload = false;
+    if (p_mesh.indicies.size() + first_index_available > index_buffer.getInstancesCount()) {
+        need_GPU_upload = true;
+        index_buffer = Buffer(
+            m_device, sizeof(uint32_t), (p_mesh.indicies.size() + index_buffer.getInstancesCount()) * 1.5,
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, Buffer::BufferType::GPU_ONLY);
     }
 
-    if (mesh.verticies.size() + firstVertexAvailable > vertexBuffer.getInstancesCount()) {
-        needGPUUpload = true;
-        vertexBuffer = Buffer(
-            device, sizeof(Vertex), (mesh.verticies.size() + vertexBuffer.getInstancesCount()) * 1.5,
+    if (p_mesh.verticies.size() + first_vertex_available > vertex_buffer.getInstancesCount()) {
+        need_GPU_upload = true;
+        vertex_buffer = Buffer(
+            m_device, sizeof(Vertex), (p_mesh.verticies.size() + vertex_buffer.getInstancesCount()) * 1.5,
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, Buffer::BufferType::GPU_ONLY);
     }
 
-    if (needGPUUpload) {
+    if (need_GPU_upload) {
         for (auto &scene_mesh : meshes) {
             if (scene_mesh.second.indicies.size() == 0 || scene_mesh.second.verticies.size() == 0) continue;
-            scene_mesh.second.setVertexAndIndexBuffer(indexBuffer, vertexBuffer);
+            scene_mesh.second.setVertexAndIndexBuffer(index_buffer, vertex_buffer);
             scene_mesh.second.uploadToGPU();
         }
     }
 
-    mesh.setVertexAndIndexBuffer(firstIndexAvailable, firstVertexAvailable, indexBuffer, vertexBuffer);
+    p_mesh.setVertexAndIndexBuffer(first_index_available, first_vertex_available, index_buffer, vertex_buffer);
 
-    mesh.uploadToGPU();
-    firstIndexAvailable += mesh.indicies.size();
-    firstVertexAvailable += mesh.verticies.size();
+    p_mesh.uploadToGPU();
+    first_index_available += p_mesh.indicies.size();
+    first_vertex_available += p_mesh.verticies.size();
 
-    meshes[nb_meshes] = mesh;
+    meshes[nb_meshes] = p_mesh;
     nb_meshes++;
 }
 
-uint32_t Scene::addImage(Image &image) {
-    images.push_back(image);
+uint32_t Scene::addImage(Image &p_image) {
+    images.push_back(p_image);
     return images.size() - 1;
 }
 
 void Scene::createDrawIndirectBuffers() {
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        drawIndirectBuffers[i] = Buffer(
-            device, sizeof(VkDrawIndexedIndirectCommand), 100000, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        m_draw_indirect_buffers[i] = Buffer(
+            m_device, sizeof(VkDrawIndexedIndirectCommand), 100000, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
             Buffer::BufferType::DYNAMIC);
 
-        countIndirectBuffers[i] = Buffer(
-            device, sizeof(uint32_t), 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+        m_count_indirect_buffers[i] = Buffer(
+            m_device, sizeof(uint32_t), 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
             Buffer::BufferType::DYNAMIC);
     }
 }
 
-void Scene::updateSim(float dt, float t, uint32_t tick) {
-    for (auto &animaticObj : animaticObjs) {
-        animaticObj->simulation(glm::vec3(0, -9.81, 0), 0.995, tick, dt, t, collisionObjects);
+void Scene::updateSim(float p_dt, float p_t, uint32_t p_tick) {
+    for (auto &animatic_obj : m_animatic_objs) {
+        animatic_obj->simulation(glm::vec3(0, -9.81, 0), 0.995, p_tick, p_dt, p_t, m_collision_objects);
     }
 }
 
-void Scene::updateFromInput(Window *window, float dt) {
-    for (auto &controlledObject : controlledObjects) {
-        controlledObject->updateFromInput(window, dt);
+void Scene::updateFromInput(Window *p_window, float p_dt) {
+    for (auto &controlled_obj : m_controlled_objects) {
+        controlled_obj->updateFromInput(p_window, p_dt);
     }
 }
 
-void Scene::updateCameraBuffer(uint32_t frameIndex) {
-    if (cameras.size() == 0) return;
+void Scene::updateCameraBuffer(uint32_t p_frame_index) {
+    if (m_cameras.size() == 0) return;
 
-    if (cameraBuffer[frameIndex].getInstancesCount() < cameras.size()) {
-        cameraBuffer[frameIndex] = Buffer(device, sizeof(Ubo), 20, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
+    if (camera_buffer[p_frame_index].getInstancesCount() < m_cameras.size()) {
+        camera_buffer[p_frame_index] = Buffer(m_device, sizeof(Ubo), 20, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
     }
     std::vector<Ubo> ubos;
 
-    for (auto cam : cameras) {
+    for (auto cam : m_cameras) {
         Ubo ubo;
-        ubo.projection = mainCamera->getProjectionMatrix();
-        ubo.view = mainCamera->getViewMatrix();
-        ubo.invView = glm::inverse(mainCamera->getViewMatrix());
+        ubo.projection = m_main_camera->getProjectionMatrix();
+        ubo.view = m_main_camera->getViewMatrix();
+        ubo.invView = glm::inverse(m_main_camera->getViewMatrix());
         ubos.push_back(ubo);
     }
 
-    cameraBuffer[frameIndex].writeToBuffer(ubos.data(), sizeof(Ubo) * ubos.size());
+    camera_buffer[p_frame_index].writeToBuffer(ubos.data(), sizeof(Ubo) * ubos.size());
 }
 
 struct Object_data {
@@ -316,27 +313,27 @@ struct Object_data {
 };
 
 void Scene::updateObjectBuffer() {
-    if (objectBuffer.getInstancesCount() < objects.size()) {
-        objectBuffer =
-            Buffer(device, sizeof(Object_data), objects.size() * 2, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, Buffer::BufferType::DYNAMIC);
-        for (auto &obj : objects) {
-            obj.second->uploadedToGPU = false;
+    if (m_object_buffer.getInstancesCount() < m_objects.size()) {
+        m_object_buffer =
+            Buffer(m_device, sizeof(Object_data), m_objects.size() * 2, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, Buffer::BufferType::DYNAMIC);
+        for (auto &obj : m_objects) {
+            obj.second->uploaded_to_GPU = false;
         }
     }
-    for (auto &obj : objects) {
-        if (!obj.second->uploadedToGPU) {
+    for (auto &obj : m_objects) {
+        if (!obj.second->uploaded_to_GPU) {
             Object_data data;
             data.world_matrix = obj.second->wMatrix();
             data.normal_matrix = obj.second->wNormalMatrix();
             data.material_offset = 0;
-            objectBuffer.writeToBuffer(&data, sizeof(Object_data), sizeof(Object_data) * obj.second->getId());
-            obj.second->uploadedToGPU = true;
+            m_object_buffer.writeToBuffer(&data, sizeof(Object_data), sizeof(Object_data) * obj.second->getId());
+            obj.second->uploaded_to_GPU = true;
         }
     }
 }
 
 void Scene::updateLightBuffer() {
-    if(lightObjects.size() == 0){
+    if(m_light_objects.size() == 0){
         Light l;
         l.color = glm::vec3(0);
         l.intensity = 0;
@@ -344,135 +341,134 @@ void Scene::updateLightBuffer() {
         addNode(-1, std::make_shared<Light>(l));
     }
 
-    if (lightBuffer.getInstancesCount() < lightObjects.size()) {
-        lightBuffer = Buffer(
-            device, sizeof(LightGPU), lightObjects.size() * 2, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, Buffer::BufferType::DYNAMIC);
+    if (m_light_buffer.getInstancesCount() < m_light_objects.size()) {
+        m_light_buffer = Buffer(
+            m_device, sizeof(LightGPU), m_light_objects.size() * 2, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, Buffer::BufferType::DYNAMIC);
 
-        for (auto &light : lightObjects) {
-            light->uploadedToGPU = false;
+        for (auto &light : m_light_objects) {
+            light->uploaded_to_GPU = false;
         }
     }
     int i = 0;
-    for (auto &light : lightObjects) {
+    for (auto &light : m_light_objects) {
 
-        if (!light->uploadedToGPU) {
+        if (!light->uploaded_to_GPU) {
             LightGPU l;
             l.color = glm::vec4(light->color, light->intensity);
             l.pos = light->wMatrix() * glm::vec4(0, 0, 0, 1);
             l.orienation = light->getParent()->wNormalMatrix() * light->transform.rot.value;
             l.Type = light->m_type;
-            light->uploadedToGPU = true;
-            lightBuffer.writeToBuffer(&l, sizeof(LightGPU), sizeof(LightGPU) * i);
+            light->uploaded_to_GPU = true;
+            m_light_buffer.writeToBuffer(&l, sizeof(LightGPU), sizeof(LightGPU) * i);
         }
         i++;
     }
 }
 
 void Scene::updateMaterialBuffer() {
-    if (materialBuffer.getInstancesCount() < materials.size() || materials.size() == 0) {
-        if (materials.size() == 0) {
+    if (material_buffer.getInstancesCount() < m_materials.size() || m_materials.size() == 0) {
+        if (m_materials.size() == 0) {
             Material mat;
             mat.color = glm::vec4(0.8, 0, 0, 1);
             mat.metallic = 0.8f;
             mat.roughness = 0.9f;
-            materials.push_back(mat);
+            m_materials.push_back(mat);
         }
-        materialBuffer =
-            Buffer(device, sizeof(MaterialGPU), materials.size(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
+        material_buffer =
+            Buffer(m_device, sizeof(MaterialGPU), m_materials.size(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
     }
-    std::vector<MaterialGPU> materialsGPU;
+    std::vector<MaterialGPU> materials_GPU;
 
-    for (auto &material : materials) {
-        materialsGPU.push_back(
+    for (auto &material : m_materials) {
+        materials_GPU.push_back(
             {material.color, material.metallic, material.roughness, material.albedo_tex_id, material.metallic_roughness_tex_id,
              material.normal_tex_id});
     }
-    materialBuffer.writeToBuffer(materialsGPU.data(), sizeof(MaterialGPU) * materialsGPU.size(), 0);
+    material_buffer.writeToBuffer(materials_GPU.data(), sizeof(MaterialGPU) * materials_GPU.size(), 0);
 }
 
 void Scene::createDescriptorSets() { 
     
-    sceneDescriptorSet = DescriptorSet(device, meshPipeline.getDescriptorSetLayout(0)); 
+    scene_descriptor_set = DescriptorSet(m_device, m_mesh_pipeline.getDescriptorSetLayout(0)); 
 }
 
 void Scene::updateDescriptorSets() {
     if (images.size() == 0) {
         glm::vec4 *defaultPixel = new glm::vec4(1, 1, 1, 1);
         // create a default texture
-        ImageCreateInfo defaultImageCreateInfo;
-        defaultImageCreateInfo.width = 1;
-        defaultImageCreateInfo.height = 1;
-        defaultImageCreateInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
-        defaultImageCreateInfo.usage_flags = VK_IMAGE_USAGE_SAMPLED_BIT;
-        defaultImageCreateInfo.image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        defaultImageCreateInfo.datas.push_back(defaultPixel);
-        Image defaultImage = Image(device, defaultImageCreateInfo);
-        images.push_back(defaultImage);
+        ImageCreateInfo default_image_create_info;
+        default_image_create_info.width = 1;
+        default_image_create_info.height = 1;
+        default_image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+        default_image_create_info.usage_flags = VK_IMAGE_USAGE_SAMPLED_BIT;
+        default_image_create_info.image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        default_image_create_info.datas.push_back(defaultPixel);
+        Image default_image = Image(m_device, default_image_create_info);
+        images.push_back(default_image);
     }
-    std::vector<VkDescriptorImageInfo> imageInfos;
+    std::vector<VkDescriptorImageInfo> image_infos;
     for (auto &texture : images) {
-        imageInfos.push_back(texture.getDescriptorImageInfo(samplerType::LINEAR));
+        image_infos.push_back(texture.getDescriptorImageInfo(samplerType::LINEAR));
     }
-    sceneDescriptorSet.writeImagesDescriptor(0, imageInfos);
-    sceneDescriptorSet.writeImageDescriptor(1, skyboxImage.getDescriptorImageInfo(samplerType::LINEAR));
+    scene_descriptor_set.writeImagesDescriptor(0, image_infos);
+    scene_descriptor_set.writeImageDescriptor(1, m_skybox_image.getDescriptorImageInfo(samplerType::LINEAR));
 }
 
 void Scene::updateRenderPassDescriptorSets() {
-    if (deferreDescriptorSet.size() == 0) {
-        deferreDescriptorSet.reserve(defferedRenderpass->getimageAttachement().size());
-        for (int i = 0; i < defferedRenderpass->getimageAttachement().size(); i++) {
-            deferreDescriptorSet.push_back(DescriptorSet(device, shadingPipeline.getDescriptorsSetLayout()[0]));
+    if (m_deferred_descriptor_set.size() == 0) {
+        m_deferred_descriptor_set.reserve(m_deffered_renderpass->getimageAttachement().size());
+        for (size_t i = 0; i < m_deffered_renderpass->getimageAttachement().size(); i++) {
+            m_deferred_descriptor_set.push_back(DescriptorSet(m_device, m_shading_pipeline.getDescriptorsSetLayout()[0]));
         }
 
-        testBuffer = Buffer(device, sizeof(uint32_t), 921600, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, Buffer::BufferType::GPU_ONLY);
-    }
-    for (int i = 0; i < defferedRenderpass->getimageAttachement().size(); i++) {
+   }
+    for (size_t i = 0; i < m_deffered_renderpass->getimageAttachement().size(); i++) {
         // color metal
-        VkDescriptorImageInfo imageInfo = defferedRenderpass->getimageAttachement()[i][0].getDescriptorImageInfo(samplerType::LINEAR);
-        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        deferreDescriptorSet[i].writeImageDescriptor(0, imageInfo);
+        VkDescriptorImageInfo image_info = m_deffered_renderpass->getimageAttachement()[i][0].getDescriptorImageInfo(samplerType::LINEAR);
+        image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        m_deferred_descriptor_set[i].writeImageDescriptor(0, image_info);
 
         // normal roughness
-        imageInfo = defferedRenderpass->getimageAttachement()[i][1].getDescriptorImageInfo(samplerType::LINEAR);
-        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        deferreDescriptorSet[i].writeImageDescriptor(1, imageInfo);
+        image_info = m_deffered_renderpass->getimageAttachement()[i][1].getDescriptorImageInfo(samplerType::LINEAR);
+        image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        m_deferred_descriptor_set[i].writeImageDescriptor(1, image_info);
 
         // depth
-        imageInfo = defferedRenderpass->getDepthAndStencilAttachement()[i].getDescriptorImageInfo(samplerType::LINEAR);
-        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        deferreDescriptorSet[i].writeImageDescriptor(2, imageInfo);
+        image_info = m_deffered_renderpass->getDepthAndStencilAttachement()[i].getDescriptorImageInfo(samplerType::LINEAR);
+        image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        m_deferred_descriptor_set[i].writeImageDescriptor(2, image_info);
 
         // swapchain
-        imageInfo = m_shading_renderpass->getimageAttachement()[i][0].getDescriptorImageInfo(samplerType::LINEAR);
-        imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-        deferreDescriptorSet[i].writeImageDescriptor(3, imageInfo);
+        image_info = m_shading_renderpass->getimageAttachement()[i][0].getDescriptorImageInfo(samplerType::LINEAR);
+        image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+        m_deferred_descriptor_set[i].writeImageDescriptor(3, image_info);
     }
 }
 
 void Scene::createPipelines() {
-    GraphicPipelineCreateInfo pipelineCreateInfo;
+    GraphicPipelineCreateInfo pipeline_create_info;
 #ifdef DEFAULT_APP_PATH
-    pipelineCreateInfo.fragmentShaderFile = "shaders/deffered.frag";
-    pipelineCreateInfo.vexterShaderFile = "shaders/deffered.vert";
+    pipeline_create_info.fragmentShaderFile = "shaders/deffered.frag";
+    pipeline_create_info.vexterShaderFile = "shaders/deffered.vert";
 #else
-    pipelineCreateInfo.fragmentShaderFile = "TTengine-2/shaders/deffered.frag";
-    pipelineCreateInfo.vexterShaderFile = "TTengine-2/shaders/deffered.vert";
+    pipeline_create_info.fragmentShaderFile = "TTengine-2/shaders/deffered.frag";
+    pipeline_create_info.vexterShaderFile = "TTengine-2/shaders/deffered.vert";
 #endif
-    meshPipeline = GraphicPipeline(device, pipelineCreateInfo);
+    m_mesh_pipeline = GraphicPipeline(m_device, pipeline_create_info);
 
 #ifdef DEFAULT_APP_PATH
-    pipelineCreateInfo.fragmentShaderFile = "shaders/bgV2.frag";
-    pipelineCreateInfo.vexterShaderFile = "shaders/bgV2.vert";
+    pipeline_create_info.fragmentShaderFile = "shaders/bgV2.frag";
+    pipeline_create_info.vexterShaderFile = "shaders/bgV2.vert";
 #else
-    pipelineCreateInfo.fragmentShaderFile = "TTengine-2/shaders/bgV2.frag";
-    pipelineCreateInfo.vexterShaderFile = "TTengine-2/shaders/bgV2.vert";
+    pipeline_create_info.fragmentShaderFile = "TTengine-2/shaders/bgV2.frag";
+    pipeline_create_info.vexterShaderFile = "TTengine-2/shaders/bgV2.vert";
 #endif
-    skyboxPipeline = GraphicPipeline(device, pipelineCreateInfo);
+    m_skybox_pipeline = GraphicPipeline(m_device, pipeline_create_info);
 
 #ifdef DEFAULT_APP_PATH
-    shadingPipeline = ComputePipeline(device, "shaders/shading.comp");
+    m_shading_pipeline = ComputePipeline(m_device, "shaders/shading.comp");
 #else
-    shadingPipeline = ComputePipeline(device, "TTengine-2/shaders/shading.comp");
+    m_shading_pipeline = ComputePipeline(m_device, "TTengine-2/shaders/shading.comp");
 #endif
 }
 

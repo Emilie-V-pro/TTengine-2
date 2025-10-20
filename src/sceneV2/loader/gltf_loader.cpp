@@ -90,11 +90,11 @@ void GLTFLoader::loadMesh(cgltf_data* data) {
         previous_max_indices.push_back(previous_max_index);
     }
 
-    scene->indexBuffer = Buffer(
+    scene->index_buffer = Buffer(
         device, sizeof(uint32_t), total_index_size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
         Buffer::BufferType::GPU_ONLY);
 
-    scene->vertexBuffer = Buffer(
+    scene->vertex_buffer = Buffer(
         device, sizeof(Vertex), total_vertex_size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
         Buffer::BufferType::GPU_ONLY);
 
@@ -169,7 +169,7 @@ void GLTFLoader::loadMesh(cgltf_data* data) {
         }
      
             Mesh m = Mesh(
-                device, indices, vertices, global_Indices_Indices[i], global_Vertex_Indices[i], scene->indexBuffer, scene->vertexBuffer);
+                device, indices, vertices, global_Indices_Indices[i], global_Vertex_Indices[i], scene->index_buffer, scene->vertex_buffer);
             addMeshMutex.lock();
             m.name = (mesh->name ? mesh->name : "Unnamed");
 
@@ -177,8 +177,8 @@ void GLTFLoader::loadMesh(cgltf_data* data) {
             // scene->addStaticMesh(m);
             addMeshMutex.unlock();
     }
-    scene->firstIndexAvailable = scene->indexBuffer.getInstancesCount();
-    scene->firstVertexAvailable = scene->vertexBuffer.getInstancesCount();
+    scene->first_index_available = scene->index_buffer.getInstancesCount();
+    scene->first_vertex_available = scene->vertex_buffer.getInstancesCount();
     scene->nb_meshes = data->meshes_count;
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;

@@ -103,9 +103,9 @@ class SimulateObj : public Node, public IIndirectRenderable, public IAnimatic {
     virtual void initMeshObjet() = 0;
 
     /*! Gestion des collisions */
-    virtual void Collision(std::vector<std::shared_ptr<ICollider>> &collisionObjects) = 0;
+    virtual void Collision(std::vector<std::shared_ptr<ICollider>> &m_collision_objects) = 0;
 
-    virtual void applyForceGravity(float t, glm::vec3 g) = 0;
+    virtual void applyForcem_gravity(float t, glm::vec3 g) = 0;
     virtual void solveExplicit(float visco, float deltaT) = 0;
 
     /*! Interaction avec l utilisateur */
@@ -141,8 +141,8 @@ class SimulateObj : public Node, public IIndirectRenderable, public IAnimatic {
     /// Declaration du tableau des masses
     std::vector<float> M;
 
-    // virtual void render(CommandBuffer &cmd, GraphicPipeline &pipeline, std::vector<Mesh> &meshes,  std::map<BasicShape, Mesh> basicMeshes) = 0;
-    // virtual void simulation(glm::vec3 gravite, float viscosite, uint32_t tick, float dt, float t, std::vector<std::shared_ptr<ICollider>> &collisionObjects);
+    // virtual void render(CommandBuffer &cmd, GraphicPipeline &pipeline, std::vector<Mesh> &meshes,  std::map<BasicShape, Mesh> m_basic_meshes) = 0;
+    // virtual void simulation(glm::vec3 gravite, float viscosite, uint32_t tick, float dt, float t, std::vector<std::shared_ptr<ICollider>> &m_collision_objects);
     
     Device *device;
 };

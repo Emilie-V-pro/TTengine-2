@@ -78,8 +78,8 @@ void matrixTOPminAndPmax(glm::vec3 &pmin, glm::vec3 &pmax, glm::mat4 matrix) {
 }
 
 void StaticMeshObj::render(CommandBuffer &cmd, RenderData &renderData) {
-    glm::mat4 IVPmatrix = glm::inverse(renderData.cameras->at(0)->getProjectionMatrix() * renderData.cameras->at(0)->getViewMatrix());
-    glm::mat4 VPmatrix = renderData.cameras->at(0)->getProjectionMatrix() * renderData.cameras->at(0)->getViewMatrix();
+    glm::mat4 IVPmatrix = glm::inverse(renderData.m_cameras->at(0)->getProjectionMatrix() * renderData.m_cameras->at(0)->getViewMatrix());
+    glm::mat4 VPmatrix = renderData.m_cameras->at(0)->getProjectionMatrix() * renderData.m_cameras->at(0)->getViewMatrix();
 
     glm::vec4 frustrumBoxPointW[8];
     frustrumBoxPointW[0] = (IVPmatrix * glm::vec4(1, 1, 1, 1));
@@ -118,7 +118,7 @@ void StaticMeshObj::render(CommandBuffer &cmd, RenderData &renderData) {
                 drawCmd.vertexOffset = mesh->getFirstVertex();
                 drawCmd.indexCount = mesh->bvh[index].nbTriangleToDraw * 3;
                 drawCmd.instanceCount = 1;
-                drawCmd.firstInstance = this->id;
+                drawCmd.firstInstance = this->m_id;
 
                 renderData.drawCommands.push_back(drawCmd);
             }
@@ -148,30 +148,30 @@ void StaticMeshObj::render(CommandBuffer &cmd, RenderData &renderData) {
 
 BoundingBox StaticMeshObj::computeBoundingBox() {
     BoundingBox tmp;
-    bbox = mesh->getBoundingBox();
+    m_bbox = mesh->getBoundingBox();
 
     // apply transformation to bounding box
-    tmp.pmin = glm::vec3(wMatrix() * glm::vec4(bbox.pmin, 1.0f));
-    tmp.pmax = glm::vec3(wMatrix() * glm::vec4(bbox.pmax, 1.0f));
-    bbox.pmin = glm::min(tmp.pmin, tmp.pmax);
-    bbox.pmax = glm::max(tmp.pmin, tmp.pmax);
+    tmp.pmin = glm::vec3(wMatrix() * glm::vec4(m_bbox.pmin, 1.0f));
+    tmp.pmax = glm::vec3(wMatrix() * glm::vec4(m_bbox.pmax, 1.0f));
+    m_bbox.pmin = glm::min(tmp.pmin, tmp.pmax);
+    m_bbox.pmax = glm::max(tmp.pmin, tmp.pmax);
 
-    for (auto &child : children) {
+    for (auto &child : m_children) {
         BoundingBox childbb = child->computeBoundingBox();
-        bbox.pmin = glm::min(bbox.pmin, tmp.pmin);
-        bbox.pmax = glm::max(bbox.pmax, tmp.pmax);
+        m_bbox.pmin = glm::min(m_bbox.pmin, tmp.pmin);
+        m_bbox.pmax = glm::max(m_bbox.pmax, tmp.pmax);
     };
 
-    if (bbox.pmin.x == bbox.pmax.x) {
-        bbox.pmin.x = bbox.pmax.x - 0.000001f;
+    if (m_bbox.pmin.x == m_bbox.pmax.x) {
+        m_bbox.pmin.x = m_bbox.pmax.x - 0.000001f;
     }
-    if (bbox.pmin.y == bbox.pmax.y) {
-        bbox.pmin.y = bbox.pmax.y - 0.000001f;
+    if (m_bbox.pmin.y == m_bbox.pmax.y) {
+        m_bbox.pmin.y = m_bbox.pmax.y - 0.000001f;
     }
-    if (bbox.pmin.z == bbox.pmax.z) {
-        bbox.pmin.z = bbox.pmax.z - 0.000001f;
+    if (m_bbox.pmin.z == m_bbox.pmax.z) {
+        m_bbox.pmin.z = m_bbox.pmax.z - 0.000001f;
     }
-    return bbox;
+    return m_bbox;
 }
 
 SceneHit StaticMeshObj::hit(glm::vec3 &ro, glm::vec3 &rd) {

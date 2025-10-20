@@ -31,9 +31,9 @@ glm::mat4 CameraV2::getViewMatrix() {
     glm::vec3 target = transform.pos + forward;
     glm::vec3 origin = transform.pos.value;
     
-    if (parent){
-        origin += parent->transform.pos.value;
-        target += parent->transform.pos.value;
+    if (m_parent){
+        origin += m_parent->transform.pos.value;
+        target += m_parent->transform.pos.value;
     }
 
     return glm::lookAt(origin, target,  up);

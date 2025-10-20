@@ -48,7 +48,7 @@ class SkeletonObj : public Node, public IAnimatic, public IIndirectRenderable, p
     void setPose(const BVH& bvh, int frameNumber);
 
 
-    void simulation(glm::vec3 gravite, float viscosite, uint32_t tick, float dt, float t, std::vector<std::shared_ptr<ICollider>> &collisionObjects);
+    void simulation(glm::vec3 gravite, float viscosite, uint32_t tick, float dt, float t, std::vector<std::shared_ptr<ICollider>> &m_collision_objects);
     void render(CommandBuffer &cmd, RenderData &renderData);
     void collisionPos(glm::vec3 &pos, glm::vec3 &vitesse);
     void updateFromInput(Window* window, float dt);

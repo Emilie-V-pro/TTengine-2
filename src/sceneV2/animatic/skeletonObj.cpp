@@ -264,7 +264,7 @@ void SkeletonObj::setPose(const BVH &bvh, int frameNumber) {}
 
 
 void SkeletonObj::simulation(
-    glm::vec3 gravite, float viscosite, uint32_t tick, float dt, float t, std::vector<std::shared_ptr<ICollider>> &collisionObjects) {
+    glm::vec3 gravite, float viscosite, uint32_t tick, float dt, float t, std::vector<std::shared_ptr<ICollider>> &m_collision_objects) {
     float time = t / 0.081667;
 
     interpol = time - floor(time);
@@ -407,12 +407,12 @@ void SkeletonObj::simulation(
         // m_joints_final[i]->transform.rot = m_joints_1[i]->transform.rot;
         // m_joints_final[i]->transform.pos = m_joints_1[i]->transform.pos;
 
-        if (m_joints_final[i]->id != 0) {
-            if (m_joints_final[i]->children.size() == 0) {
+        if (m_joints_final[i]->m_id != 0) {
+            if (m_joints_final[i]->m_children.size() == 0) {
                 continue;
             }
             glm::vec3 jpos = m_joints_final[i]->wMatrix()[3];
-            glm::vec3 ppos = m_joints_final[i]->parent->wMatrix()[3];
+            glm::vec3 ppos = m_joints_final[i]->m_parent->wMatrix()[3];
             coliders[collider_iter].first = jpos;
             coliders[collider_iter].second = ppos;
             collider_iter++;

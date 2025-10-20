@@ -322,7 +322,7 @@ void ObjetSimuleMSS::updateVertex() {
  * Simulation de l objet.
  */
 void ObjetSimuleMSS::simulation(
-    glm::vec3 gravite, float viscosite, uint32_t tick, float dt, float t, std::vector<std::shared_ptr<ICollider>> &collisionObjects) {
+    glm::vec3 gravite, float viscosite, uint32_t tick, float dt, float t, std::vector<std::shared_ptr<ICollider>> &m_collision_objects) {
     /* Calcul des forces dues aux ressorts */
     // std::cout << "Force.... " << std::endl;
     CalculForceSpring();
@@ -330,7 +330,7 @@ void ObjetSimuleMSS::simulation(
     /* Calcul des accelerations (avec ajout de la gravite aux forces) */
     // std::cout << "Accel.... " << std::endl;
     if (_Integration == "explicite")
-        applyForceGravity(t, gravite);
+        applyForcem_gravity(t, gravite);
     else if (_Integration == "implicite")
         _SolveurImpl->CalculAccel_ForceGravite(gravite, mesh.verticies.size(), A, Force, M);
 
@@ -344,7 +344,7 @@ void ObjetSimuleMSS::simulation(
     /* ! Gestion des collisions  */
     // Reponse : reste a la position du sol - arret des vitesses
     // Penser au Translate de l objet dans la scene pour trouver plan coherent
-    Collision(collisionObjects);
+    Collision(m_collision_objects);
 
     // Affichage des positions
     //  AffichagePos(Tps);

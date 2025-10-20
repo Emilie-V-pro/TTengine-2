@@ -121,7 +121,7 @@ public:
     
     
     /// Nombre d iterations pour le calcul des vitesses en implicite
-    int _Nb_Iter_VitImpl;
+    int m_nb_iter_VitImpl;
     
     /// Declaration du vecteur Y du systeme HX = Y
     std::vector<glm::vec3> Y;

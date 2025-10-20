@@ -8,11 +8,10 @@
 #include "commandBuffer/command_buffer.hpp"
 #include "struct.hpp"
 #include "structs_vk.hpp"
-#include "utils.hpp"
 
 namespace TTe {
 
-GraphicPipeline::GraphicPipeline(Device* device, GraphicPipelineCreateInfo& pipelineCreateInfo) : device(device) {
+GraphicPipeline::GraphicPipeline(Device* device, GraphicPipelineCreateInfo& pipelineCreateInfo) : m_device(device) {
     setPipelineStage(pipelineCreateInfo);
     createShaders(pipelineCreateInfo);
     createPipelineLayout(pipelineCreateInfo);
@@ -20,42 +19,42 @@ GraphicPipeline::GraphicPipeline(Device* device, GraphicPipelineCreateInfo& pipe
 }
 
 GraphicPipeline::~GraphicPipeline() {
-    // shadersMap.clear();
-    if(vk_pipelineLayout != VK_NULL_HANDLE)
-        vkDestroyPipelineLayout(*device, vk_pipelineLayout, nullptr);
+    // m_shaders_map.clear();
+    if(m_vk_pipeline_layout != VK_NULL_HANDLE)
+        vkDestroyPipelineLayout(*m_device, m_vk_pipeline_layout, nullptr);
 }
 
 GraphicPipeline::GraphicPipeline(GraphicPipeline&& other) {
-    vertexInputBinding = other.vertexInputBinding;
-    vertexAttributes = std::move(other.vertexAttributes);
+    m_vertex_input_binding = other.m_vertex_input_binding;
+    m_vertex_attributes = std::move(other.m_vertex_attributes);
     
-    shadersMap = std::move(other.shadersMap);
+    m_shaders_map = std::move(other.m_shaders_map);
 
-    pipelineStageFlags = other.pipelineStageFlags;
-    pipelineDescriptorsSetsLayout = std::move(other.pipelineDescriptorsSetsLayout);
-    pipelineDescriptorsSetsLayoutList = std::move(other.pipelineDescriptorsSetsLayoutList);
-    vk_pipelineLayout = other.vk_pipelineLayout;
-    pushConstantInfo = other.pushConstantInfo;
+    m_pipeline_stage_flags = other.m_pipeline_stage_flags;
+    m_pipeline_descriptors_sets_layout = std::move(other.m_pipeline_descriptors_sets_layout);
+    m_pipeline_descriptors_sets_layout_list = std::move(other.m_pipeline_descriptors_sets_layout_list);
+    m_vk_pipeline_layout = other.m_vk_pipeline_layout;
+    m_push_constant_info = other.m_push_constant_info;
 
-    device = other.device;
-    other.vk_pipelineLayout = VK_NULL_HANDLE;
+    m_device = other.m_device;
+    other.m_vk_pipeline_layout = VK_NULL_HANDLE;
 }
 
 GraphicPipeline& GraphicPipeline::operator=(GraphicPipeline&& other) {
     if (this != &other) {
-        vertexInputBinding = other.vertexInputBinding;
-        vertexAttributes = std::move(other.vertexAttributes);
+        m_vertex_input_binding = other.m_vertex_input_binding;
+        m_vertex_attributes = std::move(other.m_vertex_attributes);
         
-        shadersMap = std::move(other.shadersMap);
+        m_shaders_map = std::move(other.m_shaders_map);
 
-        pipelineStageFlags = other.pipelineStageFlags;
-        pipelineDescriptorsSetsLayout = std::move(other.pipelineDescriptorsSetsLayout);
-        pipelineDescriptorsSetsLayoutList = std::move(other.pipelineDescriptorsSetsLayoutList);
-        vk_pipelineLayout = other.vk_pipelineLayout;
-        pushConstantInfo = other.pushConstantInfo;
+        m_pipeline_stage_flags = other.m_pipeline_stage_flags;
+        m_pipeline_descriptors_sets_layout = std::move(other.m_pipeline_descriptors_sets_layout);
+        m_pipeline_descriptors_sets_layout_list = std::move(other.m_pipeline_descriptors_sets_layout_list);
+        m_vk_pipeline_layout = other.m_vk_pipeline_layout;
+        m_push_constant_info = other.m_push_constant_info;
 
-        device = other.device;
-        other.vk_pipelineLayout = VK_NULL_HANDLE;
+        m_device = other.m_device;
+        other.m_vk_pipeline_layout = VK_NULL_HANDLE;
     }
     return *this;
 }
@@ -64,7 +63,7 @@ void GraphicPipeline::bindPipeline(const CommandBuffer& cmdBuffer) {
     std::vector<VkShaderEXT> shaders;
     std::vector<VkShaderStageFlagBits> shaderFlags;
 
-    for (auto& shader : shadersMap) {
+    for (auto& shader : m_shaders_map) {
         shaders.push_back(shader.second);
         shaderFlags.push_back(shader.first);
     }
@@ -76,7 +75,7 @@ void GraphicPipeline::bindPipeline(const CommandBuffer& cmdBuffer) {
 }
 
 void GraphicPipeline::setVextexInfo(VkCommandBuffer cmdBuffer) {
-    vkCmdSetVertexInputEXT(cmdBuffer, 1, &vertexInputBinding, vertexAttributes.size(), vertexAttributes.data());
+    vkCmdSetVertexInputEXT(cmdBuffer, 1, &m_vertex_input_binding, m_vertex_attributes.size(), m_vertex_attributes.data());
     vkCmdSetPrimitiveTopology(cmdBuffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     vkCmdSetPrimitiveRestartEnable(cmdBuffer, VK_FALSE);
 }
@@ -101,140 +100,140 @@ void GraphicPipeline::setFragmentInfo(VkCommandBuffer cmdBuffer) {
 }
 
 void GraphicPipeline::setPipelineStage(GraphicPipelineCreateInfo& pipelineCreateInfo) {
-    pipelineStageFlags |= VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT;
-    if (!pipelineCreateInfo.geometryShaderFile.empty()) pipelineStageFlags |= VK_SHADER_STAGE_GEOMETRY_BIT;
+    m_pipeline_stage_flags |= VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT;
+    if (!pipelineCreateInfo.geometry_shader_file.empty()) m_pipeline_stage_flags |= VK_SHADER_STAGE_GEOMETRY_BIT;
 
-    if (!pipelineCreateInfo.tesselationControlShaderFile.empty()) pipelineStageFlags |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+    if (!pipelineCreateInfo.tesselation_control_shader_file.empty()) m_pipeline_stage_flags |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
 
-    if (!pipelineCreateInfo.tesselationEvaluationShaderFile.empty()) pipelineStageFlags |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+    if (!pipelineCreateInfo.tesselation_control_shader_file.empty()) m_pipeline_stage_flags |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
 }
 
 Shader GraphicPipeline::createFragmentShader(GraphicPipelineCreateInfo& pipelineCreateInfo) {
-    Shader fragmentShader(device, pipelineCreateInfo.fragmentShaderFile, pipelineStageFlags, 0);
-    // HotReload::addShaderToWatch(pipelineCreateInfo.fragmentShaderFile, this);
+    Shader fragmentShader(m_device, pipelineCreateInfo.fragment_shader_file, m_pipeline_stage_flags, 0);
+    // HotReload::addShaderToWatch(pipelineCreateInfo.fragment_shader_file, this);
     for (auto& descriptorSetlayout : fragmentShader.getDescriptorsSetLayout()) {
-        pipelineDescriptorsSetsLayout[descriptorSetlayout->getId()] = descriptorSetlayout;
+        m_pipeline_descriptors_sets_layout[descriptorSetlayout->getId()] = descriptorSetlayout;
     }
     return fragmentShader;
 }
 
 Shader GraphicPipeline::createVertexShader(GraphicPipelineCreateInfo& pipelineCreateInfo, VkShaderStageFlagBits nextStageFlag) {
-    Shader vertexShader(device, pipelineCreateInfo.vexterShaderFile, pipelineStageFlags, nextStageFlag);
-    // HotReload::addShaderToWatch(pipelineCreateInfo.vexterShaderFile, this);
+    Shader vertexShader(m_device, pipelineCreateInfo.vexter_shader_file, m_pipeline_stage_flags, nextStageFlag);
+    // HotReload::addShaderToWatch(pipelineCreateInfo.vexter_shader_file, this);
     for (auto& descriptorSetlayout : vertexShader.getDescriptorsSetLayout()) {
-        pipelineDescriptorsSetsLayout[descriptorSetlayout->getId()] = descriptorSetlayout;
+        m_pipeline_descriptors_sets_layout[descriptorSetlayout->getId()] = descriptorSetlayout;
     }
     return vertexShader;
 }
 
 Shader GraphicPipeline::createTesselationControlShader(GraphicPipelineCreateInfo& pipelineCreateInfo, VkShaderStageFlagBits nextStageFlag) {
-    Shader tesselationControlShader(device, pipelineCreateInfo.tesselationControlShaderFile, pipelineStageFlags, nextStageFlag);
-    // HotReload::addShaderToWatch(pipelineCreateInfo.tesselationControlShaderFile, this);
+    Shader tesselationControlShader(m_device, pipelineCreateInfo.tesselation_control_shader_file, m_pipeline_stage_flags, nextStageFlag);
+    // HotReload::addShaderToWatch(pipelineCreateInfo.tesselation_control_shader_file, this);
     for (auto& descriptorSetlayout : tesselationControlShader.getDescriptorsSetLayout()) {
-        pipelineDescriptorsSetsLayout[descriptorSetlayout->getId()] = descriptorSetlayout;
+        m_pipeline_descriptors_sets_layout[descriptorSetlayout->getId()] = descriptorSetlayout;
     }
     return tesselationControlShader;
 }
 
 Shader GraphicPipeline::createTesselationEvaluationShader(
     GraphicPipelineCreateInfo& pipelineCreateInfo, VkShaderStageFlagBits nextStageFlag) {
-    Shader tesselationEvaluationShader(device, pipelineCreateInfo.tesselationEvaluationShaderFile, pipelineStageFlags, nextStageFlag);
-    // HotReload::addShaderToWatch(pipelineCreateInfo.tesselationEvaluationShaderFile, this);
+    Shader tesselationEvaluationShader(m_device, pipelineCreateInfo.tesselation_evaluation_shader_file, m_pipeline_stage_flags, nextStageFlag);
+    // HotReload::addShaderToWatch(pipelineCreateInfo.tesselation_evaluation_shader_file, this);
     for (auto& descriptorSetlayout : tesselationEvaluationShader.getDescriptorsSetLayout()) {
-        pipelineDescriptorsSetsLayout[descriptorSetlayout->getId()] = descriptorSetlayout;
+        m_pipeline_descriptors_sets_layout[descriptorSetlayout->getId()] = descriptorSetlayout;
     }
     return tesselationEvaluationShader;
 }
 
 Shader GraphicPipeline::createGeometryShader(GraphicPipelineCreateInfo& pipelineCreateInfo, VkShaderStageFlagBits nextStageFlag) {
-    Shader geometryShader(device, pipelineCreateInfo.geometryShaderFile, pipelineStageFlags, nextStageFlag);
-    // HotReload::addShaderToWatch(pipelineCreateInfo.geometryShaderFile, this);
+    Shader geometryShader(m_device, pipelineCreateInfo.geometry_shader_file, m_pipeline_stage_flags, nextStageFlag);
+    // HotReload::addShaderToWatch(pipelineCreateInfo.geometry_shader_file, this);
     for (auto& descriptorSetlayout : geometryShader.getDescriptorsSetLayout()) {
-        pipelineDescriptorsSetsLayout[descriptorSetlayout->getId()] = descriptorSetlayout;
+        m_pipeline_descriptors_sets_layout[descriptorSetlayout->getId()] = descriptorSetlayout;
     }
     return geometryShader;
 }
 
 void GraphicPipeline::createShaders(GraphicPipelineCreateInfo& pipelineCreateInfo) {
     assert(
-        (!pipelineCreateInfo.fragmentShaderFile.empty() && !pipelineCreateInfo.vexterShaderFile.empty()) &&
+        (!pipelineCreateInfo.fragment_shader_file.empty() && !pipelineCreateInfo.vexter_shader_file.empty()) &&
         "Un vertex et un fragment shader sont requi pour faire une pipeline");
 
     std::vector<Shader*> buildsShaderVector;
     VkShaderStageFlagBits nextStageFlag;
-    if (!pipelineCreateInfo.tesselationEvaluationShaderFile.empty()) {
+    if (!pipelineCreateInfo.tesselation_evaluation_shader_file.empty()) {
         nextStageFlag = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-    } else if (!pipelineCreateInfo.geometryShaderFile.empty()) {
+    } else if (!pipelineCreateInfo.geometry_shader_file.empty()) {
         nextStageFlag = VK_SHADER_STAGE_GEOMETRY_BIT;
     } else {
         nextStageFlag = VK_SHADER_STAGE_FRAGMENT_BIT;
     }
 
-    shadersMap[VK_SHADER_STAGE_VERTEX_BIT] = createVertexShader(pipelineCreateInfo, nextStageFlag);
-    buildsShaderVector.push_back(&shadersMap[VK_SHADER_STAGE_VERTEX_BIT]);
+    m_shaders_map[VK_SHADER_STAGE_VERTEX_BIT] = createVertexShader(pipelineCreateInfo, nextStageFlag);
+    buildsShaderVector.push_back(&m_shaders_map[VK_SHADER_STAGE_VERTEX_BIT]);
 
-    if (!pipelineCreateInfo.tesselationEvaluationShaderFile.empty()) {
+    if (!pipelineCreateInfo.tesselation_evaluation_shader_file.empty()) {
         nextStageFlag = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-        shadersMap[VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT] = createTesselationEvaluationShader(pipelineCreateInfo, nextStageFlag);
-        buildsShaderVector.push_back(&shadersMap[VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT]);
+        m_shaders_map[VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT] = createTesselationEvaluationShader(pipelineCreateInfo, nextStageFlag);
+        buildsShaderVector.push_back(&m_shaders_map[VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT]);
 
-        if (!pipelineCreateInfo.geometryShaderFile.empty()) {
+        if (!pipelineCreateInfo.geometry_shader_file.empty()) {
             nextStageFlag = VK_SHADER_STAGE_GEOMETRY_BIT;
         } else {
             nextStageFlag = VK_SHADER_STAGE_FRAGMENT_BIT;
         }
 
-        shadersMap[VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT] = createTesselationControlShader(pipelineCreateInfo, nextStageFlag);
-        buildsShaderVector.push_back(&shadersMap[VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT]);
+        m_shaders_map[VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT] = createTesselationControlShader(pipelineCreateInfo, nextStageFlag);
+        buildsShaderVector.push_back(&m_shaders_map[VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT]);
     }
 
-    if (!pipelineCreateInfo.geometryShaderFile.empty()) {
+    if (!pipelineCreateInfo.geometry_shader_file.empty()) {
         nextStageFlag = VK_SHADER_STAGE_FRAGMENT_BIT;
-        shadersMap[VK_SHADER_STAGE_GEOMETRY_BIT] = createGeometryShader(pipelineCreateInfo, nextStageFlag);
-        buildsShaderVector.push_back(&shadersMap[VK_SHADER_STAGE_GEOMETRY_BIT]);
+        m_shaders_map[VK_SHADER_STAGE_GEOMETRY_BIT] = createGeometryShader(pipelineCreateInfo, nextStageFlag);
+        buildsShaderVector.push_back(&m_shaders_map[VK_SHADER_STAGE_GEOMETRY_BIT]);
     }
-    shadersMap[VK_SHADER_STAGE_FRAGMENT_BIT] = createFragmentShader(pipelineCreateInfo);
-    buildsShaderVector.push_back(&shadersMap[VK_SHADER_STAGE_FRAGMENT_BIT]);
+    m_shaders_map[VK_SHADER_STAGE_FRAGMENT_BIT] = createFragmentShader(pipelineCreateInfo);
+    buildsShaderVector.push_back(&m_shaders_map[VK_SHADER_STAGE_FRAGMENT_BIT]);
 
-    pushConstantInfo = make<VkPushConstantRange>();
+    m_push_constant_info = make<VkPushConstantRange>();
     // parcour the shaders to get the push constant
-    for (auto& shader : shadersMap) {
+    for (auto& shader : m_shaders_map) {
         auto shaderPushConstantInfo = shader.second.getPushConstants();
-        pushConstantInfo.stageFlags |= shader.first;
+        m_push_constant_info.stageFlags |= shader.first;
         if (shaderPushConstantInfo.size > 0) {
-            if (shaderPushConstantInfo.size > pushConstantInfo.size) {
-                pushConstantInfo.size = shaderPushConstantInfo.size;
+            if (shaderPushConstantInfo.size > m_push_constant_info.size) {
+                m_push_constant_info.size = shaderPushConstantInfo.size;
             }
         }
     }
 
-    for (auto& shader : shadersMap) {
-        shader.second.setPushConstant(pushConstantInfo);
+    for (auto& shader : m_shaders_map) {
+        shader.second.setPushConstant(m_push_constant_info);
         shader.second.createShaderInfo();
     }
 
     // Build shader together
-    Shader::buildLinkedShaders(device, buildsShaderVector);
+    Shader::buildLinkedShaders(m_device, buildsShaderVector);
 }
 
 void GraphicPipeline::reloadShader(VkShaderStageFlagBits shaderStageToReload) {
-    // shadersMap[shaderStageToReload]->reloadShaderData();
+    // m_shaders_map[shaderStageToReload]->reloadShaderData();
     // std::vector<Shader*> buildsShaderVector;
-    // for (auto& shader : shadersMap) {
-    //     vkDestroyShaderEXT(device->device(), shader.second->getShaderHandler(), nullptr);
+    // for (auto& shader : m_shaders_map) {
+    //     vkDestroyShaderEXT(m_device->m_device(), shader.second->getShaderHandler(), nullptr);
     //     buildsShaderVector.push_back(shader.second);
     // }
-    // Shader::buildLinkedShaders(device, buildsShaderVector);
+    // Shader::buildLinkedShaders(m_device, buildsShaderVector);
 }
 
 void GraphicPipeline::createPipelineLayout(GraphicPipelineCreateInfo& pipelineCreateInfo) {
     std::vector<VkDescriptorSetLayout> descriptorSetLayoutVector;
 
-    for (auto& descriptorSetLayout : pipelineDescriptorsSetsLayout) {
-        pipelineDescriptorsSetsLayoutList[descriptorSetLayout.first[0]] = descriptorSetLayout.second;
+    for (auto& descriptorSetLayout : m_pipeline_descriptors_sets_layout) {
+        m_pipeline_descriptors_sets_layout_list[descriptorSetLayout.first[0]] = descriptorSetLayout.second;
     }
 
-    for (auto& descriptorSetLayout : pipelineDescriptorsSetsLayoutList) {
+    for (auto& descriptorSetLayout : m_pipeline_descriptors_sets_layout_list) {
         descriptorSetLayoutVector.push_back(*descriptorSetLayout.second);
     }
 
@@ -242,24 +241,24 @@ void GraphicPipeline::createPipelineLayout(GraphicPipelineCreateInfo& pipelineCr
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(descriptorSetLayoutVector.size());
     pipelineLayoutInfo.pSetLayouts = descriptorSetLayoutVector.data();
-    if (pushConstantInfo.size > 0) {
+    if (m_push_constant_info.size > 0) {
         pipelineLayoutInfo.pushConstantRangeCount = 1;
-        pipelineLayoutInfo.pPushConstantRanges = &pushConstantInfo;
+        pipelineLayoutInfo.pPushConstantRanges = &m_push_constant_info;
     }
 
-    if (vkCreatePipelineLayout(*device, &pipelineLayoutInfo, nullptr, &vk_pipelineLayout) != VK_SUCCESS) {
+    if (vkCreatePipelineLayout(*m_device, &pipelineLayoutInfo, nullptr, &m_vk_pipeline_layout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     }
 }
 
 void GraphicPipeline::createVertexShaderInfo() {
-    vertexInputBinding = make<VkVertexInputBindingDescription2EXT>();
-    vertexInputBinding.binding = 0;
-    vertexInputBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-    vertexInputBinding.stride = sizeof(Vertex);
-    vertexInputBinding.divisor = 1;
+    m_vertex_input_binding = make<VkVertexInputBindingDescription2EXT>();
+    m_vertex_input_binding.binding = 0;
+    m_vertex_input_binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    m_vertex_input_binding.stride = sizeof(Vertex);
+    m_vertex_input_binding.divisor = 1;
 
-    vertexAttributes = {
+    m_vertex_attributes = {
         {VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, pos)},
         {VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT, nullptr, 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, normal)},
         {VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT, nullptr, 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, uv)},

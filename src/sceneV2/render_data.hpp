@@ -44,10 +44,10 @@ class RenderData {
 
     std::vector<VkDrawIndexedIndirectCommand> drawCommands;
 
-    std::map<Mesh::BasicShape, Mesh*> basicMeshes;
+    std::map<Mesh::BasicShape, Mesh*> m_basic_meshes;
     PushConstantStruct pushConstant;
     uint cameraId = 0;
-    std::vector<std::shared_ptr<CameraV2>> *cameras;
+    std::vector<std::shared_ptr<CameraV2>> *m_cameras;
 
     uint32_t frameIndex = 0;
     uint32_t swapchainIndex = 0;

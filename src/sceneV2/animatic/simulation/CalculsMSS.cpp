@@ -72,8 +72,8 @@ void ObjetSimuleMSS::CalculForceSpring() {
 
 }  // void
 
-void ObjetSimuleMSS::applyForceGravity(float t, glm::vec3 g) {
-    // set gravity to object space
+void ObjetSimuleMSS::applyForcem_gravity(float t, glm::vec3 g) {
+    // set m_gravity to object space
     g = glm::inverse(wNormalMatrix()) * glm::vec4(g, 0.0);
     glm::vec3 wind = glm::inverse(wNormalMatrix()) * glm::normalize(glm::vec3(1.0, 0.0, 1.0)) * 5.f * glm::sin(t);
     // #pragma omp parallel for
@@ -106,7 +106,7 @@ void ObjetSimuleMSS::solveExplicit(float visco, float deltaT) {
 /**
  * Gestion des collisions avec le sol.
  */
-void ObjetSimuleMSS::Collision(std::vector<std::shared_ptr<ICollider>> &collisionObjects) {
+void ObjetSimuleMSS::Collision(std::vector<std::shared_ptr<ICollider>> &m_collision_objects) {
     glm::mat4 wMatrix = this->wMatrix();
     glm::mat4 wInvMatrix = glm::inverse(this->wMatrix());
 
@@ -119,7 +119,7 @@ void ObjetSimuleMSS::Collision(std::vector<std::shared_ptr<ICollider>> &collisio
     for (int i = 0; i < mesh.verticies.size(); ++i) {
         if (M[i] == 0 || i % 2 == 0) continue;
 
-        for (auto &collisionObject : collisionObjects) {
+        for (auto &collisionObject : m_collision_objects) {
             // mesh.verticies[i].pos = wMatrix * glm::vec4(mesh.verticies[i].pos, 1);
             collisionObject->collisionPos(mesh.verticies[i].pos, V[i]);
             // mesh.verticies[i].pos = wInvMatrix * glm::vec4(mesh.verticies[i].pos, 1);

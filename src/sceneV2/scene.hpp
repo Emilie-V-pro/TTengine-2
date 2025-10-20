@@ -1,14 +1,10 @@
 #pragma once
 
-#include <array>
+
 #include <cstdint>
 #include <filesystem>
 #include <glm/fwd.hpp>
-#include <map>
-#include <memory>
-#include <unordered_map>
-#include <utility>
-#include <vector>
+
 
 #include "GPU_data/buffer.hpp"
 #include "GPU_data/image.hpp"
@@ -34,153 +30,111 @@ namespace TTe {
 class Scene : public Node {
    public:
     Scene() {};
-    Scene(Device *device);
+    Scene(Device *p_device);
     void initSceneData(
-        DynamicRenderPass *defferedRenderpass, DynamicRenderPass *m_shading_renderpass, std::filesystem::path skyboxPath = "textures/skybox");
+        DynamicRenderPass *p_deffered_renderpass, DynamicRenderPass *p_shading_renderpass, std::filesystem::path p_skybox_path = "textures/skybox");
     ~Scene();
 
     // copy constructor
-    Scene(Scene &&scene) {
-        this->device = scene.device;
-        this->meshes = scene.meshes;
-        this->basicMeshes = scene.basicMeshes;
-        this->images = scene.images;
-        this->materials = scene.materials;
-        this->skyboxImage = scene.skyboxImage;
-        this->sceneDescriptorSet = scene.sceneDescriptorSet;
-        this->cameraBuffer = scene.cameraBuffer;
-        this->materialBuffer = scene.materialBuffer;
-        this->mainCamera = scene.mainCamera;
-        this->cameras = scene.cameras;
-        this->animaticObjs = scene.animaticObjs;
-        this->renderables = scene.renderables;
-        this->objects = scene.objects;
-        this->freeIDs = scene.freeIDs;
-        this->nextID = scene.nextID;
-        this->skyboxPipeline = std::move(scene.skyboxPipeline);
-        this->meshPipeline = std::move(scene.meshPipeline);
-    };
+    Scene(Scene &&other) = default;
 
     // copy assignment
-    Scene &operator=(Scene &&scene) {
-        this->device = scene.device;
-        this->meshes = scene.meshes;
-        this->basicMeshes = scene.basicMeshes;
-        this->images = scene.images;
-        this->materials = scene.materials;
-        this->skyboxImage = scene.skyboxImage;
-        this->sceneDescriptorSet = scene.sceneDescriptorSet;
-        this->cameraBuffer = scene.cameraBuffer;
-        this->materialBuffer = scene.materialBuffer;
-        this->mainCamera = scene.mainCamera;
-        this->cameras = scene.cameras;
-        this->animaticObjs = scene.animaticObjs;
-        this->renderables = scene.renderables;
-        this->objects = scene.objects;
-        this->freeIDs = scene.freeIDs;
-        this->nextID = scene.nextID;
-        this->skyboxPipeline = std::move(scene.skyboxPipeline);
-        this->meshPipeline = std::move(scene.meshPipeline);
-        return *this;
-    };
+    Scene &operator=(Scene &&other) = default;
 
-    void Param(std::filesystem::path Fichier_Param);
+    void Param(std::filesystem::path p_fichier_param);
 
-    void renderDeffered(CommandBuffer &cmd, RenderData &renderData);
-    void renderShading(CommandBuffer &cmd, RenderData &renderData);
+    void renderDeffered(CommandBuffer &p_cmd, RenderData &p_render_data);
+    void renderShading(CommandBuffer &p_cmd, RenderData &p_render_data);
 
-    void updateSim(float dt, float t, uint32_t tick);
-    void updateFromInput(Window *window, float dt);
+    void updateSim(float p_dt, float p_t, uint32_t p_tick);
+    void updateFromInput(Window *p_window, float p_dt);
 
-    uint32_t addNode(uint32_t Parent_id, std::shared_ptr<Node> node);
-    void removeNode(uint32_t id);
+    uint32_t addNode(uint32_t p_parent_id, std::shared_ptr<Node> p_node);
+    void removeNode(uint32_t p_id);
 
-    uint32_t addMaterial(Material material);
+    uint32_t addMaterial(Material p_material);
 
-    void addStaticMesh(Mesh &mesh);
+    void addStaticMesh(Mesh &p_mesh);
 
-    uint32_t addImage(Image &image);
+    uint32_t addImage(Image &p_image);
 
-    std::shared_ptr<CameraV2> getMainCamera() { return mainCamera; }
+    std::shared_ptr<CameraV2> getMainCamera() { return m_main_camera; }
 
-    std::shared_ptr<Node> getNode(uint32_t id) { return objects[id]; }
+    std::shared_ptr<Node> getNode(uint32_t p_id) { return m_objects[p_id]; }
 
-    std::vector<Material> &getMaterials() { return materials; }
-    std::vector<std::shared_ptr<Light>> &getLights() { return lightObjects; }
+    std::vector<Material> &getMaterials() { return m_materials; }
+    std::vector<std::shared_ptr<Light>> &getLights() { return m_light_objects; }
 
 
 
-    void updateCameraBuffer(uint32_t frameIndex = 0);
+    void updateCameraBuffer(uint32_t p_frameIndex = 0);
     void updateMaterialBuffer();
     void updateObjectBuffer();
     void updateLightBuffer();
     void updateDescriptorSets();
     void updateRenderPassDescriptorSets();
 
-    uint32_t firstIndexAvailable = 0;
-    uint32_t firstVertexAvailable = 0;
+    uint32_t first_index_available = 0;
+    uint32_t first_vertex_available = 0;
     std::map<uint32_t, Mesh> meshes{};
     uint32_t nb_meshes = 0;
     std::vector<Image> images{};
 
-    Buffer indexBuffer;
-    Buffer vertexBuffer;
-    Buffer materialBuffer;
-    std::array<Buffer, MAX_FRAMES_IN_FLIGHT> cameraBuffer;
-    DescriptorSet sceneDescriptorSet;
+    Buffer index_buffer;
+    Buffer vertex_buffer;
+    Buffer material_buffer;
+    std::array<Buffer, MAX_FRAMES_IN_FLIGHT> camera_buffer;
+    DescriptorSet scene_descriptor_set;
 
    private:
     void createDrawIndirectBuffers();
     void createPipelines();
     void createDescriptorSets();
 
-    std::map<Mesh::BasicShape, Mesh *> basicMeshes{};
-    std::vector<Material> materials{};
+    std::map<Mesh::BasicShape, Mesh *> m_basic_meshes{};
+    std::vector<Material> m_materials{};
 
-    Image skyboxImage;
+    Image m_skybox_image;
 
     
-    std::vector<DescriptorSet> deferreDescriptorSet;
+    std::vector<DescriptorSet> m_deferred_descriptor_set;
 
-    DynamicRenderPass *defferedRenderpass;
+    DynamicRenderPass *m_deffered_renderpass;
     DynamicRenderPass *m_shading_renderpass;
 
     
     
-    Buffer objectBuffer;
-    Buffer lightBuffer;
+    Buffer m_object_buffer;
+    Buffer m_light_buffer;
 
-    std::array<Buffer, MAX_FRAMES_IN_FLIGHT> drawIndirectBuffers;
-    std::array<Buffer, MAX_FRAMES_IN_FLIGHT> countIndirectBuffers;
+    std::array<Buffer, MAX_FRAMES_IN_FLIGHT> m_draw_indirect_buffers;
+    std::array<Buffer, MAX_FRAMES_IN_FLIGHT> m_count_indirect_buffers;
 
-    std::shared_ptr<CameraV2> mainCamera;
-    std::vector<std::shared_ptr<CameraV2>> cameras{};
-    std::vector<std::shared_ptr<IAnimatic>> animaticObjs;
-    std::vector<std::shared_ptr<IRenderable>> renderables;
-    std::vector<std::shared_ptr<IIndirectRenderable>> indirectRenderables;
-    std::vector<std::shared_ptr<ICollider>> collisionObjects;
-    std::vector<std::shared_ptr<Light>> lightObjects;
-    std::vector<std::shared_ptr<IInputController>> controlledObjects;
+    std::shared_ptr<CameraV2> m_main_camera;
+    std::vector<std::shared_ptr<CameraV2>> m_cameras{};
+    std::vector<std::shared_ptr<IAnimatic>> m_animatic_objs;
+    std::vector<std::shared_ptr<IRenderable>> m_renderables;
+    std::vector<std::shared_ptr<IIndirectRenderable>> m_indirect_renderables;
+    std::vector<std::shared_ptr<ICollider>> m_collision_objects;
+    std::vector<std::shared_ptr<Light>> m_light_objects;
+    std::vector<std::shared_ptr<IInputController>> m_controlled_objects;
 
-    std::unordered_map<uint32_t, std::shared_ptr<Node>> objects;
+    std::unordered_map<uint32_t, std::shared_ptr<Node>> m_objects;
 
-    std::vector<uint32_t> freeIDs;
-    int nextID = 1;
+    std::vector<uint32_t> m_free_ids;
+    int m_next_id = 1;
     uint32_t getNewID();
 
-    GraphicPipeline skyboxPipeline;
-    ComputePipeline shadingPipeline;
-    GraphicPipeline meshPipeline;
+    GraphicPipeline m_skybox_pipeline;
+    ComputePipeline m_shading_pipeline;
+    GraphicPipeline m_mesh_pipeline;
 
-    Device *device = nullptr;
-
-
-    Buffer testBuffer;
+    Device *m_device = nullptr;
 
     // for physics simulation
-    glm::vec3 gravity{0.0f, -9.81f, 0.0f};
-    int _nb_iter;
-    float _visco;
+    glm::vec3 m_gravity{0.0f, -9.81f, 0.0f};
+    int m_nb_iter;
+    float m_visco;
 
     friend class GLTFLoader;
 };

@@ -122,14 +122,14 @@ public:
     void CalculForceSpring();
 
     /*! Simulation de l objet */
-    void simulation(glm::vec3 gravite, float viscosite, uint32_t tick, float dt, float t, std::vector<std::shared_ptr<ICollider>> &collisionObjects);
+    void simulation(glm::vec3 gravite, float viscosite, uint32_t tick, float dt, float t, std::vector<std::shared_ptr<ICollider>> &m_collision_objects);
     void render(CommandBuffer &cmd, RenderData &renderData);
     
-    void applyForceGravity(float t, glm::vec3 g);
+    void applyForcem_gravity(float t, glm::vec3 g);
     void solveExplicit(float visco, float deltaT);
     
     /*! Gestion des collisions */
-    void Collision(std::vector<std::shared_ptr<ICollider>> &collisionObjects);
+    void Collision(std::vector<std::shared_ptr<ICollider>> &m_collision_objects);
     
     /*! Mise a jour du Mesh (pour affichage) de l objet en fonction des nouvelles positions calculees */
     void updateVertex();

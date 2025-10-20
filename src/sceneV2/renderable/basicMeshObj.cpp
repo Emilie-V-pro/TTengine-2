@@ -14,14 +14,14 @@ void BasicMeshObj::render(CommandBuffer &cmd, RenderData &renderData) {
         renderData.binded_pipeline = renderData.default_pipeline;
     }
     
-    Mesh *mesh = renderData.basicMeshes[shape];
+    Mesh *mesh = renderData.m_basic_meshes[shape];
     
     VkDrawIndexedIndirectCommand drawCmd;
     drawCmd.firstIndex = mesh->getFirstIndex();
     drawCmd.vertexOffset = mesh->getFirstVertex();
     drawCmd.indexCount = mesh->nbIndicies();
     drawCmd.instanceCount = 1;
-    drawCmd.firstInstance = this->id;
+    drawCmd.firstInstance = this->m_id;
 
     renderData.drawCommands.push_back(drawCmd);
  }

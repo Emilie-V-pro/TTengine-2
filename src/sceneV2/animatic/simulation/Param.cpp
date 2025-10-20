@@ -71,25 +71,25 @@ void Scene::Param(std::filesystem::path Fichier_Param)
 	Prop.load(Fichier_Param);
 		
 	/* Viscosite du milieu */
-	GET_PARAM("viscosite", _visco);
+	GET_PARAM("viscosite", m_visco);
 	
 	/* Coordonnee de la gravite */
 	float vargx, vargy, vargz;
 	
 	/* Coordonnee en x de la gravite */
 	GET_PARAM("gx", vargx); 
-	gravity.x = vargx;
+	m_gravity.x = vargx;
 	
 	/* Coordonnee en y de la gravite */
 	GET_PARAM("gy", vargy);
-	gravity.y = vargy;
+	m_gravity.y = vargy;
 	
 	/* Coordonnee en z de la gravite */
 	GET_PARAM("gz", vargz);
-	gravity.z = vargz;
+	m_gravity.z = vargz;
 	
 	/* Nombre d iterations de la boucle de simulation */
-	GET_PARAM("nbiter", _nb_iter);
+	GET_PARAM("nbiter", m_nb_iter);
     
     /* Type d objet simule */
     std::string typeObjet;
@@ -236,7 +236,7 @@ void ObjetSimuleMSS::Param_mss(std::string Fichier_Param)
         GET_PARAM("dt", _SolveurImpl->_delta_t);
         
         /* Nb iteration */
-        GET_PARAM("nbitervitimpl", _SolveurImpl->_Nb_Iter_VitImpl);
+        GET_PARAM("nbitervitimpl", _SolveurImpl->m_nb_iter_VitImpl);
             
     }
     

@@ -3,20 +3,22 @@
 #include "commandBuffer/command_buffer.hpp"
 #include "shader/pipeline.hpp"
 #include "shader/shader.hpp"
+#include "utils.hpp"
+
 namespace TTe {
 struct GraphicPipelineCreateInfo{
-    std::filesystem::path vexterShaderFile;
-    std::filesystem::path fragmentShaderFile;
-    std::filesystem::path tesselationControlShaderFile;
-    std::filesystem::path tesselationEvaluationShaderFile;
-    std::filesystem::path geometryShaderFile;
+    std::filesystem::path vexter_shader_file;
+    std::filesystem::path fragment_shader_file;
+    std::filesystem::path tesselation_control_shader_file;
+    std::filesystem::path tesselation_evaluation_shader_file;
+    std::filesystem::path geometry_shader_file;
 };
 
 class GraphicPipeline : public Pipeline {
 
    public:
     GraphicPipeline(){};
-    GraphicPipeline(Device *device, GraphicPipelineCreateInfo& pipelineCreateInfo);
+    GraphicPipeline(Device *p_device, GraphicPipelineCreateInfo& p_pipeline_create_info);
     ~GraphicPipeline();
 
 
@@ -25,44 +27,43 @@ class GraphicPipeline : public Pipeline {
     GraphicPipeline &operator=(GraphicPipeline &&other);
 
 
-    VkPipelineLayout getPipelineLayout(){return vk_pipelineLayout;};
-    std::shared_ptr<DescriptorSetLayout> getDescriptorSetLayout(uint32_t id){return pipelineDescriptorsSetsLayoutList[id];}
+    VkPipelineLayout getPipelineLayout(){return m_vk_pipeline_layout;};
+    std::shared_ptr<DescriptorSetLayout> getDescriptorSetLayout(uint32_t p_id){return m_pipeline_descriptors_sets_layout_list[p_id];}
     
 
-    void bindPipeline(const CommandBuffer &cmdBuffer);
-    void reloadShader(VkShaderStageFlagBits shaderStageToReload);
+    void bindPipeline(const CommandBuffer &p_cmd_buffer);
+    void reloadShader(VkShaderStageFlagBits p_shader_stage_to_reload);
    private:
 
-    void createShaders(GraphicPipelineCreateInfo& pipelineCreateInfo);
+    void createShaders(GraphicPipelineCreateInfo& p_pipeline_create_info);
 
-    Shader  createFragmentShader(GraphicPipelineCreateInfo& pipelineCreateInfo);
-    Shader  createVertexShader(GraphicPipelineCreateInfo& pipelineCreateInfo, VkShaderStageFlagBits nextStageFlag);
-    Shader  createTesselationControlShader(GraphicPipelineCreateInfo& pipelineCreateInfo, VkShaderStageFlagBits nextStageFlag);
-    Shader  createTesselationEvaluationShader(GraphicPipelineCreateInfo& pipelineCreateInfo, VkShaderStageFlagBits nextStageFlag);
-    Shader  createGeometryShader(GraphicPipelineCreateInfo& pipelineCreateInfo, VkShaderStageFlagBits nextStageFlag);
+    Shader  createFragmentShader(GraphicPipelineCreateInfo& p_pipeline_create_info);
+    Shader  createVertexShader(GraphicPipelineCreateInfo& p_pipeline_create_info, VkShaderStageFlagBits p_next_stage_flag);
+    Shader  createTesselationControlShader(GraphicPipelineCreateInfo& p_pipeline_create_info, VkShaderStageFlagBits p_next_stage_flag);
+    Shader  createTesselationEvaluationShader(GraphicPipelineCreateInfo& p_pipeline_create_info, VkShaderStageFlagBits p_next_stage_flag);
+    Shader  createGeometryShader(GraphicPipelineCreateInfo& p_pipeline_create_info, VkShaderStageFlagBits p_next_stage_flag);
 
-    void setPipelineStage(GraphicPipelineCreateInfo& pipelineCreateInfo);
-    void createPipelineLayout(GraphicPipelineCreateInfo& pipelineCreateInfo);
+    void setPipelineStage(GraphicPipelineCreateInfo& p_pipeline_create_info);
+    void createPipelineLayout(GraphicPipelineCreateInfo& p_pipeline_create_info);
     void createVertexShaderInfo();
 
-    void setVextexInfo(VkCommandBuffer cmdBuffer);
+    void setVextexInfo(VkCommandBuffer p_cmd_buffer);
 
-    void setRasterizerInfo(VkCommandBuffer cmdBuffer);
+    void setRasterizerInfo(VkCommandBuffer p_cmd_buffer);
 
-    void setFragmentInfo(VkCommandBuffer cmdBuffer);
+    void setFragmentInfo(VkCommandBuffer p_cmd_buffer);
 
-    VkVertexInputBindingDescription2EXT vertexInputBinding = {};
-    std::vector<VkVertexInputAttributeDescription2EXT> vertexAttributes;
+    VkVertexInputBindingDescription2EXT m_vertex_input_binding = {};
+    std::vector<VkVertexInputAttributeDescription2EXT> m_vertex_attributes;
 
-    std::map<VkShaderStageFlagBits, Shader> shadersMap;
+    std::map<VkShaderStageFlagBits, Shader> m_shaders_map;
     
-    VkShaderStageFlags pipelineStageFlags = 0;
-    std::unordered_map<std::vector<uint32_t>, std::shared_ptr<DescriptorSetLayout>> pipelineDescriptorsSetsLayout;
-    std::map<uint32_t ,std::shared_ptr<DescriptorSetLayout>> pipelineDescriptorsSetsLayoutList;
+    std::unordered_map<std::vector<uint32_t>, std::shared_ptr<DescriptorSetLayout>> m_pipeline_descriptors_sets_layout;
+    std::map<uint32_t ,std::shared_ptr<DescriptorSetLayout>> m_pipeline_descriptors_sets_layout_list;
 
     
 
-    Device *device = nullptr;
+    Device *m_device = nullptr;
 };
 
 }  // namespace vk_stage

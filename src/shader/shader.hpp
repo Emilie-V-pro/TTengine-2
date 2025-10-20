@@ -16,7 +16,7 @@ class Shader {
    public:
     // Constructor
     Shader();
-    Shader(Device *device, std::filesystem::path shaderFile, VkShaderStageFlags descriptorStage, VkShaderStageFlags nextShaderStage = 0);
+    Shader(Device *p_device, std::filesystem::path p_shader_file, VkShaderStageFlags p_descriptor_stage, VkShaderStageFlags p_next_shader_stage = 0);
 
     // Destructor
     ~Shader();
@@ -32,24 +32,24 @@ class Shader {
     void createShaderModule();
 
     void buildShader();
-    static void buildLinkedShaders(Device *device, std::vector<Shader *> &shaders);
+    static void buildLinkedShaders(Device *p_device, std::vector<Shader *> &p_shaders);
 
     // Getters
-    operator VkShaderEXT() { return shader; }
-    operator VkShaderModule() { return shaderModule; }
+    operator VkShaderEXT() { return m_shader; }
+    operator VkShaderModule() { return m_shader_module; }
 
-    const VkShaderStageFlagBits &getShaderStage() const { return shaderStage; }
-    const VkShaderStageFlags &getNexShadersStages() const { return nextShaderStage; }
-    const VkShaderCreateInfoEXT &getShaderCreateInfo() const { return shaderCreateInfo; }
-    const VkPushConstantRange &getPushConstants() const { return pushConstants; }
-    const VkExtent3D &getComputeWorkGroupSize() const { return computeWorkGroupSize; }
-    std::vector<std::shared_ptr<DescriptorSetLayout>> &getDescriptorsSetLayout() { return descriptorsSetLayout; }
+    const VkShaderStageFlagBits &getShaderStage() const { return m_shader_stage; }
+    const VkShaderStageFlags &getNexShadersStages() const { return m_next_shader_stage; }
+    const VkShaderCreateInfoEXT &getShaderCreateInfo() const { return m_shader_create_info; }
+    const VkPushConstantRange &getPushConstants() const { return m_push_constants; }
+    const VkExtent3D &getComputeWorkGroupSize() const { return m_compute_work_group_size; }
+    std::vector<std::shared_ptr<DescriptorSetLayout>> &getDescriptorsSetLayout() { return m_descriptors_set_layout; }
 
-    static VkShaderStageFlagBits getShaderStageFlagsBitFromFileName(std::filesystem::path shaderFile);
+    static VkShaderStageFlagBits getShaderStageFlagsBitFromFileName(std::filesystem::path p_shader_file);
     
 
-    void setShaderHandler(VkShaderEXT shaderExt) { shader = shaderExt; }
-    void setPushConstant(VkPushConstantRange pushConstant) { pushConstants = pushConstant; }
+    void setShaderHandler(VkShaderEXT p_shader_ext) { m_shader = p_shader_ext; }
+    void setPushConstant(VkPushConstantRange p_push_constant) { m_push_constants = p_push_constant; }
     void createShaderInfo();
    protected:
     void loadShaderSPVCode();
@@ -60,30 +60,30 @@ class Shader {
     void saveHash();
     std::string getSavedHash();
 
-    void createDescriptorSetLayout(VkShaderStageFlags descriptorStage);
-    void createPushConstant(VkShaderStageFlags descriptorStage);
+    void createDescriptorSetLayout(VkShaderStageFlags p_descriptor_stage);
+    void createPushConstant(VkShaderStageFlags p_descriptor_stage);
 
-    glslang_stage_t getGLSLangStageFromShaderStage(VkShaderStageFlagBits shaderStage) const;
+    glslang_stage_t getGLSLangStageFromShaderStage(VkShaderStageFlagBits p_shader_stage) const;
 
-    std::vector<uint32_t> shaderCode;
-    std::vector<char> shaderSourceCode;
+    std::vector<uint32_t> m_shader_code;
+    std::vector<char> m_shader_source_code;
 
-    std::vector<std::shared_ptr<DescriptorSetLayout>> descriptorsSetLayout;
+    std::vector<std::shared_ptr<DescriptorSetLayout>> m_descriptors_set_layout;
 
-    VkPushConstantRange pushConstants = {};
+    VkPushConstantRange m_push_constants = {};
 
-    std::filesystem::path shaderPath;
-    VkShaderStageFlags nextShaderStage = 0;
-    VkShaderStageFlagBits shaderStage;
+    std::filesystem::path m_shader_path;
+    VkShaderStageFlags m_next_shader_stage = 0;
+    VkShaderStageFlagBits m_shader_stage;
 
-    VkExtent3D computeWorkGroupSize = {1, 1, 1};
+    VkExtent3D m_compute_work_group_size = {1, 1, 1};
 
 
-    VkShaderCreateInfoEXT shaderCreateInfo = {};
+    VkShaderCreateInfoEXT m_shader_create_info = {};
 
-    VkShaderEXT shader = VK_NULL_HANDLE;
-    VkShaderModule shaderModule = VK_NULL_HANDLE;
-    Device *device = nullptr;
+    VkShaderEXT m_shader = VK_NULL_HANDLE;
+    VkShaderModule m_shader_module = VK_NULL_HANDLE;
+    Device *m_device = nullptr;
 };
 
 }  // namespace TTe
