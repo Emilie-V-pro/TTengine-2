@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 
 #include <cstdint>
+#include <glm/ext/scalar_common.hpp>
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
 #include <memory>
@@ -30,11 +31,11 @@ void App::init(Device *p_device, DynamicRenderPass *p_deferred_renderpass, Dynam
     GLTFLoader gltf_loader(m_device);
     // gltfLoader.load("gltf/ABeautifulGame/glTF/ABeautifulGame.gltf");
     auto start = std::chrono::high_resolution_clock::now();
-    gltf_loader.load("gltf/Sponza/glTF/Sponza.gltf");
+    // gltf_loader.load("gltf/Sponza/glTF/Sponza.gltf");
 
     // gltfLoader.load("gltf/mc2/mc.gltf");
 
-    // gltfLoader.load("gltf/mc/mc.gltf");
+    gltf_loader.load("gltf/mc/mc.gltf");
     s = gltf_loader.getScene();
     // s = new Scene(device);
     s->initSceneData(m_deferred_renderpass, m_shading_renderpass);
@@ -90,7 +91,7 @@ void App::update(float p_delta_time, CommandBuffer &p_cmd_buffer, Window &p_wind
     std::vector<std::shared_ptr<Light>> &P = s->getLights();
     for (int i = 0; i < MAX_LIGHTS; ++i) {
         m_light_accelerations[i] = glm::vec3(distribution3(gen), distribution3(gen), distribution3(gen));
-        m_light_speeds[i] = (m_light_speeds[i] + p_delta_time * m_light_accelerations[i]) * 1.f;
+        m_light_speeds[i] = glm::min((m_light_speeds[i] + p_delta_time * m_light_accelerations[i]) * 1.f, glm::vec3( 5.0f));
         P[i]->transform.pos = P[i]->transform.pos + p_delta_time * m_light_speeds[i];
 
         if (P[i]->transform.pos->x > 200 || P[i]->transform.pos->x < -200) {

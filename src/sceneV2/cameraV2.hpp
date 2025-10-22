@@ -8,7 +8,7 @@ class CameraV2 : public Node {
     ~CameraV2();
     float fov = 80;
     float near = 0.1;
-    float far = 250.0;
+    float far = 350.0;
 
     VkExtent2D extent = {1, 1};
     glm::vec3 up {0,1,0};
