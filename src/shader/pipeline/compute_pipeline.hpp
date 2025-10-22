@@ -15,7 +15,7 @@ class ComputePipeline : public Pipeline {
    public:
    ComputePipeline() {};
     // Constructor
-    ComputePipeline(Device* device, std::filesystem::path computeShaderPath);
+    ComputePipeline(Device* p_device, std::filesystem::path p_compute_shader_path);
     // Destructor
     ~ComputePipeline();
 
@@ -28,23 +28,23 @@ class ComputePipeline : public Pipeline {
     ComputePipeline& operator=(ComputePipeline&& other);
 
 
-    void bindPipeline(const CommandBuffer& cmdBuffer);
-    void dispatch(const CommandBuffer& cmdBuffer, uint32_t nbOfinvocationX = 1, uint32_t nbOfinvocationY = 1, uint32_t nbOfinvocationZ = 1);
+    void bindPipeline(const CommandBuffer& p_cmd_buffer);
+    void dispatch(const CommandBuffer& p_cmd_buffer, uint32_t p_nb_of_invocation_x = 1, uint32_t p_nb_of_invocation_y = 1, uint32_t p_nb_of_invocation_z = 1);
 
     // void reloadShader(VkShaderStageFlagBits shaderStageToReload);
 
-    VkPipelineLayout getPipelineLayout() { return pipelineLayout; };
-    std::vector<std::shared_ptr<DescriptorSetLayout>>& getDescriptorsSetLayout() { return computeShader.getDescriptorsSetLayout(); }
+    VkPipelineLayout getPipelineLayout() { return m_pipeline_layout; };
+    std::vector<std::shared_ptr<DescriptorSetLayout>>& getDescriptorsSetLayout() { return m_compute_shader.getDescriptorsSetLayout(); }
 
    private:
-    void createShaders(std::filesystem::path& computeShaderPath);
+    void createShaders(std::filesystem::path& p_compute_shader_path);
     void createPipelineLayout();
 
-    Shader computeShader;
+    Shader m_compute_shader;
 
-    VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+    VkPipelineLayout m_pipeline_layout = VK_NULL_HANDLE;
 
-    Device* device = nullptr;
+    Device* m_device = nullptr;
 };
 
 }  // namespace TTe

@@ -448,20 +448,20 @@ void Scene::updateRenderPassDescriptorSets() {
 void Scene::createPipelines() {
     GraphicPipelineCreateInfo pipeline_create_info;
 #ifdef DEFAULT_APP_PATH
-    pipeline_create_info.fragmentShaderFile = "shaders/deffered.frag";
-    pipeline_create_info.vexterShaderFile = "shaders/deffered.vert";
+    pipeline_create_info.fragment_shader_file = "shaders/deffered.frag";
+    pipeline_create_info.vexter_shader_file = "shaders/deffered.vert";
 #else
-    pipeline_create_info.fragmentShaderFile = "TTengine-2/shaders/deffered.frag";
-    pipeline_create_info.vexterShaderFile = "TTengine-2/shaders/deffered.vert";
+    pipeline_create_info.fragment_shader_file = "TTengine-2/shaders/deffered.frag";
+    pipeline_create_info.vexter_shader_file = "TTengine-2/shaders/deffered.vert";
 #endif
     m_mesh_pipeline = GraphicPipeline(m_device, pipeline_create_info);
 
 #ifdef DEFAULT_APP_PATH
-    pipeline_create_info.fragmentShaderFile = "shaders/bgV2.frag";
-    pipeline_create_info.vexterShaderFile = "shaders/bgV2.vert";
+    pipeline_create_info.fragment_shader_file = "shaders/bgV2.frag";
+    pipeline_create_info.vexter_shader_file = "shaders/bgV2.vert";
 #else
-    pipeline_create_info.fragmentShaderFile = "TTengine-2/shaders/bgV2.frag";
-    pipeline_create_info.vexterShaderFile = "TTengine-2/shaders/bgV2.vert";
+    pipeline_create_info.fragment_shader_file = "TTengine-2/shaders/bgV2.frag";
+    pipeline_create_info.vexter_shader_file = "TTengine-2/shaders/bgV2.vert";
 #endif
     m_skybox_pipeline = GraphicPipeline(m_device, pipeline_create_info);
 

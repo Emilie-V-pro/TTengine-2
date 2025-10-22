@@ -44,7 +44,7 @@ class GraphicPipeline : public Pipeline {
     Shader  createGeometryShader(GraphicPipelineCreateInfo& p_pipeline_create_info, VkShaderStageFlagBits p_next_stage_flag);
 
     void setPipelineStage(GraphicPipelineCreateInfo& p_pipeline_create_info);
-    void createPipelineLayout(GraphicPipelineCreateInfo& p_pipeline_create_info);
+    void createPipelineLayout();
     void createVertexShaderInfo();
 
     void setVextexInfo(VkCommandBuffer p_cmd_buffer);
