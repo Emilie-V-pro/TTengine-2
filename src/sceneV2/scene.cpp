@@ -78,20 +78,20 @@ void Scene::initSceneData(DynamicRenderPass *p_deffered_renderpass, DynamicRende
 }
 
 void Scene::renderDeffered(CommandBuffer &p_cmd, RenderData &p_render_data) {
-    p_render_data.m_basic_meshes = m_basic_meshes;
-    p_render_data.m_cameras = &m_cameras;
+    p_render_data.basic_meshes = m_basic_meshes;
+    p_render_data.cameras = &m_cameras;
     m_skybox_pipeline.bindPipeline(p_cmd);
     std::vector<DescriptorSet *> descriptor_sets = {&scene_descriptor_set};
 
     DescriptorSet::bindDescriptorSet(p_cmd, descriptor_sets, m_skybox_pipeline.getPipelineLayout(), VK_PIPELINE_BIND_POINT_GRAPHICS);
 
     m_basic_meshes[Mesh::Cube]->bindMesh(p_cmd);
-    p_render_data.renderPass->setDepthAndStencil(p_cmd, false);
+    p_render_data.render_pass->setDepthAndStencil(p_cmd, false);
 
     PushConstantStruct tp{
         m_object_buffer.getBufferDeviceAddress(), material_buffer.getBufferDeviceAddress(),
-        camera_buffer[p_render_data.frameIndex].getBufferDeviceAddress(), m_light_buffer.getBufferDeviceAddress(), 0, static_cast<uint32_t>(m_light_objects.size())};
-    p_render_data.pushConstant = tp;
+        camera_buffer[p_render_data.frame_index].getBufferDeviceAddress(), m_light_buffer.getBufferDeviceAddress(), 0, static_cast<uint32_t>(m_light_objects.size())};
+    p_render_data.push_constant = tp;
     // // set push_constant for cam_id
     vkCmdPushConstants(p_cmd, m_skybox_pipeline.getPipelineLayout(), m_skybox_pipeline.getPushConstantStage(), 0, sizeof(PushConstantStruct), &tp);
 
@@ -100,7 +100,7 @@ void Scene::renderDeffered(CommandBuffer &p_cmd, RenderData &p_render_data) {
         p_cmd, m_basic_meshes[Mesh::Cube]->nbIndicies(), 1, m_basic_meshes[Mesh::Cube]->getFirstIndex(), m_basic_meshes[Mesh::Cube]->getFirstVertex(),
         0);
     vkCmdSetCullMode(p_cmd, VK_CULL_MODE_BACK_BIT);
-    p_render_data.renderPass->setDepthAndStencil(p_cmd, true);
+    p_render_data.render_pass->setDepthAndStencil(p_cmd, true);
     ;
 
     m_mesh_pipeline.bindPipeline(p_cmd);
@@ -117,14 +117,14 @@ void Scene::renderDeffered(CommandBuffer &p_cmd, RenderData &p_render_data) {
         renderable->render(p_cmd, p_render_data);
     }
 
-    m_draw_indirect_buffers[p_render_data.frameIndex].writeToBuffer(
-        p_render_data.drawCommands.data(), p_render_data.drawCommands.size() * sizeof(VkDrawIndexedIndirectCommand), 0);
+    m_draw_indirect_buffers[p_render_data.frame_index].writeToBuffer(
+        p_render_data.draw_commands.data(), p_render_data.draw_commands.size() * sizeof(VkDrawIndexedIndirectCommand), 0);
 
-    uint32_t drawcount = p_render_data.drawCommands.size();
-    m_count_indirect_buffers[p_render_data.frameIndex].writeToBuffer(&drawcount, sizeof(uint32_t), 0);
+    uint32_t drawcount = p_render_data.draw_commands.size();
+    m_count_indirect_buffers[p_render_data.frame_index].writeToBuffer(&drawcount, sizeof(uint32_t), 0);
 
     vkCmdDrawIndexedIndirectCount(
-        p_cmd, m_draw_indirect_buffers[p_render_data.frameIndex], 0, m_count_indirect_buffers[p_render_data.frameIndex], 0, drawcount,
+        p_cmd, m_draw_indirect_buffers[p_render_data.frame_index], 0, m_count_indirect_buffers[p_render_data.frame_index], 0, drawcount,
         sizeof(VkDrawIndexedIndirectCommand));
 
     for (auto &renderable : m_renderables) {
@@ -133,31 +133,31 @@ void Scene::renderDeffered(CommandBuffer &p_cmd, RenderData &p_render_data) {
 }
 
 void Scene::renderShading(CommandBuffer &p_cmd, RenderData &p_renderData) {
-    p_renderData.m_basic_meshes = m_basic_meshes;
-    p_renderData.m_cameras = &m_cameras;
-    m_deffered_renderpass->transitionAttachment(p_renderData.swapchainIndex, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, p_cmd);
-    m_shading_renderpass->transitionColorAttachment(p_renderData.swapchainIndex, VK_IMAGE_LAYOUT_GENERAL, p_cmd);
+    p_renderData.basic_meshes = m_basic_meshes;
+    p_renderData.cameras = &m_cameras;
+    m_deffered_renderpass->transitionAttachment(p_renderData.swapchain_index, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, p_cmd);
+    m_shading_renderpass->transitionColorAttachment(p_renderData.swapchain_index, VK_IMAGE_LAYOUT_GENERAL, p_cmd);
 
     m_shading_pipeline.bindPipeline(p_cmd);
 
-    std::vector<DescriptorSet *> descriptor_sets = {&m_deferred_descriptor_set[p_renderData.swapchainIndex]};
+    std::vector<DescriptorSet *> descriptor_sets = {&m_deferred_descriptor_set[p_renderData.swapchain_index]};
     DescriptorSet::bindDescriptorSet(p_cmd, descriptor_sets, m_shading_pipeline.getPipelineLayout(), VK_PIPELINE_BIND_POINT_COMPUTE);
     PushConstantStruct tp{
         m_object_buffer.getBufferDeviceAddress(), material_buffer.getBufferDeviceAddress(),
-        camera_buffer[p_renderData.frameIndex].getBufferDeviceAddress(), m_light_buffer.getBufferDeviceAddress(), 0, static_cast<uint32_t>(m_light_objects.size())};
-    p_renderData.pushConstant = tp;
+        camera_buffer[p_renderData.frame_index].getBufferDeviceAddress(), m_light_buffer.getBufferDeviceAddress(), 0, static_cast<uint32_t>(m_light_objects.size())};
+    p_renderData.push_constant = tp;
     // // set push_constant for cam_id
     vkCmdPushConstants(
         p_cmd, m_shading_pipeline.getPipelineLayout(), m_shading_pipeline.getPushConstantStage(), 0, sizeof(PushConstantStruct), &tp);
 
-    m_shading_pipeline.dispatch(p_cmd, p_renderData.renderPass->getFrameSize().width, p_renderData.renderPass->getFrameSize().height);
+    m_shading_pipeline.dispatch(p_cmd, p_renderData.render_pass->getFrameSize().width, p_renderData.render_pass->getFrameSize().height);
 
-    m_deffered_renderpass->transitionColorAttachment(p_renderData.swapchainIndex, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, p_cmd);
-    m_deffered_renderpass->transitionDepthAttachment(p_renderData.swapchainIndex, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, p_cmd);
-    m_shading_renderpass->transitionColorAttachment(p_renderData.swapchainIndex, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, p_cmd);
+    m_deffered_renderpass->transitionColorAttachment(p_renderData.swapchain_index, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, p_cmd);
+    m_deffered_renderpass->transitionDepthAttachment(p_renderData.swapchain_index, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, p_cmd);
+    m_shading_renderpass->transitionColorAttachment(p_renderData.swapchain_index, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, p_cmd);
 
     m_shading_renderpass->setClearEnable(false);
-    m_shading_renderpass->beginRenderPass(p_cmd, p_renderData.swapchainIndex);
+    m_shading_renderpass->beginRenderPass(p_cmd, p_renderData.swapchain_index);
     for (auto &renderable : m_renderables) {
         renderable->render(p_cmd, p_renderData);
     }
@@ -356,7 +356,7 @@ void Scene::updateLightBuffer() {
             LightGPU l;
             l.color = glm::vec4(light->color, light->intensity);
             l.pos = light->wMatrix() * glm::vec4(0, 0, 0, 1);
-            l.orienation = light->getParent()->wNormalMatrix() * light->transform.rot.value;
+            l.orientation = light->getParent()->wNormalMatrix() * light->transform.rot.value;
             l.Type = light->m_type;
             light->uploaded_to_GPU = true;
             m_light_buffer.writeToBuffer(&l, sizeof(LightGPU), sizeof(LightGPU) * i);
@@ -394,7 +394,7 @@ void Scene::createDescriptorSets() {
 
 void Scene::updateDescriptorSets() {
     if (images.size() == 0) {
-        glm::vec4 *defaultPixel = new glm::vec4(1, 1, 1, 1);
+        glm::vec4 *default_pixel = new glm::vec4(1, 1, 1, 1);
         // create a default texture
         ImageCreateInfo default_image_create_info;
         default_image_create_info.width = 1;
@@ -402,7 +402,7 @@ void Scene::updateDescriptorSets() {
         default_image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
         default_image_create_info.usage_flags = VK_IMAGE_USAGE_SAMPLED_BIT;
         default_image_create_info.image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        default_image_create_info.datas.push_back(defaultPixel);
+        default_image_create_info.datas.push_back(default_pixel);
         Image default_image = Image(m_device, default_image_create_info);
         images.push_back(default_image);
     }

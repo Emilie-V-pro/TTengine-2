@@ -1,6 +1,7 @@
 #include <sys/types.h>
 
 #include <cassert>
+#include <cstdint>
 #include <glm/fwd.hpp>
 #include <unordered_map>
 #include <vector>
@@ -21,16 +22,16 @@ struct IndexVertex {
 static const float Z = (1.0f + sqrt(5.0f)) / 2.0f;           // Golden ratio
 static const glm::vec2 UV = glm::vec2(1 / 11.0f, 1 / 3.0f);  // The UV coordinates are laid out in a 11x3 grid
 
-static const int IcoVertexCount = 22;
-static const int IcoIndexCount = 60;
+static const int ico_vertex_count = 22;
+static const int ico_index_count = 60;
 
-static const glm::vec3 IcoVerts[] = {
+static const glm::vec3 ico_verts[] = {
     glm::vec3(0, -1, -Z), glm::vec3(-1, -Z, 0), glm::vec3(Z, 0, -1), glm::vec3(1, -Z, 0),  glm::vec3(1, Z, 0), glm::vec3(-1, -Z, 0),
     glm::vec3(Z, 0, 1),   glm::vec3(0, -1, Z),  glm::vec3(1, Z, 0),  glm::vec3(-1, -Z, 0), glm::vec3(0, 1, Z), glm::vec3(-Z, 0, 1),
     glm::vec3(1, Z, 0),   glm::vec3(-1, -Z, 0), glm::vec3(-1, Z, 0), glm::vec3(-Z, 0, -1), glm::vec3(1, Z, 0), glm::vec3(-1, -Z, 0),
     glm::vec3(0, 1, -Z),  glm::vec3(0, -1, -Z), glm::vec3(1, Z, 0),  glm::vec3(Z, 0, -1)};
 
-static const glm::vec2 IcoUvs[] = {
+static const glm::vec2 ico_uvs[] = {
     UV * glm::vec2(0, 1),  //  0
     UV *glm::vec2(1, 0),   //  1
     UV *glm::vec2(1, 2),   //  2  //
@@ -55,7 +56,7 @@ static const glm::vec2 IcoUvs[] = {
     UV *glm::vec2(11, 2)   // 21
 };
 
-static const int IcoIndex[] = {2, 6,  4,  // Top
+static const int ico_index[] = {2, 6,  4,  // Top
                                6, 10, 8, 10, 14, 12, 14, 18, 16, 18, 21, 20,
 
                                0, 3,  2,  // Middle
@@ -64,30 +65,30 @@ static const int IcoIndex[] = {2, 6,  4,  // Top
                                0, 1,  3,  // Bottom
                                3, 5,  7, 7,  9,  11, 11, 13, 15, 15, 17, 19};
 
-IndexVertex init_sphere(Device *d, uint res, Buffer::BufferType m_type) {
+IndexVertex init_sphere(uint p_res) {
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
 
-    const int rn = (int)pow(4, res);
-    const int totalIndexCount = IcoIndexCount * rn;
-    const int totalVertexCount = IcoVertexCount + IcoIndexCount * (1 - rn) / (1 - 4);
+    const int rn = (int)pow(4, p_res);
+    const int total_index_count = ico_index_count * rn;
+    const int total_vertex_count = ico_vertex_count + ico_index_count * (1 - rn) / (1 - 4);
 
-    indices.resize(totalIndexCount);
-    vertices.resize(totalVertexCount);
+    indices.resize(total_index_count);
+    vertices.resize(total_vertex_count);
 
-    for (int i = 0; i < IcoVertexCount; i++) {  // Copy in initial mesh
-        vertices[i].pos = IcoVerts[i];
-        vertices[i].uv = IcoUvs[i];
+    for (int i = 0; i < ico_vertex_count; i++) {  // Copy in initial mesh
+        vertices[i].pos = ico_verts[i];
+        vertices[i].uv = ico_uvs[i];
     }
 
-    for (int i = 0; i < IcoIndexCount; i++) {
-        indices[i] = IcoIndex[i];
+    for (int i = 0; i < ico_index_count; i++) {
+        indices[i] = ico_index[i];
     }
 
-    int currentIndexCount = IcoIndexCount;
-    int currentVertCount = IcoVertexCount;
+    int current_index_count = ico_index_count;
+    int current_vert_count = ico_vertex_count;
 
-    for (int r = 0; r < res; r++) {
+    for (uint32_t r = 0; r < p_res; r++) {
         // Now split the triangles.
         // This can be done in place, but needs to keep track of the unique triangles
         //
@@ -97,10 +98,10 @@ IndexVertex init_sphere(Device *d, uint res, Buffer::BufferType m_type) {
         //  /       \          /  \  /  \
 		// i---------i+1      i----m0----i+1
 
-        std::unordered_map<uint64_t, int> triangleFromEdge;
-        int indexCount = currentIndexCount;
+        std::unordered_map<uint64_t, int> triangle_from_edge;
+        int index_count = current_index_count;
 
-        for (int t = 0; t < indexCount; t += 3) {
+        for (int t = 0; t < index_count; t += 3) {
             int midpoints[3] = {};
 
             for (int e = 0; e < 3; e++) {
@@ -113,13 +114,13 @@ IndexVertex init_sphere(Device *d, uint res, Buffer::BufferType m_type) {
 
                 uint64_t hash = (uint64_t)first | (uint64_t)second << (sizeof(uint32_t) * 8);
 
-                auto [triangle, wasNewEdge] = triangleFromEdge.insert({hash, currentVertCount});
+                auto [triangle, wasNewEdge] = triangle_from_edge.insert({hash, current_vert_count});
 
                 if (wasNewEdge) {
-                    vertices[currentVertCount].pos = (vertices[first].pos + vertices[second].pos) / 2.0f;
-                    vertices[currentVertCount].uv = (vertices[first].uv + vertices[second].uv) / 2.0f;
+                    vertices[current_vert_count].pos = (vertices[first].pos + vertices[second].pos) / 2.0f;
+                    vertices[current_vert_count].uv = (vertices[first].uv + vertices[second].uv) / 2.0f;
 
-                    currentVertCount += 1;
+                    current_vert_count += 1;
                 }
 
                 midpoints[e] = triangle->second;
@@ -129,17 +130,17 @@ IndexVertex init_sphere(Device *d, uint res, Buffer::BufferType m_type) {
             int mid1 = midpoints[1];
             int mid2 = midpoints[2];
 
-            indices[currentIndexCount++] = indices[t];
-            indices[currentIndexCount++] = mid0;
-            indices[currentIndexCount++] = mid2;
+            indices[current_index_count++] = indices[t];
+            indices[current_index_count++] = mid0;
+            indices[current_index_count++] = mid2;
 
-            indices[currentIndexCount++] = indices[t + 1];
-            indices[currentIndexCount++] = mid1;
-            indices[currentIndexCount++] = mid0;
+            indices[current_index_count++] = indices[t + 1];
+            indices[current_index_count++] = mid1;
+            indices[current_index_count++] = mid0;
 
-            indices[currentIndexCount++] = indices[t + 2];
-            indices[currentIndexCount++] = mid2;
-            indices[currentIndexCount++] = mid1;
+            indices[current_index_count++] = indices[t + 2];
+            indices[current_index_count++] = mid2;
+            indices[current_index_count++] = mid1;
 
             indices[t] = mid0;  // Overwrite the original triangle with the 4th new triangle
             indices[t + 1] = mid1;
@@ -157,8 +158,8 @@ IndexVertex init_sphere(Device *d, uint res, Buffer::BufferType m_type) {
     return {indices, vertices};
 }
 
-IndexVertex init_cone(Device *d, uint res, Buffer::BufferType m_type) {
-    const int div = 25;
+IndexVertex init_cone(uint p_res) {
+    const int div = p_res;
     float step = 2.0 * M_PI / div;
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
@@ -170,18 +171,18 @@ IndexVertex init_cone(Device *d, uint res, Buffer::BufferType m_type) {
         glm::vec3 normal = glm::normalize(glm::vec3(cos(alpha), 1.0f, sin(alpha)));
 
         // Base du cône
-        Vertex baseVertex;
-        baseVertex.pos = glm::vec3(cos(alpha), 0.0f, sin(alpha));
-        baseVertex.normal = normal;
-        baseVertex.uv = glm::vec2(float(i) / div, 0.0f);
-        vertices.push_back(baseVertex);
+        Vertex base_vertex;
+        base_vertex.pos = glm::vec3(cos(alpha), 0.0f, sin(alpha));
+        base_vertex.normal = normal;
+        base_vertex.uv = glm::vec2(float(i) / div, 0.0f);
+        vertices.push_back(base_vertex);
 
         // Sommet du cône
-        Vertex topVertex;
-        topVertex.pos = glm::vec3(0.0f, 1.0f, 0.0f);
-        topVertex.normal = normal;
-        topVertex.uv = glm::vec2(float(i) / div, 1.0f);
-        vertices.push_back(topVertex);
+        Vertex top_vertex;
+        top_vertex.pos = glm::vec3(0.0f, 1.0f, 0.0f);
+        top_vertex.normal = normal;
+        top_vertex.uv = glm::vec2(float(i) / div, 1.0f);
+        vertices.push_back(top_vertex);
 
         // Ajout des indices pour le GL_TRIANGLE_STRIP
         int index1 = i * 2;
@@ -193,8 +194,8 @@ IndexVertex init_cone(Device *d, uint res, Buffer::BufferType m_type) {
     return {indices, vertices};
 }
 
-IndexVertex init_cylinder(Device *d, uint res, Buffer::BufferType m_type) {
-    const int div = 25;
+IndexVertex init_cylinder(uint p_res) {
+    const int div = p_res;
     float step = 2.0 * M_PI / div;
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
@@ -206,18 +207,18 @@ IndexVertex init_cylinder(Device *d, uint res, Buffer::BufferType m_type) {
         glm::vec3 normal = glm::normalize(glm::vec3(cos(alpha), 0.0f, sin(alpha)));
 
         // Base du cylindre
-        Vertex baseVertex;
-        baseVertex.pos = glm::vec3(cos(alpha), 0.0f, sin(alpha));
-        baseVertex.normal = normal;
-        baseVertex.uv = glm::vec2(float(i) / div, 0.0f);
-        vertices.push_back(baseVertex);
+        Vertex base_vertex;
+        base_vertex.pos = glm::vec3(cos(alpha), 0.0f, sin(alpha));
+        base_vertex.normal = normal;
+        base_vertex.uv = glm::vec2(float(i) / div, 0.0f);
+        vertices.push_back(base_vertex);
 
         // Sommet du cylindre
-        Vertex topVertex;
-        topVertex.pos = glm::vec3(cos(alpha), 1.0f, sin(alpha));
-        topVertex.normal = normal;
-        topVertex.uv = glm::vec2(float(i) / div, 1.0f);
-        vertices.push_back(topVertex);
+        Vertex top_vertex;
+        top_vertex.pos = glm::vec3(cos(alpha), 1.0f, sin(alpha));
+        top_vertex.normal = normal;
+        top_vertex.uv = glm::vec2(float(i) / div, 1.0f);
+        vertices.push_back(top_vertex);
 
         // Ajout des indices pour le GL_TRIANGLE_STRIP
         int index1 = i * 2;
@@ -229,7 +230,7 @@ IndexVertex init_cylinder(Device *d, uint res, Buffer::BufferType m_type) {
     return {indices, vertices};
 }
 
-IndexVertex init_cube(Device *d, uint res, Buffer::BufferType m_type) {
+IndexVertex init_cube() {
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
 
@@ -316,7 +317,7 @@ IndexVertex init_cube(Device *d, uint res, Buffer::BufferType m_type) {
     return {indices, vertices};
 }
 
-IndexVertex init_plane(Device *d, uint res, Buffer::BufferType m_type) {
+IndexVertex init_plane() {
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
 
@@ -336,37 +337,37 @@ IndexVertex init_plane(Device *d, uint res, Buffer::BufferType m_type) {
     return {indices, vertices};
 }
 
-Mesh::Mesh(Device *device, const BasicShape &b, uint resolution, Buffer::BufferType m_type) : device(device), m_type(m_type) {
+Mesh::Mesh(Device *p_device, const BasicShape &p_b, uint p_resolution, Buffer::BufferType p_type) : m_type(p_type), m_device(p_device) {
     IndexVertex IV;
-    switch (b) {
+    switch (p_b) {
         case BasicShape::Sphere:
-            IV = init_sphere(device, resolution, m_type);
+            IV = init_sphere(p_resolution);
             break;
         case BasicShape::Cube:
-            IV = init_cube(device, resolution, m_type);
+            IV = init_cube();
             break;
         case BasicShape::Plane:
-            IV = init_plane(device, resolution, m_type);
+            IV = init_plane();
             break;
         default:
             assert("Invalid shape");
             break;
     }
-    *this = Mesh(device, IV.indices, IV.vertices, m_type);
+    *this = Mesh(p_device, IV.indices, IV.vertices, p_type);
 }
 
 Mesh::Mesh(
-    Device *device, const BasicShape &b, uint resolution) {
+    Device *p_device, const BasicShape &p_b, uint p_resolution) {
     IndexVertex IV;
-    switch (b) {
+    switch (p_b) {
         case BasicShape::Sphere:
-            IV = init_sphere(device, resolution, m_type);
+            IV = init_sphere(p_resolution);
             break;
         case BasicShape::Cube:
-            IV = init_cube(device, resolution, m_type);
+            IV = init_cube();
             break;
         case BasicShape::Plane:
-            IV = init_plane(device, resolution, m_type);
+            IV = init_plane();
             break;
         default:
             assert("Invalid shape");
@@ -375,7 +376,7 @@ Mesh::Mesh(
     this->verticies = IV.vertices;
     this->indicies = IV.indices;
 
-    this->device = device;
+    this->m_device = p_device;
     this->createBVH();
 }
 

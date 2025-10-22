@@ -10,9 +10,9 @@ class MainController {
    public:
    MainController(){};
 
-   void setCursors(Window* window) {
-       previousMouseMoveCallback = glfwSetCursorPosCallback(*window, mouseMoveCallback);
-        previousMouseButtonCallback = glfwSetMouseButtonCallback(*window, mouseButtonCallback);
+   void setCursors(Window* p_window) {
+       s_previous_mouse_move_callback = glfwSetCursorPosCallback(*p_window, mouseMoveCallback);
+        s_previous_mouse_button_callback = glfwSetMouseButtonCallback(*p_window, mouseButtonCallback);
     }
     struct KeyMappings {
         int move_left = GLFW_KEY_A;
@@ -32,24 +32,24 @@ class MainController {
     };
 
     //previous callback functions
-    static GLFWcursorposfun previousMouseMoveCallback;
-    static GLFWmousebuttonfun previousMouseButtonCallback;
+    static GLFWcursorposfun s_previous_mouse_move_callback;
+    static GLFWmousebuttonfun s_previous_mouse_button_callback;
 
 
-    void moveInPlaneXZ(Window* window, float dt, std::shared_ptr<CameraV2> cam);
+    void moveInPlaneXZ(Window* p_window, float p_dt, std::shared_ptr<CameraV2> p_cam);
     KeyMappings keys{};
 
     
 
-    static void mouseMoveCallback(GLFWwindow* window, double xpos, double ypos);
-    static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+    static void mouseMoveCallback(GLFWwindow* p_window, double p_xpos, double p_ypos);
+    static void mouseButtonCallback(GLFWwindow* p_window, int p_button, int p_action, int p_mods);
     
 
 
 
 
-    bool waspressed = false;
-    float moveSpeed{3.f};
-    float lookSpeed{1.5f};
+    bool was_pressed = false;
+    float move_speed{3.f};
+    float look_speed{1.5f};
 };
 }  // namespace vk_stage

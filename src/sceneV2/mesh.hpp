@@ -2,7 +2,7 @@
 
 #include <sys/types.h>
 
-#include <array>
+
 #include <cstdint>
 #include <glm/fwd.hpp>
 #include <glm/glm.hpp>
@@ -21,25 +21,25 @@ class Mesh {
     enum BasicShape { Sphere, Cone, Cylinder, Cube, Plane };
 
     Mesh() {};
-    Mesh(Device *device, Buffer::BufferType m_type = Buffer::BufferType::DYNAMIC) : device(device), m_type(m_type) {};
+    Mesh(Device *p_device, Buffer::BufferType p_type = Buffer::BufferType::DYNAMIC) : m_type(p_type), m_device(p_device) {};
     Mesh(
-        Device *device,
-        const std::vector<unsigned int> &indicies,
-        const std::vector<Vertex> &verticies,
-        Buffer::BufferType m_type = Buffer::BufferType::DYNAMIC);
+        Device *p_device,
+        const std::vector<unsigned int> &p_indicies,
+        const std::vector<Vertex> &p_verticies,
+        Buffer::BufferType p_type = Buffer::BufferType::DYNAMIC);
 
     Mesh(
-        Device *device,
-        const std::vector<uint32_t> &indicies,
-        const std::vector<Vertex> &verticies,
-        uint first_index,
-        uint first_vertex,
-        Buffer indexBuffer,
-        Buffer vertexBuffer);
+        Device *p_device,
+        const std::vector<uint32_t> &p_indicies,
+        const std::vector<Vertex> &p_verticies,
+        uint p_first_index,
+        uint p_first_vertex,
+        Buffer p_index_buffer,
+        Buffer p_vertex_buffer);
 
-    Mesh(Device *device, const BasicShape &b, uint resolution, Buffer::BufferType m_type);
+    Mesh(Device *p_device, const BasicShape &p_shape, uint p_resolution, Buffer::BufferType p_type);
 
-    Mesh(Device *device, const BasicShape &b, uint resolution);
+    Mesh(Device *p_device, const BasicShape &p_shape, uint p_resolution);
 
     Mesh(const Mesh &other) = default;
     Mesh &operator=(const Mesh &other) = default;
@@ -50,43 +50,43 @@ class Mesh {
 
     void createBVH();
 
-    void uploadToGPU(CommandBuffer *ext_cmd = nullptr);
+    void uploadToGPU(CommandBuffer *p_ext_cmd = nullptr);
 
-    void bindMesh(CommandBuffer &cmd);
+    void bindMesh(CommandBuffer &p_cmd);
 
-    void setVertexAndIndexBuffer(uint first_index, uint first_vertex, Buffer indexBuffer, Buffer vertexBuffer);
-    void setVertexAndIndexBuffer(Buffer indexBuffer, Buffer vertexBuffer);
+    void setVertexAndIndexBuffer(uint p_first_index, uint p_first_vertex, Buffer p_index_buffer, Buffer p_vertex_buffer);
+    void setVertexAndIndexBuffer(Buffer p_index_buffer, Buffer p_vertex_buffer);
 
     int nbTriangle() const { return indicies.size() / 3; };
     int nbVerticies() const { return verticies.size(); };
     int nbIndicies() const { return indicies.size(); };
 
-    uint32_t getFirstIndex() const { return first_index; }
-    uint32_t getFirstVertex() const { return first_vertex; }
+    uint32_t getFirstIndex() const { return m_first_index; }
+    uint32_t getFirstVertex() const { return m_first_vertex; }
 
-    Buffer &getVertexBuffer() { return vertexBuffer; }
-    Buffer &getIndexBuffer() { return indexBuffer; }
+    Buffer &getVertexBuffer() { return m_vertex_buffer; }
+    Buffer &getIndexBuffer() { return m_index_buffer; }
 
-    void setMaterial(uint i) {
+    void setMaterial(uint p_i) {
         for (auto &v : verticies) {
-            v.material_id = i;
+            v.material_id = p_i;
         }
 
         uploadToGPU();
     }
 
-    void applyMaterialOffset(uint offset) {
+    void applyMaterialOffset(uint p_offset) {
         for (auto &v : verticies) {
-            v.material_id += offset;
+            v.material_id += p_offset;
         }
         uploadToGPU();
     }
 
-    SceneHit hit(glm::vec3 &ro, glm::vec3 &rd);
+    SceneHit hit(glm::vec3 &p_ro, glm::vec3 &p_rd);
 
     BoundingBox getBoundingBox() const { return bvh[0].bbox; }
 
-    static SceneHit intersectTriangle(glm::vec3 &ro, glm::vec3 &rd, Vertex &v0, Vertex &v1, Vertex &v2);
+    static SceneHit intersectTriangle(glm::vec3 &p_ro, glm::vec3 &p_rd, Vertex &p_v0, Vertex &p_v1, Vertex &p_v2);
 
     std::vector<Vertex> verticies;
     std::vector<uint32_t> indicies;
@@ -96,10 +96,10 @@ class Mesh {
         BoundingBox bbox;
 
         uint32_t index = 0;  // for child index and indicies index
-        uint32_t nbTriangle = 0;
+        uint32_t nb_triangle = 0;
 
         uint32_t indicies_index = 0;
-        uint32_t nbTriangleToDraw = 0;
+        uint32_t nb_triangle_to_draw = 0;
     };
 
     std::vector<BVH_mesh> bvh;
@@ -109,18 +109,18 @@ class Mesh {
 
     // BVH
 
-    void split(uint32_t index, uint32_t count, uint32_t bvh_index, uint32_t depth = 0);
+    void split(uint32_t p_index, uint32_t p_count, uint32_t p_bvh_index, uint32_t p_depth = 0);
 
     // Storage data
-    Buffer vertexBuffer;
-    Buffer indexBuffer;
+    Buffer m_vertex_buffer;
+    Buffer m_index_buffer;
     Buffer::BufferType m_type = Buffer::BufferType::GPU_ONLY;
 
     // Draw data
-    uint32_t first_index = 0;
-    uint32_t first_vertex = 0;
+    uint32_t m_first_index = 0;
+    uint32_t m_first_vertex = 0;
 
-    Device *device;
+    Device *m_device;
 };
 
 }  // namespace TTe

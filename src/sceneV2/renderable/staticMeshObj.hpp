@@ -1,7 +1,6 @@
 #pragma once
 
-#include <cstdint>
-#include <vector>
+
 #include "sceneV2/mesh.hpp"
 #include "sceneV2/IIndirectRenderable.hpp"
 #include "sceneV2/node.hpp"
@@ -13,28 +12,28 @@ class StaticMeshObj : public IIndirectRenderable, public Node {
 
     // copy constructor
     StaticMeshObj(const StaticMeshObj &other) : Node(other) {
-        this->mesh = other.mesh;
+        this->m_mesh = other.m_mesh;
     }
 
     // copy assignment
     StaticMeshObj &operator=(const StaticMeshObj &other) {
         if (this != &other) {
             Node::operator=(other);
-            this->mesh = other.mesh;
+            this->m_mesh = other.m_mesh;
         }
         return *this;
     }
 
     // move constructor
     StaticMeshObj(StaticMeshObj &&other) : Node(other) {
-        this->mesh = other.mesh;
+        this->m_mesh = other.m_mesh;
     }
 
     // move assignment
     StaticMeshObj &operator=(StaticMeshObj &&other) {
         if (this != &other) {
             Node::operator=(other);
-            this->mesh = other.mesh;
+            this->m_mesh = other.m_mesh;
         }
         return *this;
     }
@@ -47,12 +46,12 @@ class StaticMeshObj : public IIndirectRenderable, public Node {
 
     // overide hit and compute bounding box
     virtual BoundingBox computeBoundingBox() override;
-    virtual SceneHit hit(glm::vec3 &ro, glm::vec3 &rd) override;
+    virtual SceneHit hit(glm::vec3 &p_ro, glm::vec3 &p_rd) override;
     
     
-    void render(CommandBuffer &cmd, RenderData &renderData) override;
-    void setMesh(Mesh* mesh) { this->mesh = mesh; }
+    void render(CommandBuffer &p_cmd, RenderData &p_render_data) override;
+    void setMesh(Mesh* p_mesh) { this->m_mesh = p_mesh; }
     private:
-    Mesh* mesh;
+    Mesh* m_mesh;
 };
 }

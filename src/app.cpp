@@ -117,9 +117,9 @@ void App::update(float p_delta_time, CommandBuffer &p_cmd_buffer, Window &p_wind
         DynamicRenderPass temp =
             DynamicRenderPass(m_device, {4096, 4096}, {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM}, 1, DEPTH, nullptr, nullptr);
         RenderData r;
-        r.frameIndex = 0;
-        r.cameraId = 0;
-        r.renderPass = &temp;
+        r.frame_index = 0;
+        r.camera_id = 0;
+        r.render_pass = &temp;
         // s->getMainCamera()->extent = {1,1};
         temp.beginRenderPass(render_cmd_buffer, 0);
         s->renderDeffered(render_cmd_buffer, r);
@@ -134,9 +134,9 @@ void App::update(float p_delta_time, CommandBuffer &p_cmd_buffer, Window &p_wind
 
 void App::renderDeferredFrame(float p_deltat_time, CommandBuffer &p_cmd_buffer, uint32_t p_render_index, uint32_t p_swapchain_index) {
     RenderData r;
-    r.frameIndex = p_render_index;
-    r.cameraId = 0;
-    r.renderPass = m_shading_renderpass;
+    r.frame_index = p_render_index;
+    r.camera_id = 0;
+    r.render_pass = m_shading_renderpass;
 
     s->updateCameraBuffer(p_render_index);
 
@@ -152,10 +152,10 @@ void App::renderShadedFrame(float p_deltat_time, CommandBuffer &p_cmd_buffer, ui
     // m_shading_renderpass->beginRenderPass(p_cmd_buffer, p_swapchain_index);
     // m_shading_renderpass->endRenderPass(p_cmd_buffer);
     RenderData r;
-    r.frameIndex = p_render_index;
-    r.cameraId = 0;
-    r.swapchainIndex = p_swapchain_index;
-    r.renderPass = m_shading_renderpass;
+    r.frame_index = p_render_index;
+    r.camera_id = 0;
+    r.swapchain_index = p_swapchain_index;
+    r.render_pass = m_shading_renderpass;
     s->renderShading(p_cmd_buffer, r);
 }
 }  // namespace TTe

@@ -1,4 +1,3 @@
-
 #include "gltf_loader.hpp"
 
 #include <cstddef>
@@ -8,12 +7,9 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
-#include <stack>
 #include <vector>
 
 #include "GPU_data/image.hpp"
-#include "commandBuffer/commandPool_handler.hpp"
-#include "commandBuffer/command_buffer.hpp"
 #include "math/fov.hpp"
 #include "math/quaternion_convertor.hpp"
 #include "sceneV2/cameraV2.hpp"
@@ -31,20 +27,20 @@
 namespace TTe {
 
 void GLTFLoader::load(const std::filesystem::path& filePath) {
-    dataPath = filePath;
+    m_data_path = filePath;
     cgltf_options options = {};
     cgltf_data* data = nullptr;
     cgltf_result result = cgltf_parse_file(&options, (DATA_PATH / filePath).c_str(), &data);
     if (result == cgltf_result_success) {
         result = cgltf_load_buffers(&options, data, (DATA_PATH / filePath).c_str());
         if (result == cgltf_result_success) {
-            scene = new Scene(device);
+            m_scene = new Scene(m_device);
             loadMesh(data);
             loadMaterial(data);
             loadTexture(data);
             loadNode(data);
 
-            for (int i = 0; i < data->scenes[0].nodes_count; i++) {
+            for (uint32_t i = 0; i < data->scenes[0].nodes_count; i++) {
                 cgltf_node* node = data->scenes[0].nodes[i];
                 std::cout << "Node name: " << (node->name ? node->name : "Unnamed") << std::endl;
             }
@@ -62,7 +58,7 @@ void GLTFLoader::loadMesh(cgltf_data* data) {
     std::vector<uint32_t> global_Indices_Indices;
     std::vector<uint32_t> global_Vertex_Indices;
 
-    for (int i = 0; i < data->meshes_count; i++) {
+    for (uint32_t i = 0; i < data->meshes_count; i++) {
         uint32_t local_max_vertex_index = 0;
         global_Indices_Indices.push_back(total_index_size);
         global_Vertex_Indices.push_back(total_vertex_size);
@@ -70,7 +66,7 @@ void GLTFLoader::loadMesh(cgltf_data* data) {
         cgltf_mesh* mesh = &data->meshes[i];
         
         std::vector<uint32_t> previous_max_index;
-        for (int j = 0; j < mesh->primitives_count; j++) {
+        for (uint32_t j = 0; j < mesh->primitives_count; j++) {
             cgltf_primitive* primitive = &mesh->primitives[j];
 
             if (primitive->indices) {
@@ -78,7 +74,7 @@ void GLTFLoader::loadMesh(cgltf_data* data) {
             }
 
             previous_max_index.push_back(local_max_vertex_index);
-            for (int k = 0; k < primitive->attributes_count; k++) {
+            for (uint32_t k = 0; k < primitive->attributes_count; k++) {
                 cgltf_attribute* attribute = &primitive->attributes[k];
                 if (attribute->data && attribute->type == cgltf_attribute_type_position) {
                     total_vertex_size += attribute->data->count;
@@ -90,12 +86,12 @@ void GLTFLoader::loadMesh(cgltf_data* data) {
         previous_max_indices.push_back(previous_max_index);
     }
 
-    scene->index_buffer = Buffer(
-        device, sizeof(uint32_t), total_index_size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+    m_scene->index_buffer = Buffer(
+        m_device, sizeof(uint32_t), total_index_size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
         Buffer::BufferType::GPU_ONLY);
 
-    scene->vertex_buffer = Buffer(
-        device, sizeof(Vertex), total_vertex_size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+    m_scene->vertex_buffer = Buffer(
+        m_device, sizeof(Vertex), total_vertex_size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
         Buffer::BufferType::GPU_ONLY);
 
     std::cout << "Total index size: " << total_index_size << std::endl;
@@ -105,14 +101,14 @@ void GLTFLoader::loadMesh(cgltf_data* data) {
     auto start = std::chrono::high_resolution_clock::now();
     std::mutex addMeshMutex;
     #pragma omp parallel for schedule(dynamic, 1)
-    for (int i = 0; i < data->meshes_count; i++) {
+    for (uint32_t i = 0; i < data->meshes_count; i++) {
         cgltf_mesh* mesh = &data->meshes[i];
         std::cout << "Mesh name: " << (mesh->name ? mesh->name : "Unnamed") << std::endl;
 
 
         std::vector<Vertex> vertices;
         std::vector<uint32_t> indices;
-        for (int j = 0; j < mesh->primitives_count; j++) {
+        for (uint32_t j = 0; j < mesh->primitives_count; j++) {
             cgltf_primitive* primitive = &mesh->primitives[j];
 
             if (primitive->indices) {
@@ -129,7 +125,7 @@ void GLTFLoader::loadMesh(cgltf_data* data) {
             std::vector<float> normal_buffer;
             std::vector<float> uv_buffer;
 
-            for (int k = 0; k < primitive->attributes_count; k++) {
+            for (uint32_t k = 0; k < primitive->attributes_count; k++) {
                 cgltf_attribute* attribute = &primitive->attributes[k];
                 if (attribute->type == cgltf_attribute_type_position) {
                     assert(attribute->data->type == cgltf_type_vec3);
@@ -154,7 +150,7 @@ void GLTFLoader::loadMesh(cgltf_data* data) {
             }
             // Process attributes, indices, etc.
             // This is where you would handle the mesh data
-            for (int k = 0; k < pos_buffer.size() / 3; k++) {
+            for (uint32_t k = 0; k < pos_buffer.size() / 3; k++) {
                 Vertex vertex;
                 vertex.pos = glm::vec3(pos_buffer[k * 3], pos_buffer[k * 3 + 1], pos_buffer[k * 3 + 2]);
                 if (!normal_buffer.empty()) {
@@ -169,25 +165,25 @@ void GLTFLoader::loadMesh(cgltf_data* data) {
         }
      
             Mesh m = Mesh(
-                device, indices, vertices, global_Indices_Indices[i], global_Vertex_Indices[i], scene->index_buffer, scene->vertex_buffer);
+                m_device, indices, vertices, global_Indices_Indices[i], global_Vertex_Indices[i], m_scene->index_buffer, m_scene->vertex_buffer);
             addMeshMutex.lock();
             m.name = (mesh->name ? mesh->name : "Unnamed");
 
-            scene->meshes[i] = std::move(m);
-            // scene->addStaticMesh(m);
+            m_scene->meshes[i] = std::move(m);
+            // m_scene->addStaticMesh(m);
             addMeshMutex.unlock();
     }
-    scene->first_index_available = scene->index_buffer.getInstancesCount();
-    scene->first_vertex_available = scene->vertex_buffer.getInstancesCount();
-    scene->nb_meshes = data->meshes_count;
+    m_scene->first_index_available = m_scene->index_buffer.getInstancesCount();
+    m_scene->first_vertex_available = m_scene->vertex_buffer.getInstancesCount();
+    m_scene->nb_meshes = data->meshes_count;
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
     std::cout << "Mesh loading took: " << elapsed.count() << " seconds" << std::endl;
 }
 
 void GLTFLoader::loadMaterial(cgltf_data* data) {
-    isAlbedoTex.resize(data->images_count, true);
-    for (int i = 0; i < data->materials_count; i++) {
+    m_is_albedo_tex.resize(data->images_count, true);
+    for (uint32_t i = 0; i < data->materials_count; i++) {
         cgltf_material* material = &data->materials[i];
         std::cout << "Material name: " << (material->name ? material->name : "Unnamed") << std::endl;
 
@@ -206,34 +202,34 @@ void GLTFLoader::loadMaterial(cgltf_data* data) {
             mat.roughness = pbr->roughness_factor;
             if (pbr->metallic_roughness_texture.texture && pbr->metallic_roughness_texture.texture->image) {
                 mat.metallic_roughness_tex_id = int(std::distance(data->images, pbr->metallic_roughness_texture.texture->image));
-                isAlbedoTex[mat.metallic_roughness_tex_id] = false;
+                m_is_albedo_tex[mat.metallic_roughness_tex_id] = false;
             }
         }
 
         if (material->normal_texture.texture && material->normal_texture.texture->image) {
             mat.normal_tex_id = int(std::distance(data->images, material->normal_texture.texture->image));
-            isAlbedoTex[mat.normal_tex_id] = false;
+            m_is_albedo_tex[mat.normal_tex_id] = false;
         }
-        scene->addMaterial(mat);
+        m_scene->addMaterial(mat);
     }
 }
 
 void GLTFLoader::loadTexture(cgltf_data* data) {
     auto start = std::chrono::high_resolution_clock::now();
-    scene->images.resize(data->images_count);
+    m_scene->images.resize(data->images_count);
     #pragma omp parallel for schedule(dynamic, 1)
-    for (int i = 0; i < data->images_count; i++) {
+    for (uint32_t i = 0; i < data->images_count; i++) {
         cgltf_image* image = &data->images[i];
-        // std::cout << dataPath.parent_path() / image->uri << std::endl;
+        // std::cout << m_data_path.parent_path() / image->uri << std::endl;
         std::cout << "Image name: " << (image->name ? image->name : "Unnamed") << std::endl;
 
         ImageCreateInfo imageCreateInfo;
-        imageCreateInfo.format = isAlbedoTex[i] ? VK_FORMAT_R8G8B8A8_SRGB : VK_FORMAT_R8G8B8A8_UNORM;
+        imageCreateInfo.format = m_is_albedo_tex[i] ? VK_FORMAT_R8G8B8A8_SRGB : VK_FORMAT_R8G8B8A8_UNORM;
         imageCreateInfo.image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         imageCreateInfo.usage_flags = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         imageCreateInfo.enable_mipmap = false;
         if (image->uri) {
-            imageCreateInfo.filename.push_back(dataPath.parent_path() / image->uri);
+            imageCreateInfo.filename.push_back(m_data_path.parent_path() / image->uri);
         } else {
             // put data of bufferview into datas ptr
 
@@ -250,11 +246,11 @@ void GLTFLoader::loadTexture(cgltf_data* data) {
             }
         }
 
-        Image imageObj(device, imageCreateInfo);
+        Image imageObj(m_device, imageCreateInfo);
         if (imageCreateInfo.datas.size() > 0) {
             stbi_image_free(imageCreateInfo.datas[0]);
         }
-        scene->images[i] = std::move(imageObj);
+        m_scene->images[i] = std::move(imageObj);
     }
 
     auto end = std::chrono::high_resolution_clock::now();
@@ -281,7 +277,7 @@ void GLTFLoader::loadNode(cgltf_data* data) {
         if (node->children_count > 0 || node->mesh || node->camera || node->light) {
             if (node->mesh) {
                 std::shared_ptr<StaticMeshObj> mesh_node = std::make_shared<StaticMeshObj>();
-                mesh_node->setMesh(&scene->meshes[std::distance(data->meshes, node->mesh)]);
+                mesh_node->setMesh(&m_scene->meshes[std::distance(data->meshes, node->mesh)]);
                 engin_node = mesh_node;
             }
 
@@ -326,9 +322,9 @@ void GLTFLoader::loadNode(cgltf_data* data) {
             nodeMap[node] = engin_node;
 
             if (node->parent) {
-                scene->addNode(nodeMap[node->parent]->getId(), engin_node);
+                m_scene->addNode(nodeMap[node->parent]->getId(), engin_node);
             } else {
-                scene->addNode(-1, engin_node);
+                m_scene->addNode(-1, engin_node);
             }
 
             for (int i = node->children_count - 1; i >= 0; i--) {

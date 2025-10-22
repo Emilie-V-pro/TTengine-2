@@ -7,14 +7,14 @@ BasicMeshObj::BasicMeshObj() {}
 
 BasicMeshObj::~BasicMeshObj() {}
 
-void BasicMeshObj::render(CommandBuffer &cmd, RenderData &renderData) {
+void BasicMeshObj::render(CommandBuffer &p_cmd, RenderData &p_render_data) {
 
-    if(renderData.binded_pipeline != renderData.default_pipeline){
-        renderData.binded_pipeline->bindPipeline(cmd);
-        renderData.binded_pipeline = renderData.default_pipeline;
+    if(p_render_data.binded_pipeline != p_render_data.default_pipeline){
+        p_render_data.binded_pipeline->bindPipeline(p_cmd);
+        p_render_data.binded_pipeline = p_render_data.default_pipeline;
     }
     
-    Mesh *mesh = renderData.m_basic_meshes[shape];
+    Mesh *mesh = p_render_data.basic_meshes[m_shape];
     
     VkDrawIndexedIndirectCommand drawCmd;
     drawCmd.firstIndex = mesh->getFirstIndex();
@@ -23,7 +23,7 @@ void BasicMeshObj::render(CommandBuffer &cmd, RenderData &renderData) {
     drawCmd.instanceCount = 1;
     drawCmd.firstInstance = this->m_id;
 
-    renderData.drawCommands.push_back(drawCmd);
+    p_render_data.draw_commands.push_back(drawCmd);
  }
 
 

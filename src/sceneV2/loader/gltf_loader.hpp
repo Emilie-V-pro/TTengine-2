@@ -1,27 +1,28 @@
 #pragma once
 
+#include <filesystem>
+
 #include "cgltf.h"
 #include "device.hpp"
 #include "sceneV2/scene.hpp"
-#include <filesystem>
-#include <string>
+
 namespace TTe {
 class GLTFLoader {
     public:
-    GLTFLoader(Device *device) : device(device) {}
+    GLTFLoader(Device *p_device) : m_device(p_device) {}
     void load(const std::filesystem::path &filePath);
-    Scene* getScene() const {return scene;}
+    Scene* getScene() const {return m_scene;}
     
     private:
-    void loadMesh(cgltf_data* data);
-    void loadMaterial(cgltf_data* data);
-    void loadTexture(cgltf_data* data);
-    void loadNode(cgltf_data* data);
+    void loadMesh(cgltf_data* p_data);
+    void loadMaterial(cgltf_data* p_data);
+    void loadTexture(cgltf_data* p_data);
+    void loadNode(cgltf_data* p_data);
 
-    std::vector<bool> isAlbedoTex;
-    std::filesystem::path dataPath;
+    std::vector<bool> m_is_albedo_tex;
+    std::filesystem::path m_data_path;
 
-    Scene *scene = nullptr;
-    Device *device = nullptr;
+    Scene *m_scene = nullptr;
+    Device *m_device = nullptr;
 };
 }
