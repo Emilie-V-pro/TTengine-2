@@ -41,8 +41,8 @@ class StaticMeshObj : public IIndirectRenderable, public Node {
     ~StaticMeshObj();
 
     
-
-
+    
+    virtual std::vector<MeshBlock> getMeshBlock(uint32_t p_nb_max_triangle) override;
 
     // overide hit and compute bounding box
     virtual BoundingBox computeBoundingBox() override;

@@ -1,0 +1,228 @@
+#version 450
+#extension GL_KHR_shader_subgroup_basic : enable
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+#extension GL_KHR_shader_subgroup_ballot : enable
+#extension GL_EXT_buffer_reference : require
+#extension GL_EXT_buffer_reference2 : require
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
+#extension GL_EXT_nonuniform_qualifier : require
+#extension GL_EXT_scalar_block_layout : require
+
+#define FLT_MAX 3.402823466e+38
+#define FLT_MIN 1.175494351e-38
+#define DBL_MAX 1.7976931348623158e+308
+#define DBL_MIN 2.2250738585072014e-308
+
+struct VkDrawIndexedIndirectCommand {
+    uint indexCount;
+    uint instanceCount;
+    uint firstIndex;
+    int vertexOffset;
+    uint firstInstance;
+};
+
+struct Mesh_block {
+    vec3 pmin;
+    int vertexOffset;
+    vec3 pmax;
+    uint indexOffset;
+    uint indexSize;
+    int instancesID;
+    vec2 padding;
+};
+
+struct Object_data {
+    mat4 world_matrix;
+    mat4 normal_matrix;
+    vec3 padding;
+    uint material_offset;
+};
+
+struct Camera_data {
+    mat4 projection;
+    mat4 view;
+    mat4 invView;
+};
+
+layout(buffer_reference, std430) readonly buffer ObjectBuffer {
+    Object_data data[];
+};
+layout(buffer_reference, std430) readonly buffer CameraBuffer {
+    Camera_data data[];
+};
+layout(buffer_reference, std430) readonly buffer MeshBlockBuffer {
+    Mesh_block data[];
+};
+layout(buffer_reference, std430) buffer DrawCmdBuffer {
+    VkDrawIndexedIndirectCommand data[];
+};
+
+layout(buffer_reference, std430) buffer DrawCountBuffer {
+    uint count;
+};
+
+layout(push_constant) uniform Push {
+    ObjectBuffer objects;
+    CameraBuffer cams;
+    MeshBlockBuffer meshBlocks;
+    DrawCmdBuffer drawCmds;
+    DrawCountBuffer drawCount;
+    uint camid;
+    uint numberOfmesh_block;
+
+}
+pc;
+
+layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+
+void matrixTOPminAndPmax(inout vec3 pmin, inout vec3 pmax, in mat4 matrix) {
+    vec3 BoxPoints[8];
+    BoxPoints[0] = (matrix * vec4(pmin.x, pmin.y, pmin.z, 1)).xyz;
+    BoxPoints[1] = (matrix * vec4(pmin.x, pmin.y, pmax.z, 1)).xyz;
+    BoxPoints[2] = (matrix * vec4(pmin.x, pmax.y, pmin.z, 1)).xyz;
+    BoxPoints[3] = (matrix * vec4(pmin.x, pmax.y, pmax.z, 1)).xyz;
+    BoxPoints[4] = (matrix * vec4(pmax.x, pmin.y, pmin.z, 1)).xyz;
+    BoxPoints[5] = (matrix * vec4(pmax.x, pmin.y, pmax.z, 1)).xyz;
+    BoxPoints[6] = (matrix * vec4(pmax.x, pmax.y, pmin.z, 1)).xyz;
+    BoxPoints[7] = (matrix * vec4(pmax.x, pmax.y, pmax.z, 1)).xyz;
+    pmin = vec3(FLT_MAX, FLT_MAX, FLT_MAX);
+    pmax = vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+    for (int i = 1; i < 8; i++) {
+        pmin = min(pmin, BoxPoints[i]);
+        pmax = max(pmax, BoxPoints[i]);
+    }
+}
+
+bool checkBlockVisibility(vec3 frustrumBoxPoints[8], vec3 pmin, vec3 pmax, mat4 VPMatrix) {
+    int compteur[6] = int[](0, 0, 0, 0, 0, 0);
+    for (int i = 0; i < 8; i++) {
+        if (frustrumBoxPoints[i].x < pmin.x) {
+            compteur[0]++;
+        }
+        if (frustrumBoxPoints[i].x > pmax.x) {
+            compteur[1]++;
+        }
+        if (frustrumBoxPoints[i].y < pmin.y) {
+            compteur[2]++;
+        }
+        if (frustrumBoxPoints[i].y > pmax.y) {
+            compteur[3]++;
+        }
+        if (frustrumBoxPoints[i].z < pmin.z) {
+            compteur[4]++;
+        }
+        if (frustrumBoxPoints[i].z > pmax.z) {
+            compteur[5]++;
+        }
+    }
+    for (int i = 0; i < 6; i++)
+        if (compteur[i] == 8) return false;
+
+    vec4 boxPoint[8] = {
+            {
+                pmin.x,
+                pmin.y,
+                pmin.z,
+                1.0
+            },
+            {
+                pmin.x,
+                pmin.y,
+                pmax.z,
+                1.0
+            },
+            {
+                pmin.x,
+                pmax.y,
+                pmin.z,
+                1.0
+            },
+            {
+                pmin.x,
+                pmax.y,
+                pmax.z,
+                1.0
+            },
+            {
+                pmax.x,
+                pmin.y,
+                pmin.z,
+                1.0
+            },
+            {
+                pmax.x,
+                pmin.y,
+                pmax.z,
+                1.0
+            },
+            {
+                pmax.x,
+                pmax.y,
+                pmin.z,
+                1.0
+            },
+            {
+                pmax.x,
+                pmax.y,
+                pmax.z,
+                1.0
+            },
+        };
+    for (int i = 0; i < 8; i++) boxPoint[i] = VPMatrix * boxPoint[i];
+
+    int n[6] = int[](0, 0, 0, 0, 0, 0);
+    for (int i = 0; i < 8; i++) {
+        if (boxPoint[i].x < -boxPoint[i].w) n[0]++; // trop a gauche
+        if (boxPoint[i].x > boxPoint[i].w) n[1]++; // a droite
+
+        if (boxPoint[i].y < -boxPoint[i].w) n[2]++; // en bas
+        if (boxPoint[i].y > boxPoint[i].w) n[3]++; // en haut
+
+        if (boxPoint[i].z < -boxPoint[i].w) n[4]++; // derriere
+        if (boxPoint[i].z > boxPoint[i].w) n[5]++; // devant
+    }
+    for (int i = 0; i < 6; i++)
+        if (n[i] == 8) return false;
+
+    return true;
+}
+
+void main() {
+    if (gl_GlobalInvocationID.x >= pc.numberOfmesh_block) {
+        return;
+    }
+    Mesh_block m = pc.meshBlocks.data[gl_GlobalInvocationID.x];
+    
+    mat4 VP = pc.cams.data[0].projection * pc.cams.data[0].view;
+    mat4 IVPWmatrix = inverse(VP * pc.objects.data[m.instancesID].world_matrix );
+    vec4 frustrumBoxPointW[8];
+    frustrumBoxPointW[0] = (IVPWmatrix * vec4(1, 1, 1, 1));
+    frustrumBoxPointW[1] = (IVPWmatrix * vec4(1, 1, -1, 1));
+    frustrumBoxPointW[2] = (IVPWmatrix * vec4(1, -1, 1, 1));
+    frustrumBoxPointW[3] = (IVPWmatrix * vec4(1, -1, -1, 1));
+    frustrumBoxPointW[4] = (IVPWmatrix * vec4(-1, 1, 1, 1));
+    frustrumBoxPointW[5] = (IVPWmatrix * vec4(-1, 1, -1, 1));
+    frustrumBoxPointW[6] = (IVPWmatrix * vec4(-1, -1, 1, 1));
+    frustrumBoxPointW[7] = (IVPWmatrix * vec4(-1, -1, -1, 1));
+    vec3 frustrumBoxPoint[8];
+    for (int i = 0; i < 8; i++) {
+        frustrumBoxPoint[i] = vec3(frustrumBoxPointW[i].x, frustrumBoxPointW[i].y, frustrumBoxPointW[i].z) / frustrumBoxPointW[i].w;
+    }
+
+    bool visible = checkBlockVisibility(frustrumBoxPoint, m.pmin, m.pmax, VP);
+    uint localIndex = 0;
+
+    if (visible) {
+        localIndex = subgroupInclusiveAdd(1) - 1;
+    }
+    uint total = subgroupMax(localIndex);
+    uint globalIndex;
+    if (subgroupElect()) {
+        globalIndex = atomicAdd(pc.drawCount.count, total + 1);
+    }
+    globalIndex = subgroupBroadcastFirst(globalIndex);
+
+    if (visible)
+        pc.drawCmds.data[globalIndex + localIndex] =
+            VkDrawIndexedIndirectCommand(m.indexSize, 1, m.indexOffset, m.vertexOffset, m.instancesID);
+}

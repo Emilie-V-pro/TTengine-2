@@ -172,6 +172,7 @@ void Mesh::createBVH() {
     // create bvh
 }
 
+
 SceneHit Mesh::hit(glm::vec3& p_ro, glm::vec3& p_rd) {
  
     std::stack<uint32_t> bvh_stack;

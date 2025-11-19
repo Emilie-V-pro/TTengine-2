@@ -24,6 +24,16 @@ struct Material {
     }
 };
 
+struct MeshBlock{
+    glm::vec3 pmin;
+    int vertexOffset;
+    glm::vec3 pmax;
+    uint indexOffset;
+    uint indexSize;
+    int instancesID;
+    glm::vec2 padding;
+};
+
 struct MaterialGPU {
     glm::vec3 color;
     float metallic;

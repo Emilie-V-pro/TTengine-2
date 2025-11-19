@@ -1,7 +1,10 @@
 
 #include "staticMeshObj.hpp"
+
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
+
+#include "struct.hpp"
 
 namespace TTe {
 
@@ -35,8 +38,9 @@ bool checkBlockVisibility(glm::vec3 p_frustrum_box_points[8], glm::vec3 p_pmin, 
         if (compteur[i] == 8) return false;
 
     glm::vec4 box_point[8] = {
-        {p_pmin.x, p_pmin.y, p_pmin.z, 1.0}, {p_pmin.x, p_pmin.y, p_pmax.z, 1.0}, {p_pmin.x, p_pmax.y, p_pmin.z, 1.0}, {p_pmin.x, p_pmax.y, p_pmax.z, 1.0},
-        {p_pmax.x, p_pmin.y, p_pmin.z, 1.0}, {p_pmax.x, p_pmin.y, p_pmax.z, 1.0}, {p_pmax.x, p_pmax.y, p_pmin.z, 1.0}, {p_pmax.x, p_pmax.y, p_pmax.z, 1.0},
+        {p_pmin.x, p_pmin.y, p_pmin.z, 1.0}, {p_pmin.x, p_pmin.y, p_pmax.z, 1.0}, {p_pmin.x, p_pmax.y, p_pmin.z, 1.0},
+        {p_pmin.x, p_pmax.y, p_pmax.z, 1.0}, {p_pmax.x, p_pmin.y, p_pmin.z, 1.0}, {p_pmax.x, p_pmin.y, p_pmax.z, 1.0},
+        {p_pmax.x, p_pmax.y, p_pmin.z, 1.0}, {p_pmax.x, p_pmax.y, p_pmax.z, 1.0},
     };
     for (int i = 0; i < 8; i++) box_point[i] = p_VP_matrix * box_point[i];
 
@@ -57,7 +61,7 @@ bool checkBlockVisibility(glm::vec3 p_frustrum_box_points[8], glm::vec3 p_pmin, 
     return true;
 }
 
-void matrixTOPminAndPmax(glm::vec3 &p_pmin, glm::vec3 &p_pmax, glm::mat4 p_matrix) {
+void matrixTOPminAndPmax(glm::vec3& p_pmin, glm::vec3& p_pmax, glm::mat4 p_matrix) {
     glm::vec3 p_box_points[8];
     p_box_points[0] = glm::vec3(p_matrix * glm::vec4(p_pmin.x, p_pmin.y, p_pmin.z, 1));
     p_box_points[1] = glm::vec3(p_matrix * glm::vec4(p_pmin.x, p_pmin.y, p_pmax.z, 1));
@@ -75,8 +79,38 @@ void matrixTOPminAndPmax(glm::vec3 &p_pmin, glm::vec3 &p_pmax, glm::mat4 p_matri
     }
 }
 
-void StaticMeshObj::render(CommandBuffer &p_cmd, RenderData &p_render_data) {
-    glm::mat4 IVP_matrix = glm::inverse(p_render_data.cameras->at(0)->getProjectionMatrix() * p_render_data.cameras->at(0)->getViewMatrix());
+std::vector<MeshBlock> StaticMeshObj::getMeshBlock(uint32_t p_nb_max_triangle) {
+    std::vector<MeshBlock> returnValue;
+    std::stack<uint32_t> bvh_stack;
+    bvh_stack.push(0);
+    while (!bvh_stack.empty()) {
+        uint32_t index = bvh_stack.top();
+        bvh_stack.pop();
+
+        // if leaf
+        if (m_mesh->bvh[index].nb_triangle_to_draw <= p_nb_max_triangle) {
+            glm::vec3 pmin = m_mesh->bvh[index].bbox.pmin;
+            glm::vec3 pmax = m_mesh->bvh[index].bbox.pmax;
+            MeshBlock mesh_block;
+
+            mesh_block.indexOffset = m_mesh->getFirstIndex() + m_mesh->bvh[index].indicies_index;
+            mesh_block.vertexOffset = m_mesh->getFirstVertex();
+            mesh_block.indexSize = m_mesh->bvh[index].nb_triangle_to_draw * 3;
+            mesh_block.pmin = pmin;
+            mesh_block.pmax = pmax;
+            mesh_block.instancesID = this->m_id;
+            returnValue.push_back(mesh_block);
+        } else {
+            bvh_stack.push(m_mesh->bvh[index].index);
+            bvh_stack.push(m_mesh->bvh[index].index + 1);
+        }
+    }
+    return returnValue;
+}
+
+void StaticMeshObj::render(CommandBuffer& p_cmd, RenderData& p_render_data) {
+    glm::mat4 IVP_matrix =
+        glm::inverse(p_render_data.cameras->at(0)->getProjectionMatrix() * p_render_data.cameras->at(0)->getViewMatrix());
     glm::mat4 VP_matrix = p_render_data.cameras->at(0)->getProjectionMatrix() * p_render_data.cameras->at(0)->getViewMatrix();
 
     glm::vec4 frustrum_box_point_w[8];
@@ -90,7 +124,8 @@ void StaticMeshObj::render(CommandBuffer &p_cmd, RenderData &p_render_data) {
     frustrum_box_point_w[7] = (IVP_matrix * glm::vec4(-1, -1, -1, 1));
     glm::vec3 frustrum_box_point[8];
     for (int i = 0; i < 8; i++) {
-        frustrum_box_point[i] = glm::vec3(frustrum_box_point_w[i].x, frustrum_box_point_w[i].y, frustrum_box_point_w[i].z) / frustrum_box_point_w[i].w;
+        frustrum_box_point[i] =
+            glm::vec3(frustrum_box_point_w[i].x, frustrum_box_point_w[i].y, frustrum_box_point_w[i].z) / frustrum_box_point_w[i].w;
     }
 
     glm::vec3 pmin = this->m_mesh->getBoundingBox().pmin;
@@ -122,12 +157,10 @@ void StaticMeshObj::render(CommandBuffer &p_cmd, RenderData &p_render_data) {
             }
 
         } else {
-  
-            bvh_stack.push( m_mesh->bvh[index].index);
+            bvh_stack.push(m_mesh->bvh[index].index);
             bvh_stack.push(m_mesh->bvh[index].index + 1);
         }
     }
-    
 
     // if (checkBlockVisibility(frustrumBoxPoint, pmin, pmax, VPmatrix)) {
     //     VkDrawIndexedIndirectCommand drawCmd;
@@ -154,7 +187,7 @@ BoundingBox StaticMeshObj::computeBoundingBox() {
     m_bbox.pmin = glm::min(tmp.pmin, tmp.pmax);
     m_bbox.pmax = glm::max(tmp.pmin, tmp.pmax);
 
-    for (auto &child : m_children) {
+    for (auto& child : m_children) {
         BoundingBox childbb = child->computeBoundingBox();
         m_bbox.pmin = glm::min(childbb.pmin, tmp.pmin);
         m_bbox.pmax = glm::max(childbb.pmax, tmp.pmax);
@@ -175,7 +208,7 @@ BoundingBox StaticMeshObj::computeBoundingBox() {
     return m_bbox;
 }
 
-SceneHit StaticMeshObj::hit(glm::vec3 &p_ro, glm::vec3 &p_rd) {
+SceneHit StaticMeshObj::hit(glm::vec3& p_ro, glm::vec3& p_rd) {
     // transform ray to local space
     glm::vec3 local_ro = glm::inverse(wMatrix()) * glm::vec4(p_ro, 1.0f);
     glm::vec3 local_rd = glm::normalize(glm::inverse(wMatrix()) * glm::vec4(p_rd, 0.0f));

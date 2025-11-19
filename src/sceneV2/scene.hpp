@@ -1,9 +1,11 @@
 #pragma once
 
 
+#include <array>
 #include <cstdint>
 #include <filesystem>
 #include <glm/fwd.hpp>
+#include <vector>
 
 
 #include "GPU_data/buffer.hpp"
@@ -110,6 +112,9 @@ class Scene : public Node {
     std::array<Buffer, MAX_FRAMES_IN_FLIGHT> m_draw_indirect_buffers;
     std::array<Buffer, MAX_FRAMES_IN_FLIGHT> m_count_indirect_buffers;
 
+    Buffer m_mesh_block_buffer;
+    std::vector<MeshBlock> m_mesh_blocks;
+
     std::shared_ptr<CameraV2> m_main_camera;
     std::vector<std::shared_ptr<CameraV2>> m_cameras{};
     std::vector<std::shared_ptr<IAnimatic>> m_animatic_objs;
@@ -128,6 +133,8 @@ class Scene : public Node {
     GraphicPipeline m_skybox_pipeline;
     ComputePipeline m_shading_pipeline;
     GraphicPipeline m_mesh_pipeline;
+
+    ComputePipeline m_cull_pipeline;
 
     Device *m_device = nullptr;
 

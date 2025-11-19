@@ -28,14 +28,15 @@
 
 namespace TTe {
 
-Scene::Scene(Device *p_device) : m_device(p_device) {
+Scene::Scene(Device* p_device) : m_device(p_device) {
     createPipelines();
     createDescriptorSets();
 }
 
 Scene::~Scene() {}
 
-void Scene::initSceneData(DynamicRenderPass *p_deffered_renderpass, DynamicRenderPass *p_shading_renderpass, std::filesystem::path p_skybox_path) {
+void Scene::initSceneData(
+    DynamicRenderPass* p_deffered_renderpass, DynamicRenderPass* p_shading_renderpass, std::filesystem::path p_skybox_path) {
     this->m_deffered_renderpass = p_deffered_renderpass;
     this->m_shading_renderpass = p_shading_renderpass;
     ImageCreateInfo skybox_image_create_info;
@@ -77,11 +78,11 @@ void Scene::initSceneData(DynamicRenderPass *p_deffered_renderpass, DynamicRende
     updateRenderPassDescriptorSets();
 }
 
-void Scene::renderDeffered(CommandBuffer &p_cmd, RenderData &p_render_data) {
+void Scene::renderDeffered(CommandBuffer& p_cmd, RenderData& p_render_data) {
     p_render_data.basic_meshes = m_basic_meshes;
     p_render_data.cameras = &m_cameras;
     m_skybox_pipeline.bindPipeline(p_cmd);
-    std::vector<DescriptorSet *> descriptor_sets = {&scene_descriptor_set};
+    std::vector<DescriptorSet*> descriptor_sets = {&scene_descriptor_set};
 
     DescriptorSet::bindDescriptorSet(p_cmd, descriptor_sets, m_skybox_pipeline.getPipelineLayout(), VK_PIPELINE_BIND_POINT_GRAPHICS);
 
@@ -89,16 +90,21 @@ void Scene::renderDeffered(CommandBuffer &p_cmd, RenderData &p_render_data) {
     p_render_data.render_pass->setDepthAndStencil(p_cmd, false);
 
     PushConstantStruct tp{
-        m_object_buffer.getBufferDeviceAddress(), material_buffer.getBufferDeviceAddress(),
-        camera_buffer[p_render_data.frame_index].getBufferDeviceAddress(), m_light_buffer.getBufferDeviceAddress(), 0, static_cast<uint32_t>(m_light_objects.size())};
+        m_object_buffer.getBufferDeviceAddress(),
+        material_buffer.getBufferDeviceAddress(),
+        camera_buffer[p_render_data.frame_index].getBufferDeviceAddress(),
+        m_light_buffer.getBufferDeviceAddress(),
+        0,
+        static_cast<uint32_t>(m_light_objects.size())};
     p_render_data.push_constant = tp;
     // // set push_constant for cam_id
-    vkCmdPushConstants(p_cmd, m_skybox_pipeline.getPipelineLayout(), m_skybox_pipeline.getPushConstantStage(), 0, sizeof(PushConstantStruct), &tp);
+    vkCmdPushConstants(
+        p_cmd, m_skybox_pipeline.getPipelineLayout(), m_skybox_pipeline.getPushConstantStage(), 0, sizeof(PushConstantStruct), &tp);
 
     vkCmdSetCullMode(p_cmd, VK_CULL_MODE_NONE);
     vkCmdDrawIndexed(
-        p_cmd, m_basic_meshes[Mesh::Cube]->nbIndicies(), 1, m_basic_meshes[Mesh::Cube]->getFirstIndex(), m_basic_meshes[Mesh::Cube]->getFirstVertex(),
-        0);
+        p_cmd, m_basic_meshes[Mesh::Cube]->nbIndicies(), 1, m_basic_meshes[Mesh::Cube]->getFirstIndex(),
+        m_basic_meshes[Mesh::Cube]->getFirstVertex(), 0);
     vkCmdSetCullMode(p_cmd, VK_CULL_MODE_BACK_BIT);
     p_render_data.render_pass->setDepthAndStencil(p_cmd, true);
     ;
@@ -112,27 +118,30 @@ void Scene::renderDeffered(CommandBuffer &p_cmd, RenderData &p_render_data) {
     // renderData.binded_pipeline = &m_mesh_pipeline;
     // renderData.binded_mesh = &m_basic_meshes[Mesh::Cube];
     // renderData.descriptorSets.push(scene_descriptor_set);
+    if (true) {
+        for (auto& renderable : m_indirect_renderables) {
+            renderable->render(p_cmd, p_render_data);
+        }
 
-    for (auto &renderable : m_indirect_renderables) {
-        renderable->render(p_cmd, p_render_data);
+        m_draw_indirect_buffers[p_render_data.frame_index].writeToBuffer(
+            p_render_data.draw_commands.data(), p_render_data.draw_commands.size() * sizeof(VkDrawIndexedIndirectCommand), 0);
+
+        uint32_t drawcount = p_render_data.draw_commands.size();
+        m_count_indirect_buffers[p_render_data.frame_index].writeToBuffer(&drawcount, sizeof(uint32_t), 0);
+    } else {
+
     }
-
-    m_draw_indirect_buffers[p_render_data.frame_index].writeToBuffer(
-        p_render_data.draw_commands.data(), p_render_data.draw_commands.size() * sizeof(VkDrawIndexedIndirectCommand), 0);
-
-    uint32_t drawcount = p_render_data.draw_commands.size();
-    m_count_indirect_buffers[p_render_data.frame_index].writeToBuffer(&drawcount, sizeof(uint32_t), 0);
 
     vkCmdDrawIndexedIndirectCount(
         p_cmd, m_draw_indirect_buffers[p_render_data.frame_index], 0, m_count_indirect_buffers[p_render_data.frame_index], 0, drawcount,
         sizeof(VkDrawIndexedIndirectCommand));
 
-    for (auto &renderable : m_renderables) {
+    for (auto& renderable : m_renderables) {
         renderable->render(p_cmd, p_render_data);
     }
 }
 
-void Scene::renderShading(CommandBuffer &p_cmd, RenderData &p_renderData) {
+void Scene::renderShading(CommandBuffer& p_cmd, RenderData& p_renderData) {
     p_renderData.basic_meshes = m_basic_meshes;
     p_renderData.cameras = &m_cameras;
     m_deffered_renderpass->transitionAttachment(p_renderData.swapchain_index, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, p_cmd);
@@ -140,11 +149,15 @@ void Scene::renderShading(CommandBuffer &p_cmd, RenderData &p_renderData) {
 
     m_shading_pipeline.bindPipeline(p_cmd);
 
-    std::vector<DescriptorSet *> descriptor_sets = {&m_deferred_descriptor_set[p_renderData.swapchain_index]};
+    std::vector<DescriptorSet*> descriptor_sets = {&m_deferred_descriptor_set[p_renderData.swapchain_index]};
     DescriptorSet::bindDescriptorSet(p_cmd, descriptor_sets, m_shading_pipeline.getPipelineLayout(), VK_PIPELINE_BIND_POINT_COMPUTE);
     PushConstantStruct tp{
-        m_object_buffer.getBufferDeviceAddress(), material_buffer.getBufferDeviceAddress(),
-        camera_buffer[p_renderData.frame_index].getBufferDeviceAddress(), m_light_buffer.getBufferDeviceAddress(), 0, static_cast<uint32_t>(m_light_objects.size())};
+        m_object_buffer.getBufferDeviceAddress(),
+        material_buffer.getBufferDeviceAddress(),
+        camera_buffer[p_renderData.frame_index].getBufferDeviceAddress(),
+        m_light_buffer.getBufferDeviceAddress(),
+        0,
+        static_cast<uint32_t>(m_light_objects.size())};
     p_renderData.push_constant = tp;
     // // set push_constant for cam_id
     vkCmdPushConstants(
@@ -158,7 +171,7 @@ void Scene::renderShading(CommandBuffer &p_cmd, RenderData &p_renderData) {
 
     m_shading_renderpass->setClearEnable(false);
     m_shading_renderpass->beginRenderPass(p_cmd, p_renderData.swapchain_index);
-    for (auto &renderable : m_renderables) {
+    for (auto& renderable : m_renderables) {
         renderable->render(p_cmd, p_renderData);
     }
     m_shading_renderpass->endRenderPass(p_cmd);
@@ -175,36 +188,35 @@ uint32_t Scene::getNewID() {
 };
 
 uint32_t Scene::addNode(uint32_t p_parent_id, std::shared_ptr<Node> p_node) {
-    if (dynamic_cast<IRenderable *>(p_node.get())) {
+    if (dynamic_cast<IRenderable*>(p_node.get())) {
         m_renderables.push_back(std::dynamic_pointer_cast<IRenderable>(p_node));
     }
-    if (dynamic_cast<IIndirectRenderable *>(p_node.get())) {
+    if (dynamic_cast<IIndirectRenderable*>(p_node.get())) {
         m_indirect_renderables.push_back(std::dynamic_pointer_cast<IIndirectRenderable>(p_node));
     }
 
-    if (dynamic_cast<CameraV2 *>(p_node.get())) {
+    if (dynamic_cast<CameraV2*>(p_node.get())) {
         m_cameras.push_back(std::dynamic_pointer_cast<CameraV2>(p_node));
         if (m_cameras.size() == 1) {
             m_main_camera = m_cameras[0];
         }
     }
 
-    if (dynamic_cast<IAnimatic *>(p_node.get())) {
+    if (dynamic_cast<IAnimatic*>(p_node.get())) {
         m_animatic_objs.push_back(std::dynamic_pointer_cast<IAnimatic>(p_node));
     }
 
-    if (dynamic_cast<ICollider *>(p_node.get())) {
+    if (dynamic_cast<ICollider*>(p_node.get())) {
         m_collision_objects.push_back(std::dynamic_pointer_cast<ICollider>(p_node));
     }
 
-    if (dynamic_cast<IInputController *>(p_node.get())) {
+    if (dynamic_cast<IInputController*>(p_node.get())) {
         m_controlled_objects.push_back(std::dynamic_pointer_cast<IInputController>(p_node));
     }
 
-    if (dynamic_cast<Light *>(p_node.get())) {
+    if (dynamic_cast<Light*>(p_node.get())) {
         m_light_objects.push_back(std::dynamic_pointer_cast<Light>(p_node));
     }
-    
 
     if (p_parent_id == uint32_t(-1)) {
         this->addChild(p_node);
@@ -223,7 +235,7 @@ uint32_t Scene::addMaterial(Material p_material) {
     return m_materials.size() - 1;
 }
 
-void Scene::addStaticMesh(Mesh &p_mesh) {
+void Scene::addStaticMesh(Mesh& p_mesh) {
     bool need_GPU_upload = false;
     if (p_mesh.indicies.size() + first_index_available > index_buffer.getInstancesCount()) {
         need_GPU_upload = true;
@@ -240,7 +252,7 @@ void Scene::addStaticMesh(Mesh &p_mesh) {
     }
 
     if (need_GPU_upload) {
-        for (auto &scene_mesh : meshes) {
+        for (auto& scene_mesh : meshes) {
             if (scene_mesh.second.indicies.size() == 0 || scene_mesh.second.verticies.size() == 0) continue;
             scene_mesh.second.setVertexAndIndexBuffer(index_buffer, vertex_buffer);
             scene_mesh.second.uploadToGPU();
@@ -257,7 +269,7 @@ void Scene::addStaticMesh(Mesh &p_mesh) {
     nb_meshes++;
 }
 
-uint32_t Scene::addImage(Image &p_image) {
+uint32_t Scene::addImage(Image& p_image) {
     images.push_back(p_image);
     return images.size() - 1;
 }
@@ -265,8 +277,8 @@ uint32_t Scene::addImage(Image &p_image) {
 void Scene::createDrawIndirectBuffers() {
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         m_draw_indirect_buffers[i] = Buffer(
-            m_device, sizeof(VkDrawIndexedIndirectCommand), 100000, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-            Buffer::BufferType::DYNAMIC);
+            m_device, sizeof(VkDrawIndexedIndirectCommand), 100000,
+            VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
 
         m_count_indirect_buffers[i] = Buffer(
             m_device, sizeof(uint32_t), 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
@@ -275,13 +287,13 @@ void Scene::createDrawIndirectBuffers() {
 }
 
 void Scene::updateSim(float p_dt, float p_t, uint32_t p_tick) {
-    for (auto &animatic_obj : m_animatic_objs) {
+    for (auto& animatic_obj : m_animatic_objs) {
         animatic_obj->simulation(glm::vec3(0, -9.81, 0), 0.995, p_tick, p_dt, p_t, m_collision_objects);
     }
 }
 
-void Scene::updateFromInput(Window *p_window, float p_dt) {
-    for (auto &controlled_obj : m_controlled_objects) {
+void Scene::updateFromInput(Window* p_window, float p_dt) {
+    for (auto& controlled_obj : m_controlled_objects) {
         controlled_obj->updateFromInput(p_window, p_dt);
     }
 }
@@ -314,13 +326,18 @@ struct Object_data {
 
 void Scene::updateObjectBuffer() {
     if (m_object_buffer.getInstancesCount() < m_objects.size()) {
-        m_object_buffer =
-            Buffer(m_device, sizeof(Object_data), m_objects.size() * 2, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, Buffer::BufferType::DYNAMIC);
-        for (auto &obj : m_objects) {
+        m_object_buffer = Buffer(
+            m_device, sizeof(Object_data), m_objects.size() * 2, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, Buffer::BufferType::DYNAMIC);
+        for (auto& obj : m_objects) {
             obj.second->uploaded_to_GPU = false;
         }
+
+        m_mesh_block_buffer =
+            Buffer(m_device, sizeof(MeshBlock), 100000, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, Buffer::BufferType::DYNAMIC);
     }
-    for (auto &obj : m_objects) {
+
+    uint32_t total_mesh_block = 0;
+    for (auto& obj : m_objects) {
         if (!obj.second->uploaded_to_GPU) {
             Object_data data;
             data.world_matrix = obj.second->wMatrix();
@@ -328,12 +345,21 @@ void Scene::updateObjectBuffer() {
             data.material_offset = 0;
             m_object_buffer.writeToBuffer(&data, sizeof(Object_data), sizeof(Object_data) * obj.second->getId());
             obj.second->uploaded_to_GPU = true;
+
+            auto renderable_obj = std::dynamic_pointer_cast<IIndirectRenderable>(obj.second);
+
+            if (renderable_obj) {
+                auto mesh_blocks = renderable_obj->getMeshBlock(10000);
+                m_mesh_block_buffer.writeToBuffer(
+                    mesh_blocks.data(), sizeof(MeshBlock) * mesh_blocks.size(), sizeof(MeshBlock) * total_mesh_block);
+                total_mesh_block += mesh_blocks.size();
+            }
         }
     }
 }
 
 void Scene::updateLightBuffer() {
-    if(m_light_objects.size() == 0){
+    if (m_light_objects.size() == 0) {
         Light l;
         l.color = glm::vec3(0);
         l.intensity = 0;
@@ -345,13 +371,12 @@ void Scene::updateLightBuffer() {
         m_light_buffer = Buffer(
             m_device, sizeof(LightGPU), m_light_objects.size() * 2, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, Buffer::BufferType::DYNAMIC);
 
-        for (auto &light : m_light_objects) {
+        for (auto& light : m_light_objects) {
             light->uploaded_to_GPU = false;
         }
     }
     int i = 0;
-    for (auto &light : m_light_objects) {
-
+    for (auto& light : m_light_objects) {
         if (!light->uploaded_to_GPU) {
             LightGPU l;
             l.color = glm::vec4(light->color, light->intensity);
@@ -379,7 +404,7 @@ void Scene::updateMaterialBuffer() {
     }
     std::vector<MaterialGPU> materials_GPU;
 
-    for (auto &material : m_materials) {
+    for (auto& material : m_materials) {
         materials_GPU.push_back(
             {material.color, material.metallic, material.roughness, material.albedo_tex_id, material.metallic_roughness_tex_id,
              material.normal_tex_id});
@@ -387,14 +412,11 @@ void Scene::updateMaterialBuffer() {
     material_buffer.writeToBuffer(materials_GPU.data(), sizeof(MaterialGPU) * materials_GPU.size(), 0);
 }
 
-void Scene::createDescriptorSets() { 
-    
-    scene_descriptor_set = DescriptorSet(m_device, m_mesh_pipeline.getDescriptorSetLayout(0)); 
-}
+void Scene::createDescriptorSets() { scene_descriptor_set = DescriptorSet(m_device, m_mesh_pipeline.getDescriptorSetLayout(0)); }
 
 void Scene::updateDescriptorSets() {
     if (images.size() == 0) {
-        glm::vec4 *default_pixel = new glm::vec4(1, 1, 1, 1);
+        glm::vec4* default_pixel = new glm::vec4(1, 1, 1, 1);
         // create a default texture
         ImageCreateInfo default_image_create_info;
         default_image_create_info.width = 1;
@@ -407,7 +429,7 @@ void Scene::updateDescriptorSets() {
         images.push_back(default_image);
     }
     std::vector<VkDescriptorImageInfo> image_infos;
-    for (auto &texture : images) {
+    for (auto& texture : images) {
         image_infos.push_back(texture.getDescriptorImageInfo(samplerType::LINEAR));
     }
     scene_descriptor_set.writeImagesDescriptor(0, image_infos);
@@ -420,8 +442,7 @@ void Scene::updateRenderPassDescriptorSets() {
         for (size_t i = 0; i < m_deffered_renderpass->getimageAttachement().size(); i++) {
             m_deferred_descriptor_set.push_back(DescriptorSet(m_device, m_shading_pipeline.getDescriptorsSetLayout()[0]));
         }
-
-   }
+    }
     for (size_t i = 0; i < m_deffered_renderpass->getimageAttachement().size(); i++) {
         // color metal
         VkDescriptorImageInfo image_info = m_deffered_renderpass->getimageAttachement()[i][0].getDescriptorImageInfo(samplerType::LINEAR);
@@ -469,6 +490,12 @@ void Scene::createPipelines() {
     m_shading_pipeline = ComputePipeline(m_device, "shaders/shading.comp");
 #else
     m_shading_pipeline = ComputePipeline(m_device, "TTengine-2/shaders/shading.comp");
+#endif
+
+#ifdef DEFAULT_APP_PATH
+    m_cull_pipeline = ComputePipeline(m_device, "shaders/cull.comp");
+#else
+    m_cull_pipeline = ComputePipeline(m_device, "TTengine-2/shaders/cull.comp");
 #endif
 }
 
