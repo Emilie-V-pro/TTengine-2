@@ -31,9 +31,9 @@ struct PushConstantStruct {
 struct PushConstantCullStruct {
     uint64_t obj_buffer;
     uint64_t cam_buffer;
-    uint64_t meshBlocks;
-    uint64_t drawCmds;
-    uint64_t drawCount;
+    uint64_t mesh_blocks_buffer;
+    uint64_t draw_cmds_buffer;
+    uint64_t draw_count_buffer;
     uint32_t camid;
     uint32_t numberOfmesh_block;
 };

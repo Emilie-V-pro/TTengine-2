@@ -129,11 +129,21 @@ void Scene::renderDeffered(CommandBuffer& p_cmd, RenderData& p_render_data) {
         uint32_t drawcount = p_render_data.draw_commands.size();
         m_count_indirect_buffers[p_render_data.frame_index].writeToBuffer(&drawcount, sizeof(uint32_t), 0);
     } else {
-
+        PushConstantCullStruct pc_cull;
+        // m_object_buffer.getBufferDeviceAddress(),
+        // material_buffer.getBufferDeviceAddress(),
+        // camera_buffer[p_render_data.frame_index].getBufferDeviceAddress(),
+        // m_light_buffer.getBufferDeviceAddress(),
+        pc_cull.cam_buffer = camera_buffer[p_render_data.frame_index].getBufferDeviceAddress();
+        pc_cull.obj_buffer = m_object_buffer.getBufferDeviceAddress();
+        pc_cull.draw_cmds_buffer = m_draw_indirect_buffers[p_render_data.frame_index].getBufferDeviceAddress();
+        pc_cull.numberOfmesh_block = m_count_indirect_buffers[p_render_data.frame_index].getBufferDeviceAddress();
+        pc_cull.camid = 0;
+        pc_cull.numberOfmesh_block = 0;
     }
 
     vkCmdDrawIndexedIndirectCount(
-        p_cmd, m_draw_indirect_buffers[p_render_data.frame_index], 0, m_count_indirect_buffers[p_render_data.frame_index], 0, drawcount,
+        p_cmd, m_draw_indirect_buffers[p_render_data.frame_index], 0, m_count_indirect_buffers[p_render_data.frame_index], 0, 1000000,
         sizeof(VkDrawIndexedIndirectCommand));
 
     for (auto& renderable : m_renderables) {
