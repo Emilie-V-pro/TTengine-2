@@ -1,6 +1,8 @@
 
 #include "scene.hpp"
 
+#include <vulkan/vulkan_core.h>
+
 #include <cstddef>
 #include <cstdint>
 #include <glm/fwd.hpp>
@@ -81,6 +83,37 @@ void Scene::initSceneData(
 void Scene::renderDeffered(CommandBuffer& p_cmd, RenderData& p_render_data) {
     p_render_data.basic_meshes = m_basic_meshes;
     p_render_data.cameras = &m_cameras;
+    if (false) {
+        for (auto& renderable : m_indirect_renderables) {
+            renderable->render(p_cmd, p_render_data);
+        }
+
+        m_draw_indirect_buffers[p_render_data.frame_index].writeToBuffer(
+            p_render_data.draw_commands.data(), p_render_data.draw_commands.size() * sizeof(VkDrawIndexedIndirectCommand), 0);
+
+        uint32_t drawcount = p_render_data.draw_commands.size();
+        m_count_indirect_buffers[p_render_data.frame_index].writeToBuffer(&drawcount, sizeof(uint32_t), 0);
+    } else {
+        uint32_t draw_count_init = 0;
+        m_count_indirect_buffers[p_render_data.frame_index].writeToBuffer(&draw_count_init, sizeof(uint32_t), 0);
+        PushConstantCullStruct pc_cull;
+        pc_cull.cam_buffer = camera_buffer[p_render_data.frame_index].getBufferDeviceAddress();
+        pc_cull.obj_buffer = m_object_buffer.getBufferDeviceAddress();
+        pc_cull.mesh_blocks_buffer = m_mesh_block_buffer.getBufferDeviceAddress();
+        pc_cull.draw_cmds_buffer = m_draw_indirect_buffers[p_render_data.frame_index].getBufferDeviceAddress();
+        pc_cull.draw_count_buffer = m_count_indirect_buffers[p_render_data.frame_index].getBufferDeviceAddress();
+        pc_cull.camid = 0;
+        pc_cull.numberOfmesh_block = m_total_mesh_block;
+
+        m_cull_pipeline.bindPipeline(p_cmd);
+        vkCmdPushConstants(p_cmd, m_cull_pipeline.getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pc_cull), &pc_cull);
+
+        m_cull_pipeline.dispatch(p_cmd, m_total_mesh_block, 1, 1);
+        m_mesh_block_buffer.addBufferMemoryBarrier(p_cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT);
+    }
+
+    m_deffered_renderpass->beginRenderPass(p_cmd, p_render_data.swapchain_index);
+
     m_skybox_pipeline.bindPipeline(p_cmd);
     std::vector<DescriptorSet*> descriptor_sets = {&scene_descriptor_set};
 
@@ -118,37 +151,15 @@ void Scene::renderDeffered(CommandBuffer& p_cmd, RenderData& p_render_data) {
     // renderData.binded_pipeline = &m_mesh_pipeline;
     // renderData.binded_mesh = &m_basic_meshes[Mesh::Cube];
     // renderData.descriptorSets.push(scene_descriptor_set);
-    if (true) {
-        for (auto& renderable : m_indirect_renderables) {
-            renderable->render(p_cmd, p_render_data);
-        }
-
-        m_draw_indirect_buffers[p_render_data.frame_index].writeToBuffer(
-            p_render_data.draw_commands.data(), p_render_data.draw_commands.size() * sizeof(VkDrawIndexedIndirectCommand), 0);
-
-        uint32_t drawcount = p_render_data.draw_commands.size();
-        m_count_indirect_buffers[p_render_data.frame_index].writeToBuffer(&drawcount, sizeof(uint32_t), 0);
-    } else {
-        PushConstantCullStruct pc_cull;
-        // m_object_buffer.getBufferDeviceAddress(),
-        // material_buffer.getBufferDeviceAddress(),
-        // camera_buffer[p_render_data.frame_index].getBufferDeviceAddress(),
-        // m_light_buffer.getBufferDeviceAddress(),
-        pc_cull.cam_buffer = camera_buffer[p_render_data.frame_index].getBufferDeviceAddress();
-        pc_cull.obj_buffer = m_object_buffer.getBufferDeviceAddress();
-        pc_cull.draw_cmds_buffer = m_draw_indirect_buffers[p_render_data.frame_index].getBufferDeviceAddress();
-        pc_cull.numberOfmesh_block = m_count_indirect_buffers[p_render_data.frame_index].getBufferDeviceAddress();
-        pc_cull.camid = 0;
-        pc_cull.numberOfmesh_block = 0;
-    }
 
     vkCmdDrawIndexedIndirectCount(
-        p_cmd, m_draw_indirect_buffers[p_render_data.frame_index], 0, m_count_indirect_buffers[p_render_data.frame_index], 0, 1000000,
+        p_cmd, m_draw_indirect_buffers[p_render_data.frame_index], 0, m_count_indirect_buffers[p_render_data.frame_index], 0, 100000,
         sizeof(VkDrawIndexedIndirectCommand));
 
     for (auto& renderable : m_renderables) {
         renderable->render(p_cmd, p_render_data);
     }
+    m_deffered_renderpass->endRenderPass(p_cmd);
 }
 
 void Scene::renderShading(CommandBuffer& p_cmd, RenderData& p_renderData) {
@@ -346,7 +357,7 @@ void Scene::updateObjectBuffer() {
             Buffer(m_device, sizeof(MeshBlock), 100000, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, Buffer::BufferType::DYNAMIC);
     }
 
-    uint32_t total_mesh_block = 0;
+    m_total_mesh_block = 0;
     for (auto& obj : m_objects) {
         if (!obj.second->uploaded_to_GPU) {
             Object_data data;
@@ -361,8 +372,8 @@ void Scene::updateObjectBuffer() {
             if (renderable_obj) {
                 auto mesh_blocks = renderable_obj->getMeshBlock(10000);
                 m_mesh_block_buffer.writeToBuffer(
-                    mesh_blocks.data(), sizeof(MeshBlock) * mesh_blocks.size(), sizeof(MeshBlock) * total_mesh_block);
-                total_mesh_block += mesh_blocks.size();
+                    mesh_blocks.data(), sizeof(MeshBlock) * mesh_blocks.size(), sizeof(MeshBlock) * m_total_mesh_block);
+                m_total_mesh_block += mesh_blocks.size();
             }
         }
     }

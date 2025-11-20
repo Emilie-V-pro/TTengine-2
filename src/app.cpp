@@ -136,14 +136,15 @@ void App::update(float p_delta_time, CommandBuffer &p_cmd_buffer, Window &p_wind
 void App::renderDeferredFrame(float p_deltat_time, CommandBuffer &p_cmd_buffer, uint32_t p_render_index, uint32_t p_swapchain_index) {
     RenderData r;
     r.frame_index = p_render_index;
+    r.swapchain_index = p_swapchain_index;
     r.camera_id = 0;
     r.render_pass = m_shading_renderpass;
 
     s->updateCameraBuffer(p_render_index);
 
-    m_deferred_renderpass->beginRenderPass(p_cmd_buffer, p_swapchain_index);
+
     s->renderDeffered(p_cmd_buffer, r);
-    m_deferred_renderpass->endRenderPass(p_cmd_buffer);
+   
 
 }
 

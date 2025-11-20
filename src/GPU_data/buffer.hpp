@@ -79,9 +79,12 @@ class Buffer : public CmdBufferRessource {
         VkDeviceSize p_src_offset = 0,
         VkDeviceSize p_dst_offset = 0);
 
-    void addBufferMemoryBarrier(const CommandBuffer& p_ext_cmd_buffer, VkPipelineStageFlags2 p_src_stage_mask, VkPipelineStageFlags2 p_dst_stage_mask);
+    void addBufferMemoryBarrier(const CommandBuffer& p_ext_cmd_buffer, VkPipelineStageFlags p_src_stage_mask, VkPipelineStageFlags p_dst_stage_mask);
 
     void transferQueueOwnership(const CommandBuffer& p_ext_cmd_buffer, uint32_t p_queue_index);
+
+
+
 
    private:
     VkBufferUsageFlags getBufferUsageFlags(BufferType p_buffer_type) const;

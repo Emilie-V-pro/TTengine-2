@@ -229,7 +229,7 @@ void Buffer::copyBuffer(
 }
 
 void Buffer::addBufferMemoryBarrier(
-    const CommandBuffer& p_ext_cmd_buffer, VkPipelineStageFlags2 p_src_stage_mask, VkPipelineStageFlags2 p_dst_stage_mask) {
+    const CommandBuffer& p_ext_cmd_buffer, VkPipelineStageFlags p_src_stage_mask, VkPipelineStageFlags p_dst_stage_mask) {
     auto buffer_memory_barrier = make<VkBufferMemoryBarrier>();
     buffer_memory_barrier.buffer = m_vk_buffer;
     buffer_memory_barrier.srcAccessMask = getFlagFromPipelineStage(p_src_stage_mask);

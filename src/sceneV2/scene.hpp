@@ -113,7 +113,7 @@ class Scene : public Node {
     std::array<Buffer, MAX_FRAMES_IN_FLIGHT> m_count_indirect_buffers;
 
     Buffer m_mesh_block_buffer;
-    std::vector<MeshBlock> m_mesh_blocks;
+    uint m_total_mesh_block = 0;
 
     std::shared_ptr<CameraV2> m_main_camera;
     std::vector<std::shared_ptr<CameraV2>> m_cameras{};

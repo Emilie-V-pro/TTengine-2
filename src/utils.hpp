@@ -69,7 +69,7 @@ inline VkAccessFlagBits2 getFlagFromPipelineStage(const VkPipelineStageFlags2 p_
             break;
     }
 
-    switch (p_pipeline_stage) {
+    switch (p_pipeline_stage) {        
         case VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT:
         case VK_PIPELINE_STAGE_2_SUBPASS_SHADER_BIT_HUAWEI:
             return_flag |= VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT;
@@ -283,7 +283,6 @@ inline VkAccessFlagBits2 getFlagFromPipelineStage(const VkPipelineStageFlags2 p_
 
     switch (p_pipeline_stage) {
         case VK_PIPELINE_STAGE_2_TRANSFORM_FEEDBACK_BIT_EXT:
-        case VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT:
             return_flag |= VK_ACCESS_2_TRANSFORM_FEEDBACK_WRITE_BIT_EXT;
             break;
         default:
@@ -344,7 +343,6 @@ inline VkAccessFlagBits2 getFlagFromPipelineStage(const VkPipelineStageFlags2 p_
         case VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT:
         case VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT:
         case VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT:
-        case VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT:
         case VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR:
         case VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT:
         case VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT:
@@ -587,7 +585,7 @@ inline VkAccessFlags getAccessFlagsFromLayout(const VkImageLayout p_layout) {
             return 0;
             break;
         case VK_IMAGE_LAYOUT_GENERAL:
-            return VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+            return VK_ACCESS_NONE;
             break;
         case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
             return VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;

@@ -14,7 +14,7 @@
 
 namespace TTe {
 
-#define MAX_LIGHTS 128
+#define MAX_LIGHTS 64
 
 class App : public IApp {
    public:

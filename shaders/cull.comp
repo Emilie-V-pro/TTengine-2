@@ -94,6 +94,8 @@ void matrixTOPminAndPmax(inout vec3 pmin, inout vec3 pmax, in mat4 matrix) {
 }
 
 bool checkBlockVisibility(vec3 frustrumBoxPoints[8], vec3 pmin, vec3 pmax, mat4 VPMatrix) {
+
+
     int compteur[6] = int[](0, 0, 0, 0, 0, 0);
     for (int i = 0; i < 8; i++) {
         if (frustrumBoxPoints[i].x < pmin.x) {
@@ -193,8 +195,8 @@ void main() {
     }
     Mesh_block m = pc.meshBlocks.data[gl_GlobalInvocationID.x];
     
-    mat4 VP = pc.cams.data[0].projection * pc.cams.data[0].view;
-    mat4 IVPWmatrix = inverse(VP * pc.objects.data[m.instancesID].world_matrix );
+    mat4 MVP = pc.cams.data[0].projection * pc.cams.data[0].view * pc.objects.data[m.instancesID].world_matrix;
+    mat4 IVPWmatrix = inverse(MVP);
     vec4 frustrumBoxPointW[8];
     frustrumBoxPointW[0] = (IVPWmatrix * vec4(1, 1, 1, 1));
     frustrumBoxPointW[1] = (IVPWmatrix * vec4(1, 1, -1, 1));
@@ -209,7 +211,7 @@ void main() {
         frustrumBoxPoint[i] = vec3(frustrumBoxPointW[i].x, frustrumBoxPointW[i].y, frustrumBoxPointW[i].z) / frustrumBoxPointW[i].w;
     }
 
-    bool visible = checkBlockVisibility(frustrumBoxPoint, m.pmin, m.pmax, VP);
+    bool visible = checkBlockVisibility(frustrumBoxPoint, m.pmin, m.pmax, MVP);
     uint localIndex = 0;
 
     if (visible) {
