@@ -75,26 +75,8 @@ pc;
 
 layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 
-void matrixTOPminAndPmax(inout vec3 pmin, inout vec3 pmax, in mat4 matrix) {
-    vec3 BoxPoints[8];
-    BoxPoints[0] = (matrix * vec4(pmin.x, pmin.y, pmin.z, 1)).xyz;
-    BoxPoints[1] = (matrix * vec4(pmin.x, pmin.y, pmax.z, 1)).xyz;
-    BoxPoints[2] = (matrix * vec4(pmin.x, pmax.y, pmin.z, 1)).xyz;
-    BoxPoints[3] = (matrix * vec4(pmin.x, pmax.y, pmax.z, 1)).xyz;
-    BoxPoints[4] = (matrix * vec4(pmax.x, pmin.y, pmin.z, 1)).xyz;
-    BoxPoints[5] = (matrix * vec4(pmax.x, pmin.y, pmax.z, 1)).xyz;
-    BoxPoints[6] = (matrix * vec4(pmax.x, pmax.y, pmin.z, 1)).xyz;
-    BoxPoints[7] = (matrix * vec4(pmax.x, pmax.y, pmax.z, 1)).xyz;
-    pmin = vec3(FLT_MAX, FLT_MAX, FLT_MAX);
-    pmax = vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-    for (int i = 1; i < 8; i++) {
-        pmin = min(pmin, BoxPoints[i]);
-        pmax = max(pmax, BoxPoints[i]);
-    }
-}
 
 bool checkBlockVisibility(vec3 frustrumBoxPoints[8], vec3 pmin, vec3 pmax, mat4 VPMatrix) {
-
 
     int compteur[6] = int[](0, 0, 0, 0, 0, 0);
     for (int i = 0; i < 8; i++) {
@@ -189,10 +171,18 @@ bool checkBlockVisibility(vec3 frustrumBoxPoints[8], vec3 pmin, vec3 pmax, mat4 
     return true;
 }
 
+shared uint group_offset;
+
 void main() {
     if (gl_GlobalInvocationID.x >= pc.numberOfmesh_block) {
         return;
     }
+
+    if(gl_LocalInvocationID.x == 0) {
+        group_offset = 0;
+    }
+    memoryBarrierShared();
+
     Mesh_block m = pc.meshBlocks.data[gl_GlobalInvocationID.x];
     
     mat4 MVP = pc.cams.data[0].projection * pc.cams.data[0].view * pc.objects.data[m.instancesID].world_matrix;
@@ -217,12 +207,31 @@ void main() {
     if (visible) {
         localIndex = subgroupInclusiveAdd(1) - 1;
     }
+
+
+
+
     uint total = subgroupMax(localIndex);
-    uint globalIndex;
+    
+    
+    uint sub_groupe_index;
+
     if (subgroupElect()) {
-        globalIndex = atomicAdd(pc.drawCount.count, total + 1);
+        sub_groupe_index = atomicAdd(group_offset, total + 1);
     }
-    globalIndex = subgroupBroadcastFirst(globalIndex);
+    memoryBarrierShared();
+
+
+
+    if(gl_LocalInvocationID.x == 0) {
+        group_offset = atomicAdd(pc.drawCount.count, group_offset);
+    }
+
+    memoryBarrierShared();
+
+
+
+    uint globalIndex = subgroupBroadcastFirst(group_offset + sub_groupe_index);
 
     if (visible)
         pc.drawCmds.data[globalIndex + localIndex] =

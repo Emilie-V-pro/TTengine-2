@@ -64,6 +64,8 @@ class RenderData {
     uint32_t frame_index = 0;
     uint32_t swapchain_index = 0;
 
+    bool update_culling = false;
+
    private:
 };
 }  // namespace TTe

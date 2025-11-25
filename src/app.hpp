@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <glm/fwd.hpp>
 #include <mutex>
@@ -10,6 +11,7 @@
 #include "dynamic_renderpass.hpp"
 #include "sceneV2/main_controller.hpp"
 #include "sceneV2/scene.hpp"
+#include "utils.hpp"
 #include "window.hpp"
 
 namespace TTe {
@@ -37,7 +39,7 @@ class App : public IApp {
    DynamicRenderPass *m_shading_renderpass = nullptr;
    Scene *s;
    MainController m_movement_controller;
-
+   std::array<bool, MAX_FRAMES_IN_FLIGHT> update_culling = {true, true};
    std::mutex m;
 
 

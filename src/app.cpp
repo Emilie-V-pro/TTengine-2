@@ -131,6 +131,12 @@ void App::update(float p_delta_time, CommandBuffer &p_cmd_buffer, Window &p_wind
 
         temp.savedRenderPass(0);
     }
+
+    if(glfwGetKey(p_window_obj, GLFW_KEY_C) == GLFW_PRESS){
+        for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++){
+            update_culling[i] = true;
+        }
+    }
 }
 
 void App::renderDeferredFrame(float p_deltat_time, CommandBuffer &p_cmd_buffer, uint32_t p_render_index, uint32_t p_swapchain_index) {
@@ -140,6 +146,10 @@ void App::renderDeferredFrame(float p_deltat_time, CommandBuffer &p_cmd_buffer, 
     r.camera_id = 0;
     r.render_pass = m_shading_renderpass;
 
+    if(update_culling[p_render_index]){
+        r.update_culling = true;
+        update_culling[p_render_index] = false;
+    }
     s->updateCameraBuffer(p_render_index);
 
 

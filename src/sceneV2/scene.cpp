@@ -1,6 +1,7 @@
 
 #include "scene.hpp"
 
+#include <GLFW/glfw3.h>
 #include <vulkan/vulkan_core.h>
 
 #include <cstddef>
@@ -94,22 +95,24 @@ void Scene::renderDeffered(CommandBuffer& p_cmd, RenderData& p_render_data) {
         uint32_t drawcount = p_render_data.draw_commands.size();
         m_count_indirect_buffers[p_render_data.frame_index].writeToBuffer(&drawcount, sizeof(uint32_t), 0);
     } else {
-        uint32_t draw_count_init = 0;
-        m_count_indirect_buffers[p_render_data.frame_index].writeToBuffer(&draw_count_init, sizeof(uint32_t), 0);
-        PushConstantCullStruct pc_cull;
-        pc_cull.cam_buffer = camera_buffer[p_render_data.frame_index].getBufferDeviceAddress();
-        pc_cull.obj_buffer = m_object_buffer.getBufferDeviceAddress();
-        pc_cull.mesh_blocks_buffer = m_mesh_block_buffer.getBufferDeviceAddress();
-        pc_cull.draw_cmds_buffer = m_draw_indirect_buffers[p_render_data.frame_index].getBufferDeviceAddress();
-        pc_cull.draw_count_buffer = m_count_indirect_buffers[p_render_data.frame_index].getBufferDeviceAddress();
-        pc_cull.camid = 0;
-        pc_cull.numberOfmesh_block = m_total_mesh_block;
+        if (p_render_data.update_culling) {
+            uint32_t draw_count_init = 0;
+            m_count_indirect_buffers[p_render_data.frame_index].writeToBuffer(&draw_count_init, sizeof(uint32_t), 0);
+            PushConstantCullStruct pc_cull;
+            pc_cull.cam_buffer = camera_buffer[p_render_data.frame_index].getBufferDeviceAddress();
+            pc_cull.obj_buffer = m_object_buffer.getBufferDeviceAddress();
+            pc_cull.mesh_blocks_buffer = m_mesh_block_buffer.getBufferDeviceAddress();
+            pc_cull.draw_cmds_buffer = m_draw_indirect_buffers[p_render_data.frame_index].getBufferDeviceAddress();
+            pc_cull.draw_count_buffer = m_count_indirect_buffers[p_render_data.frame_index].getBufferDeviceAddress();
+            pc_cull.camid = 0;
+            pc_cull.numberOfmesh_block = m_total_mesh_block;
 
-        m_cull_pipeline.bindPipeline(p_cmd);
-        vkCmdPushConstants(p_cmd, m_cull_pipeline.getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pc_cull), &pc_cull);
+            m_cull_pipeline.bindPipeline(p_cmd);
+            vkCmdPushConstants(p_cmd, m_cull_pipeline.getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pc_cull), &pc_cull);
 
-        m_cull_pipeline.dispatch(p_cmd, m_total_mesh_block, 1, 1);
-        m_mesh_block_buffer.addBufferMemoryBarrier(p_cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT);
+            m_cull_pipeline.dispatch(p_cmd, m_total_mesh_block, 1, 1);
+            m_mesh_block_buffer.addBufferMemoryBarrier(p_cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT);
+        }
     }
 
     m_deffered_renderpass->beginRenderPass(p_cmd, p_render_data.swapchain_index);
@@ -298,7 +301,7 @@ uint32_t Scene::addImage(Image& p_image) {
 void Scene::createDrawIndirectBuffers() {
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         m_draw_indirect_buffers[i] = Buffer(
-            m_device, sizeof(VkDrawIndexedIndirectCommand), 100000,
+            m_device, sizeof(VkDrawIndexedIndirectCommand), 300000,
             VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
 
         m_count_indirect_buffers[i] = Buffer(
@@ -354,7 +357,7 @@ void Scene::updateObjectBuffer() {
         }
 
         m_mesh_block_buffer =
-            Buffer(m_device, sizeof(MeshBlock), 100000, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, Buffer::BufferType::DYNAMIC);
+            Buffer(m_device, sizeof(MeshBlock), 300000, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, Buffer::BufferType::DYNAMIC);
     }
 
     m_total_mesh_block = 0;
@@ -370,7 +373,7 @@ void Scene::updateObjectBuffer() {
             auto renderable_obj = std::dynamic_pointer_cast<IIndirectRenderable>(obj.second);
 
             if (renderable_obj) {
-                auto mesh_blocks = renderable_obj->getMeshBlock(10000);
+                auto mesh_blocks = renderable_obj->getMeshBlock(2000);
                 m_mesh_block_buffer.writeToBuffer(
                     mesh_blocks.data(), sizeof(MeshBlock) * mesh_blocks.size(), sizeof(MeshBlock) * m_total_mesh_block);
                 m_total_mesh_block += mesh_blocks.size();
