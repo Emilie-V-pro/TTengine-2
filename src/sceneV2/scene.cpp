@@ -95,7 +95,7 @@ void Scene::renderDeffered(CommandBuffer& p_cmd, RenderData& p_render_data) {
         uint32_t drawcount = p_render_data.draw_commands.size();
         m_count_indirect_buffers[p_render_data.frame_index].writeToBuffer(&drawcount, sizeof(uint32_t), 0);
     } else {
-        if (p_render_data.update_culling) {
+        if (true) {
             uint32_t draw_count_init = 0;
             m_count_indirect_buffers[p_render_data.frame_index].writeToBuffer(&draw_count_init, sizeof(uint32_t), 0);
             PushConstantCullStruct pc_cull;

@@ -8,6 +8,7 @@
 #extension GL_EXT_nonuniform_qualifier : require
 #extension GL_EXT_scalar_block_layout : require
 
+
 #define FLT_MAX 3.402823466e+38
 #define FLT_MIN 1.175494351e-38
 #define DBL_MAX 1.7976931348623158e+308
@@ -181,7 +182,7 @@ void main() {
     if(gl_LocalInvocationID.x == 0) {
         group_offset = 0;
     }
-    memoryBarrierShared();
+    barrier();
 
     Mesh_block m = pc.meshBlocks.data[gl_GlobalInvocationID.x];
     
@@ -202,38 +203,28 @@ void main() {
     }
 
     bool visible = checkBlockVisibility(frustrumBoxPoint, m.pmin, m.pmax, MVP);
-    uint localIndex = 0;
+    uint local_index = subgroupExclusiveAdd(visible ? 1 : 0);
+    uint max_draw = subgroupAdd(visible ? 1 : 0);
 
-    if (visible) {
-        localIndex = subgroupInclusiveAdd(1) - 1;
+    uint sub_group_index = 0;
+    if(max_draw > 0 && subgroupElect()){
+        sub_group_index = atomicAdd(group_offset, max_draw);
     }
+    barrier();
 
 
 
-
-    uint total = subgroupMax(localIndex);
-    
-    
-    uint sub_groupe_index;
-
-    if (subgroupElect()) {
-        sub_groupe_index = atomicAdd(group_offset, total + 1);
-    }
-    memoryBarrierShared();
-
-
-
-    if(gl_LocalInvocationID.x == 0) {
+    if(group_offset >0 && gl_LocalInvocationID.x == 0) {
         group_offset = atomicAdd(pc.drawCount.count, group_offset);
     }
 
-    memoryBarrierShared();
+    barrier();
 
 
 
-    uint globalIndex = subgroupBroadcastFirst(group_offset + sub_groupe_index);
+    uint globalIndex = subgroupBroadcastFirst(group_offset + sub_group_index);
 
     if (visible)
-        pc.drawCmds.data[globalIndex + localIndex] =
+        pc.drawCmds.data[globalIndex + local_index] =
             VkDrawIndexedIndirectCommand(m.indexSize, 1, m.indexOffset, m.vertexOffset, m.instancesID);
 }
