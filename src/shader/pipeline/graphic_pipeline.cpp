@@ -1,7 +1,7 @@
 
 #include "graphic_pipeline.hpp"
-#include <vulkan/vulkan_core.h>
 
+#include <vulkan/vulkan_core.h>
 
 #include <cstddef>
 
@@ -20,14 +20,13 @@ GraphicPipeline::GraphicPipeline(Device* p_device, GraphicPipelineCreateInfo& p_
 
 GraphicPipeline::~GraphicPipeline() {
     // m_shaders_map.clear();
-    if(m_vk_pipeline_layout != VK_NULL_HANDLE)
-        vkDestroyPipelineLayout(*m_device, m_vk_pipeline_layout, nullptr);
+    if (m_vk_pipeline_layout != VK_NULL_HANDLE) vkDestroyPipelineLayout(*m_device, m_vk_pipeline_layout, nullptr);
 }
 
 GraphicPipeline::GraphicPipeline(GraphicPipeline&& other) {
     m_vertex_input_binding = other.m_vertex_input_binding;
     m_vertex_attributes = std::move(other.m_vertex_attributes);
-    
+
     m_shaders_map = std::move(other.m_shaders_map);
 
     m_pipeline_stage_flags = other.m_pipeline_stage_flags;
@@ -44,7 +43,7 @@ GraphicPipeline& GraphicPipeline::operator=(GraphicPipeline&& other) {
     if (this != &other) {
         m_vertex_input_binding = other.m_vertex_input_binding;
         m_vertex_attributes = std::move(other.m_vertex_attributes);
-        
+
         m_shaders_map = std::move(other.m_shaders_map);
 
         m_pipeline_stage_flags = other.m_pipeline_stage_flags;
@@ -86,7 +85,7 @@ void GraphicPipeline::setRasterizerInfo(VkCommandBuffer p_cmd_buffer) {
     vkCmdSetSampleMaskEXT(p_cmd_buffer, VK_SAMPLE_COUNT_1_BIT, &sampleMask);
     vkCmdSetAlphaToCoverageEnableEXT(p_cmd_buffer, VK_FALSE);
     vkCmdSetPolygonModeEXT(p_cmd_buffer, VK_POLYGON_MODE_FILL);
-    
+
     vkCmdSetCullMode(p_cmd_buffer, VK_CULL_MODE_BACK_BIT);
     vkCmdSetFrontFace(p_cmd_buffer, VK_FRONT_FACE_COUNTER_CLOCKWISE);
 }
@@ -105,7 +104,8 @@ void GraphicPipeline::setPipelineStage(GraphicPipelineCreateInfo& p_pipeline_cre
 
     if (!p_pipeline_create_info.tesselation_control_shader_file.empty()) m_pipeline_stage_flags |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
 
-    if (!p_pipeline_create_info.tesselation_control_shader_file.empty()) m_pipeline_stage_flags |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+    if (!p_pipeline_create_info.tesselation_control_shader_file.empty())
+        m_pipeline_stage_flags |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
 }
 
 Shader GraphicPipeline::createFragmentShader(GraphicPipelineCreateInfo& p_pipeline_create_info) {
@@ -117,6 +117,24 @@ Shader GraphicPipeline::createFragmentShader(GraphicPipelineCreateInfo& p_pipeli
     return fragment_shader;
 }
 
+Shader GraphicPipeline::createTaskShader(GraphicPipelineCreateInfo& p_pipeline_create_info, VkShaderStageFlagBits p_next_stage_flag) {
+    Shader task_shader(m_device, p_pipeline_create_info.vexter_shader_file, m_pipeline_stage_flags, p_next_stage_flag);
+    // HotReload::addShaderToWatch(p_pipeline_create_info.vexter_shader_file, this);
+    for (auto& descriptor_setlayout : task_shader.getDescriptorsSetLayout()) {
+        m_pipeline_descriptors_sets_layout[descriptor_setlayout->getId()] = descriptor_setlayout;
+    }
+    return task_shader;
+}
+
+Shader GraphicPipeline::createMeshShader(GraphicPipelineCreateInfo& p_pipeline_create_info, VkShaderStageFlagBits p_next_stage_flag) {
+    Shader mesh_shader(m_device, p_pipeline_create_info.vexter_shader_file, m_pipeline_stage_flags, p_next_stage_flag);
+    // HotReload::addShaderToWatch(p_pipeline_create_info.vexter_shader_file, this);
+    for (auto& descriptor_setlayout : mesh_shader.getDescriptorsSetLayout()) {
+        m_pipeline_descriptors_sets_layout[descriptor_setlayout->getId()] = descriptor_setlayout;
+    }
+    return mesh_shader;
+}
+
 Shader GraphicPipeline::createVertexShader(GraphicPipelineCreateInfo& p_pipeline_create_info, VkShaderStageFlagBits p_next_stage_flag) {
     Shader vertex_shader(m_device, p_pipeline_create_info.vexter_shader_file, m_pipeline_stage_flags, p_next_stage_flag);
     // HotReload::addShaderToWatch(p_pipeline_create_info.vexter_shader_file, this);
@@ -126,8 +144,10 @@ Shader GraphicPipeline::createVertexShader(GraphicPipelineCreateInfo& p_pipeline
     return vertex_shader;
 }
 
-Shader GraphicPipeline::createTesselationControlShader(GraphicPipelineCreateInfo& p_pipeline_create_info, VkShaderStageFlagBits p_next_stage_flag) {
-    Shader tesselation_control_shader(m_device, p_pipeline_create_info.tesselation_control_shader_file, m_pipeline_stage_flags, p_next_stage_flag);
+Shader GraphicPipeline::createTesselationControlShader(
+    GraphicPipelineCreateInfo& p_pipeline_create_info, VkShaderStageFlagBits p_next_stage_flag) {
+    Shader tesselation_control_shader(
+        m_device, p_pipeline_create_info.tesselation_control_shader_file, m_pipeline_stage_flags, p_next_stage_flag);
     // HotReload::addShaderToWatch(p_pipeline_create_info.tesselation_control_shader_file, this);
     for (auto& descriptor_setlayout : tesselation_control_shader.getDescriptorsSetLayout()) {
         m_pipeline_descriptors_sets_layout[descriptor_setlayout->getId()] = descriptor_setlayout;
@@ -137,7 +157,8 @@ Shader GraphicPipeline::createTesselationControlShader(GraphicPipelineCreateInfo
 
 Shader GraphicPipeline::createTesselationEvaluationShader(
     GraphicPipelineCreateInfo& p_pipeline_create_info, VkShaderStageFlagBits p_next_stage_flag) {
-    Shader tesselation_evaluation_shader(m_device, p_pipeline_create_info.tesselation_evaluation_shader_file, m_pipeline_stage_flags, p_next_stage_flag);
+    Shader tesselation_evaluation_shader(
+        m_device, p_pipeline_create_info.tesselation_evaluation_shader_file, m_pipeline_stage_flags, p_next_stage_flag);
     // HotReload::addShaderToWatch(p_pipeline_create_info.tesselation_evaluation_shader_file, this);
     for (auto& descriptor_setlayout : tesselation_evaluation_shader.getDescriptorsSetLayout()) {
         m_pipeline_descriptors_sets_layout[descriptor_setlayout->getId()] = descriptor_setlayout;
@@ -161,37 +182,50 @@ void GraphicPipeline::createShaders(GraphicPipelineCreateInfo& p_pipeline_create
 
     std::vector<Shader*> builds_shader_vector;
     VkShaderStageFlagBits next_stage_flag;
-    if (!p_pipeline_create_info.tesselation_evaluation_shader_file.empty()) {
-        next_stage_flag = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-    } else if (!p_pipeline_create_info.geometry_shader_file.empty()) {
-        next_stage_flag = VK_SHADER_STAGE_GEOMETRY_BIT;
+
+    if (!p_pipeline_create_info.task_shader_file.empty()) {
+        m_shaders_map[VK_SHADER_STAGE_TASK_BIT_EXT] = createTaskShader(p_pipeline_create_info, VK_SHADER_STAGE_MESH_BIT_EXT);
+        builds_shader_vector.push_back(&m_shaders_map[VK_SHADER_STAGE_TASK_BIT_EXT]);
+        m_shaders_map[VK_SHADER_STAGE_MESH_BIT_EXT] = createMeshShader(p_pipeline_create_info, VK_SHADER_STAGE_FRAGMENT_BIT);
+        builds_shader_vector.push_back(&m_shaders_map[VK_SHADER_STAGE_MESH_BIT_EXT]);
+
+
     } else {
-        next_stage_flag = VK_SHADER_STAGE_FRAGMENT_BIT;
-    }
-
-    m_shaders_map[VK_SHADER_STAGE_VERTEX_BIT] = createVertexShader(p_pipeline_create_info, next_stage_flag);
-    builds_shader_vector.push_back(&m_shaders_map[VK_SHADER_STAGE_VERTEX_BIT]);
-
-    if (!p_pipeline_create_info.tesselation_evaluation_shader_file.empty()) {
-        next_stage_flag = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-        m_shaders_map[VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT] = createTesselationEvaluationShader(p_pipeline_create_info, next_stage_flag);
-        builds_shader_vector.push_back(&m_shaders_map[VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT]);
-
-        if (!p_pipeline_create_info.geometry_shader_file.empty()) {
+        if (!p_pipeline_create_info.tesselation_evaluation_shader_file.empty()) {
+            next_stage_flag = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+        } else if (!p_pipeline_create_info.geometry_shader_file.empty()) {
             next_stage_flag = VK_SHADER_STAGE_GEOMETRY_BIT;
         } else {
             next_stage_flag = VK_SHADER_STAGE_FRAGMENT_BIT;
         }
 
-        m_shaders_map[VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT] = createTesselationControlShader(p_pipeline_create_info, next_stage_flag);
-        builds_shader_vector.push_back(&m_shaders_map[VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT]);
+        m_shaders_map[VK_SHADER_STAGE_VERTEX_BIT] = createVertexShader(p_pipeline_create_info, next_stage_flag);
+        builds_shader_vector.push_back(&m_shaders_map[VK_SHADER_STAGE_VERTEX_BIT]);
+
+        if (!p_pipeline_create_info.tesselation_evaluation_shader_file.empty()) {
+            next_stage_flag = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+            m_shaders_map[VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT] =
+                createTesselationEvaluationShader(p_pipeline_create_info, next_stage_flag);
+            builds_shader_vector.push_back(&m_shaders_map[VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT]);
+
+            if (!p_pipeline_create_info.geometry_shader_file.empty()) {
+                next_stage_flag = VK_SHADER_STAGE_GEOMETRY_BIT;
+            } else {
+                next_stage_flag = VK_SHADER_STAGE_FRAGMENT_BIT;
+            }
+
+            m_shaders_map[VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT] =
+                createTesselationControlShader(p_pipeline_create_info, next_stage_flag);
+            builds_shader_vector.push_back(&m_shaders_map[VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT]);
+        }
+
+        if (!p_pipeline_create_info.geometry_shader_file.empty()) {
+            next_stage_flag = VK_SHADER_STAGE_FRAGMENT_BIT;
+            m_shaders_map[VK_SHADER_STAGE_GEOMETRY_BIT] = createGeometryShader(p_pipeline_create_info, next_stage_flag);
+            builds_shader_vector.push_back(&m_shaders_map[VK_SHADER_STAGE_GEOMETRY_BIT]);
+        }
     }
 
-    if (!p_pipeline_create_info.geometry_shader_file.empty()) {
-        next_stage_flag = VK_SHADER_STAGE_FRAGMENT_BIT;
-        m_shaders_map[VK_SHADER_STAGE_GEOMETRY_BIT] = createGeometryShader(p_pipeline_create_info, next_stage_flag);
-        builds_shader_vector.push_back(&m_shaders_map[VK_SHADER_STAGE_GEOMETRY_BIT]);
-    }
     m_shaders_map[VK_SHADER_STAGE_FRAGMENT_BIT] = createFragmentShader(p_pipeline_create_info);
     builds_shader_vector.push_back(&m_shaders_map[VK_SHADER_STAGE_FRAGMENT_BIT]);
 

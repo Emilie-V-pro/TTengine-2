@@ -7,6 +7,7 @@
 
 namespace TTe {
 struct GraphicPipelineCreateInfo{
+    std::filesystem::path task_shader_file;
     std::filesystem::path vexter_shader_file;
     std::filesystem::path fragment_shader_file;
     std::filesystem::path tesselation_control_shader_file;
@@ -38,6 +39,8 @@ class GraphicPipeline : public Pipeline {
     void createShaders(GraphicPipelineCreateInfo& p_pipeline_create_info);
 
     Shader  createFragmentShader(GraphicPipelineCreateInfo& p_pipeline_create_info);
+    Shader  createTaskShader(GraphicPipelineCreateInfo& p_pipeline_create_info, VkShaderStageFlagBits p_next_stage_flag);
+    Shader  createMeshShader(GraphicPipelineCreateInfo& p_pipeline_create_info, VkShaderStageFlagBits p_next_stage_flag);
     Shader  createVertexShader(GraphicPipelineCreateInfo& p_pipeline_create_info, VkShaderStageFlagBits p_next_stage_flag);
     Shader  createTesselationControlShader(GraphicPipelineCreateInfo& p_pipeline_create_info, VkShaderStageFlagBits p_next_stage_flag);
     Shader  createTesselationEvaluationShader(GraphicPipelineCreateInfo& p_pipeline_create_info, VkShaderStageFlagBits p_next_stage_flag);

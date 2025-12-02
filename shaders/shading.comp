@@ -249,15 +249,5 @@ void main() {
     vec4 clip = vec4(ndc, depth, 1.0);
 
     imageStore(output_texture, pixel_pos, fromLinear(vec4(final_color.rgb, 1)));
-    // // BRDFResults res = DisneyBRDF(textColor.rgb, metalRoughness.r, metalRoughness.g, surfaceNormal, view, lightDir);
-    // // color += ((res.diffuse + res.specular) * cubeMapColor.rgb);
 
-    // vec3 color_difuse =
-    //     LearnOpenGLBRDF(textColor.rgb, metalRoughness.r, metalRoughness.g, surfaceNormal, view, diffuse_lightDir,
-    //     diffuse_cubeMapColor.rgb);
-    // vec3 color_reflect = LearnOpenGLBRDF(textColor.rgb, metalRoughness.r, metalRoughness.g, surfaceNormal, view, reflect_lightDir,
-    // reflect_cubeMapColor.rgb );
-
-    // color += vec3(0.03) * textColor.rgb;
-    // color += mix(color_reflect, color_difuse , metalRoughness.r);
 }

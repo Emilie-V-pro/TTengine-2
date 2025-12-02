@@ -26,6 +26,15 @@ struct PushConstantStruct {
 };
 #pragma pack(pop)
 
+#pragma pack(push, 1)
+struct ShadowPushConstantStruct {
+    uint64_t obj_buffer;
+    uint64_t mat_buffer;
+    uint64_t cam_buffer;
+    uint32_t camid;
+};
+#pragma pack(pop)
+
 
 #pragma pack(push, 1)
 struct PushConstantCullStruct {
@@ -38,6 +47,7 @@ struct PushConstantCullStruct {
     uint32_t numberOfmesh_block;
 };
 #pragma pack(pop)
+
 
 struct LightGPU{
     glm::vec4 color;

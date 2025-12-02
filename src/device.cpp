@@ -1,5 +1,6 @@
 
 #include "device.hpp"
+#include <vulkan/vulkan_core.h>
 
 #include <iostream>
 
@@ -23,7 +24,7 @@ Device::Device(Window &p_window) {
 
 void Device::createInstance() {
     vkb::InstanceBuilder instance_builder;
-    instance_builder.set_app_name("TTEngine 2.0").set_engine_name("TTEngine 2.0").require_api_version(1, 3, 0);
+    instance_builder.set_app_name("TTEngine 2.0").set_engine_name("TTEngine 2.0").require_api_version(1, 4, 0);
 
     if (enableValidationLayers) {
         instance_builder.request_validation_layers()
@@ -118,8 +119,15 @@ void setRequiredExtensionsFeatures(vkb::PhysicalDeviceSelector &p_phys_device_se
     descriptor_buffer_feature.descriptorBuffer = true;
     descriptor_buffer_feature.descriptorBufferCaptureReplay = true;
 
+    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_feature{};
+    mesh_shader_feature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
+    mesh_shader_feature.meshShader = true;
+    mesh_shader_feature.taskShader = true;
+
+
     p_phys_device_selector.add_required_extension_features(shader_obj_feature);
     p_phys_device_selector.add_required_extension_features(descriptor_buffer_feature);
+    p_phys_device_selector.add_required_extension_features(mesh_shader_feature);
 }
 
 // Features paramater
@@ -164,6 +172,7 @@ void setRequiredFeatures13(vkb::PhysicalDeviceSelector &p_phys_device_selector) 
     p_phys_device_selector.set_required_features_13(required_features13);
 }
 
+
 void Device::setRequiredFeatures(vkb::PhysicalDeviceSelector &p_phys_device_selector) {
     setRequiredExtensionsFeatures(p_phys_device_selector);
     setRequiredFeatures10(p_phys_device_selector);
@@ -175,6 +184,7 @@ void Device::setRequiredExtensions(vkb::PhysicalDeviceSelector &p_phys_device_se
     p_phys_device_selector.add_required_extension("VK_EXT_shader_object");
     p_phys_device_selector.add_required_extension("VK_EXT_descriptor_buffer");
     p_phys_device_selector.add_required_extension("VK_KHR_swapchain_mutable_format");
+    p_phys_device_selector.add_required_extension("VK_EXT_mesh_shader");
 }
 
 void Device::queryPhysicalDeviceProperties() {

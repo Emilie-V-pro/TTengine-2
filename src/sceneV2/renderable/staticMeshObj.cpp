@@ -110,8 +110,8 @@ std::vector<MeshBlock> StaticMeshObj::getMeshBlock(uint32_t p_nb_max_triangle) {
 
 void StaticMeshObj::render(CommandBuffer& p_cmd, RenderData& p_render_data) {
     glm::mat4 IVP_matrix =
-        glm::inverse(p_render_data.cameras->at(0)->getProjectionMatrix() * p_render_data.cameras->at(0)->getViewMatrix());
-    glm::mat4 VP_matrix = p_render_data.cameras->at(0)->getProjectionMatrix() * p_render_data.cameras->at(0)->getViewMatrix();
+        glm::inverse(p_render_data.cameras->at(p_render_data.camera_id)->getProjectionMatrix() * p_render_data.cameras->at(p_render_data.camera_id)->getViewMatrix());
+    glm::mat4 VP_matrix = p_render_data.cameras->at(p_render_data.camera_id)->getProjectionMatrix() * p_render_data.cameras->at(p_render_data.camera_id)->getViewMatrix();
 
     glm::vec4 frustrum_box_point_w[8];
     frustrum_box_point_w[0] = (IVP_matrix * glm::vec4(1, 1, 1, 1));
@@ -162,19 +162,7 @@ void StaticMeshObj::render(CommandBuffer& p_cmd, RenderData& p_render_data) {
         }
     }
 
-    // if (checkBlockVisibility(frustrumBoxPoint, pmin, pmax, VPmatrix)) {
-    //     VkDrawIndexedIndirectCommand drawCmd;
-    //     drawCmd.firstIndex = m_mesh->getFirstIndex();
-    //     drawCmd.vertexOffset = m_mesh->getFirstVertex();
-    //     drawCmd.indexCount = m_mesh->nbIndicies();
-    //     drawCmd.instanceCount = 1;
-    //     drawCmd.firstInstance = this->id;
 
-    //     renderData.drawCommands.push_back(drawCmd);
-    //     printf("AAAAAAAAAAAAAAAAAALLLLLLLLLLLLLLLLLLER\n");
-    // } else {
-    //     printf("ya quedal\n");
-    // }
 }
 
 BoundingBox StaticMeshObj::computeBoundingBox() {

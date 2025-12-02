@@ -665,6 +665,12 @@ VkShaderStageFlagBits Shader::getShaderStageFlagsBitFromFileName(std::filesystem
         case (str2int(".rcall")):
             return VK_SHADER_STAGE_CALLABLE_BIT_KHR;
             break;
+        case (str2int(".task")):
+            return VK_SHADER_STAGE_TASK_BIT_EXT;
+            break;
+        case (str2int(".mesh")):
+            return VK_SHADER_STAGE_MESH_BIT_EXT;
+            break;
         default:
             throw std::runtime_error("not supported shader m_type");
     }

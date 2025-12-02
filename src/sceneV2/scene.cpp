@@ -18,6 +18,7 @@
 #include "commandBuffer/command_buffer.hpp"
 #include "descriptor/descriptorSet.hpp"
 #include "device.hpp"
+#include "dynamic_renderpass.hpp"
 #include "sceneV2/IIndirectRenderable.hpp"
 #include "sceneV2/IRenderable.hpp"
 #include "sceneV2/Icollider.hpp"
@@ -28,6 +29,7 @@
 #include "sceneV2/render_data.hpp"
 #include "shader/pipeline/compute_pipeline.hpp"
 #include "struct.hpp"
+#include "utils.hpp"
 
 namespace TTe {
 
@@ -66,6 +68,18 @@ void Scene::initSceneData(
     // Mesh planeMesh(m_device, Mesh::BasicShape::Plane, 1);
     // addStaticMesh(planeMesh);
     // m_basic_meshes[Mesh::BasicShape::Plane] = &meshes.back();
+
+
+    ImageCreateInfo shadow_image_create_info;
+    shadow_image_create_info.width = 2048;
+    shadow_image_create_info.height = 2048;
+    shadow_image_create_info.format = VK_FORMAT_D24_UNORM_S8_UINT;
+    shadow_image_create_info.usage_flags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    shadow_image_create_info.image_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    skybox_image_create_info.enable_mipmap = false;
+
+
+    m_shadow_renderpass = DynamicRenderPass(m_device, {2048, 2048}, {}, MAX_FRAMES_IN_FLIGHT, DEPTH);
 
     vkDeviceWaitIdle(*m_device);
 
@@ -521,6 +535,16 @@ void Scene::createPipelines() {
 #else
     m_cull_pipeline = ComputePipeline(m_device, "TTengine-2/shaders/cull.comp");
 #endif
+
+#ifdef DEFAULT_APP_PATH
+    pipeline_create_info.fragment_shader_file = "shaders/shadow.frag";
+    pipeline_create_info.vexter_shader_file = "shaders/shadow.vert";
+#else
+    pipeline_create_info.fragment_shader_file = "TTengine-2/shaders/shadow.frag";
+    pipeline_create_info.vexter_shader_file = "TTengine-2/shaders/shadow.vert";
+#endif
+    m_shadow_pipeline = GraphicPipeline(m_device, pipeline_create_info);
+
 }
 
 }  // namespace TTe

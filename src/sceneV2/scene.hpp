@@ -45,6 +45,7 @@ class Scene : public Node {
 
     void Param(std::filesystem::path p_fichier_param);
 
+    void renderShadowMaps(CommandBuffer &p_cmd, RenderData &p_render_data);
     void renderDeffered(CommandBuffer &p_cmd, RenderData &p_render_data);
     void renderShading(CommandBuffer &p_cmd, RenderData &p_render_data);
 
@@ -97,12 +98,12 @@ class Scene : public Node {
     std::vector<Material> m_materials{};
 
     Image m_skybox_image;
-
     
     std::vector<DescriptorSet> m_deferred_descriptor_set;
-
+    
     DynamicRenderPass *m_deffered_renderpass;
     DynamicRenderPass *m_shading_renderpass;
+    DynamicRenderPass m_shadow_renderpass;
 
     
     
@@ -133,6 +134,8 @@ class Scene : public Node {
     GraphicPipeline m_skybox_pipeline;
     ComputePipeline m_shading_pipeline;
     GraphicPipeline m_mesh_pipeline;
+    
+    GraphicPipeline m_shadow_pipeline;
 
     ComputePipeline m_cull_pipeline;
 
