@@ -83,6 +83,8 @@ class Mesh {
     }
 
     std::vector<MeshBlock> getMeshBlock(uint32_t p_nb_max_triangle);
+    
+    
 
     SceneHit hit(glm::vec3 &p_ro, glm::vec3 &p_rd);
 

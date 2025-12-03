@@ -31,13 +31,24 @@ void App::init(Device *p_device, DynamicRenderPass *p_deferred_renderpass, Dynam
     GLTFLoader gltf_loader(m_device);
     // gltfLoader.load("gltf/ABeautifulGame/glTF/ABeautifulGame.gltf");
     auto start = std::chrono::high_resolution_clock::now();
-    // gltf_loader.load("gltf/Sponza/glTF/Sponza.gltf");
+    gltf_loader.load("gltf/Sponza/glTF/Sponza.gltf");
 
     // gltfLoader.load("gltf/mc2/mc.gltf");
 
-    gltf_loader.load("gltf/mc/mc.gltf");
+    // gltf_loader.load("gltf/mc/mc.gltf");
     s = gltf_loader.getScene();
     // s = new Scene(device);
+
+
+    auto sun = std::make_shared<Light>();
+    sun->m_type = Light::DIRECTIONAL;
+    sun->transform.rot = glm::normalize(glm::vec3(1.0f,1.0f,0.0f));
+    sun->color = glm::vec3(1.0f, 1.0f, 0.9f);
+    sun->intensity = 1.0f;
+    sun->shadows_enabled = true;
+    s->addNode(-1, sun);
+
+
     s->initSceneData(m_deferred_renderpass, m_shading_renderpass);
     s->computeBoundingBox();
     auto end = std::chrono::high_resolution_clock::now();
@@ -154,6 +165,7 @@ void App::renderDeferredFrame(float p_deltat_time, CommandBuffer &p_cmd_buffer, 
 
 
     s->renderDeffered(p_cmd_buffer, r);
+    s->renderShadowMaps(p_cmd_buffer, r);
    
 
 }

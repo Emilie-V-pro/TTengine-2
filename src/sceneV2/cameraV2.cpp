@@ -45,7 +45,13 @@ glm::mat4 CameraV2::getInvViewMatrix() {
 }
 
 glm::mat4 CameraV2::getProjectionMatrix() {
-    return glm::perspective(glm::radians(fov), ((float) extent.width / (float) extent.height), near, far);
+
+    if(type == PERSPECTIVE){
+        return glm::perspective(glm::radians(fov), ((float) extent.width / (float) extent.height), near, far);
+    }else {
+        return glm::ortho(left, right, bottom, top, near, far);
+    }
+
 
 }
 

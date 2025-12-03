@@ -89,6 +89,8 @@ class Scene : public Node {
     std::array<Buffer, MAX_FRAMES_IN_FLIGHT> camera_buffer;
     DescriptorSet scene_descriptor_set;
 
+    std::array<DescriptorSet, MAX_FRAMES_IN_FLIGHT> shadow_descriptor_sets;
+
    private:
     void createDrawIndirectBuffers();
     void createPipelines();
@@ -110,13 +112,15 @@ class Scene : public Node {
     Buffer m_object_buffer;
     Buffer m_light_buffer;
 
-    std::array<Buffer, MAX_FRAMES_IN_FLIGHT> m_draw_indirect_buffers;
-    std::array<Buffer, MAX_FRAMES_IN_FLIGHT> m_count_indirect_buffers;
+    std::vector<std::array<Buffer, MAX_FRAMES_IN_FLIGHT>> m_draw_indirect_buffers;
+    std::vector<std::array<Buffer, MAX_FRAMES_IN_FLIGHT>> m_count_indirect_buffers;
 
     Buffer m_mesh_block_buffer;
     uint m_total_mesh_block = 0;
 
     std::shared_ptr<CameraV2> m_main_camera;
+    uint32_t m_main_camera_id = 0;
+
     std::vector<std::shared_ptr<CameraV2>> m_cameras{};
     std::vector<std::shared_ptr<IAnimatic>> m_animatic_objs;
     std::vector<std::shared_ptr<IRenderable>> m_renderables;

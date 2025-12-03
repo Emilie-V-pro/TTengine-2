@@ -4,10 +4,16 @@
 #extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
 #extension GL_EXT_mesh_shader: require
 
-
-layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
-
-layout(triangles, max_vertices = 32*3, max_primitives = 32) out;
+struct Mesh_block {
+    vec3 pmin;
+    int vertexOffset;
+    vec3 pmax;
+    uint indexOffset;
+    uint indexSize;
+    int instancesID;
+    int nb_of_vertices;
+    int vertex_list_offset;
+};
 
 struct Material {
     vec3 color;
@@ -17,11 +23,6 @@ struct Material {
     int metallic_roughness_tex_id;
     int normal_tex_id;
 };
-
-
-layout(location = 0) out vec2 fraguv[];
-layout(location = 1) out flat int alphaTextureID[];
-
 
 struct Camera_data {
     mat4 projection;
@@ -36,10 +37,15 @@ struct Object_data {
     uint material_offset;
 };
 
-
-layout(buffer_reference, std430) readonly buffer ObjectBuffer { Object_data data[]; };
-layout(buffer_reference, std430) readonly buffer MaterialBuffer { Material data[]; };
-layout(buffer_reference, std430) readonly buffer CameraBuffer { Camera_data data[]; };
+layout(buffer_reference, std430) readonly buffer ObjectBuffer {
+    Object_data data[];
+};
+layout(buffer_reference, std430) readonly buffer MaterialBuffer {
+    Material data[];
+};
+layout(buffer_reference, std430) readonly buffer CameraBuffer {
+    Camera_data data[];
+};
 
 layout(set = 0, binding = 0) uniform sampler2D textures[1000];
 
@@ -50,11 +56,30 @@ layout(push_constant) uniform constants {
     MaterialBuffer matBuffer;
     CameraBuffer camBuffer;
     uint camera_id;
-}pc;
+} pc;
 
+struct SharedData {
+    uint indexSize;
+    uint indexOffset;
+    int vertexOffset;
+    int instancesID;
+};
 
+taskPayloadSharedEXT SharedData sharedData;
+
+layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+layout(triangles, max_vertices = 32 * 3, max_primitives = 32) out;
+
+layout(location = 0) out vec2 fraguv[];
+layout(location = 1) out flat int alphaTextureID[];
 
 void main() {
+    if (gl_LocalInvocationIndex == 0)
+    {
+        // set the number of vertices and primitives to put out just once for the complete workgroup
+        SetMeshOutputsEXT(ver, 2 * numMeshInvocationsX * numMeshInvocationsY);
+    }
+
     vec4 positionWorld = pc.objBuffer.data[gl_InstanceIndex].world_matrix * vec4(position, 1.0);
     Camera_data c = pc.camBuffer.data[pc.camera_id];
     gl_Position = c.projection * c.view * positionWorld;

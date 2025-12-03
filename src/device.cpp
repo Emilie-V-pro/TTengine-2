@@ -127,7 +127,7 @@ void setRequiredExtensionsFeatures(vkb::PhysicalDeviceSelector &p_phys_device_se
 
     p_phys_device_selector.add_required_extension_features(shader_obj_feature);
     p_phys_device_selector.add_required_extension_features(descriptor_buffer_feature);
-    p_phys_device_selector.add_required_extension_features(mesh_shader_feature);
+    // p_phys_device_selector.add_required_extension_features(mesh_shader_feature);
 }
 
 // Features paramater
@@ -184,7 +184,7 @@ void Device::setRequiredExtensions(vkb::PhysicalDeviceSelector &p_phys_device_se
     p_phys_device_selector.add_required_extension("VK_EXT_shader_object");
     p_phys_device_selector.add_required_extension("VK_EXT_descriptor_buffer");
     p_phys_device_selector.add_required_extension("VK_KHR_swapchain_mutable_format");
-    p_phys_device_selector.add_required_extension("VK_EXT_mesh_shader");
+    // p_phys_device_selector.add_required_extension("VK_EXT_mesh_shader");
 }
 
 void Device::queryPhysicalDeviceProperties() {

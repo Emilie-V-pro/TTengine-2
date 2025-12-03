@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan_core.h>
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <glm/fwd.hpp>
@@ -69,21 +70,14 @@ void Scene::initSceneData(
     // addStaticMesh(planeMesh);
     // m_basic_meshes[Mesh::BasicShape::Plane] = &meshes.back();
 
+  
 
-    ImageCreateInfo shadow_image_create_info;
-    shadow_image_create_info.width = 2048;
-    shadow_image_create_info.height = 2048;
-    shadow_image_create_info.format = VK_FORMAT_D24_UNORM_S8_UINT;
-    shadow_image_create_info.usage_flags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    shadow_image_create_info.image_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    skybox_image_create_info.enable_mipmap = false;
+    m_shadow_renderpass = DynamicRenderPass(m_device, {4096, 4096}, {}, MAX_FRAMES_IN_FLIGHT, DEPTH);
 
-
-    m_shadow_renderpass = DynamicRenderPass(m_device, {2048, 2048}, {}, MAX_FRAMES_IN_FLIGHT, DEPTH);
 
     vkDeviceWaitIdle(*m_device);
 
-    if (m_cameras.size() == 0) {
+    if (m_main_camera == nullptr) {
         addNode(-1, std::make_shared<CameraV2>());
     }
     createDrawIndirectBuffers();
@@ -98,36 +92,23 @@ void Scene::initSceneData(
 void Scene::renderDeffered(CommandBuffer& p_cmd, RenderData& p_render_data) {
     p_render_data.basic_meshes = m_basic_meshes;
     p_render_data.cameras = &m_cameras;
-    if (false) {
-        for (auto& renderable : m_indirect_renderables) {
-            renderable->render(p_cmd, p_render_data);
-        }
 
-        m_draw_indirect_buffers[p_render_data.frame_index].writeToBuffer(
-            p_render_data.draw_commands.data(), p_render_data.draw_commands.size() * sizeof(VkDrawIndexedIndirectCommand), 0);
+    uint32_t draw_count_init = 0;
+    m_count_indirect_buffers[m_main_camera_id][p_render_data.frame_index].writeToBuffer(&draw_count_init, sizeof(uint32_t), 0);
+    PushConstantCullStruct pc_cull;
+    pc_cull.cam_buffer = camera_buffer[p_render_data.frame_index].getBufferDeviceAddress();
+    pc_cull.obj_buffer = m_object_buffer.getBufferDeviceAddress();
+    pc_cull.mesh_blocks_buffer = m_mesh_block_buffer.getBufferDeviceAddress();
+    pc_cull.draw_cmds_buffer = m_draw_indirect_buffers[m_main_camera_id][p_render_data.frame_index].getBufferDeviceAddress();
+    pc_cull.draw_count_buffer = m_count_indirect_buffers[m_main_camera_id][p_render_data.frame_index].getBufferDeviceAddress();
+    pc_cull.camid = m_main_camera_id;
+    pc_cull.numberOfmesh_block = m_total_mesh_block;
 
-        uint32_t drawcount = p_render_data.draw_commands.size();
-        m_count_indirect_buffers[p_render_data.frame_index].writeToBuffer(&drawcount, sizeof(uint32_t), 0);
-    } else {
-        if (true) {
-            uint32_t draw_count_init = 0;
-            m_count_indirect_buffers[p_render_data.frame_index].writeToBuffer(&draw_count_init, sizeof(uint32_t), 0);
-            PushConstantCullStruct pc_cull;
-            pc_cull.cam_buffer = camera_buffer[p_render_data.frame_index].getBufferDeviceAddress();
-            pc_cull.obj_buffer = m_object_buffer.getBufferDeviceAddress();
-            pc_cull.mesh_blocks_buffer = m_mesh_block_buffer.getBufferDeviceAddress();
-            pc_cull.draw_cmds_buffer = m_draw_indirect_buffers[p_render_data.frame_index].getBufferDeviceAddress();
-            pc_cull.draw_count_buffer = m_count_indirect_buffers[p_render_data.frame_index].getBufferDeviceAddress();
-            pc_cull.camid = 0;
-            pc_cull.numberOfmesh_block = m_total_mesh_block;
+    m_cull_pipeline.bindPipeline(p_cmd);
+    vkCmdPushConstants(p_cmd, m_cull_pipeline.getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pc_cull), &pc_cull);
 
-            m_cull_pipeline.bindPipeline(p_cmd);
-            vkCmdPushConstants(p_cmd, m_cull_pipeline.getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pc_cull), &pc_cull);
-
-            m_cull_pipeline.dispatch(p_cmd, m_total_mesh_block, 1, 1);
-            m_mesh_block_buffer.addBufferMemoryBarrier(p_cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT);
-        }
-    }
+    m_cull_pipeline.dispatch(p_cmd, m_total_mesh_block, 1, 1);
+    m_mesh_block_buffer.addBufferMemoryBarrier(p_cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT);
 
     m_deffered_renderpass->beginRenderPass(p_cmd, p_render_data.swapchain_index);
 
@@ -144,7 +125,7 @@ void Scene::renderDeffered(CommandBuffer& p_cmd, RenderData& p_render_data) {
         material_buffer.getBufferDeviceAddress(),
         camera_buffer[p_render_data.frame_index].getBufferDeviceAddress(),
         m_light_buffer.getBufferDeviceAddress(),
-        0,
+        m_main_camera_id,
         static_cast<uint32_t>(m_light_objects.size())};
     p_render_data.push_constant = tp;
     // // set push_constant for cam_id
@@ -170,7 +151,7 @@ void Scene::renderDeffered(CommandBuffer& p_cmd, RenderData& p_render_data) {
     // renderData.descriptorSets.push(scene_descriptor_set);
 
     vkCmdDrawIndexedIndirectCount(
-        p_cmd, m_draw_indirect_buffers[p_render_data.frame_index], 0, m_count_indirect_buffers[p_render_data.frame_index], 0, 100000,
+        p_cmd, m_draw_indirect_buffers[m_main_camera_id][p_render_data.frame_index], 0, m_count_indirect_buffers[m_main_camera_id][p_render_data.frame_index], 0, 100000,
         sizeof(VkDrawIndexedIndirectCommand));
 
     for (auto& renderable : m_renderables) {
@@ -183,18 +164,18 @@ void Scene::renderShading(CommandBuffer& p_cmd, RenderData& p_renderData) {
     p_renderData.basic_meshes = m_basic_meshes;
     p_renderData.cameras = &m_cameras;
     m_deffered_renderpass->transitionAttachment(p_renderData.swapchain_index, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, p_cmd);
+    m_shadow_renderpass.transitionDepthAttachment(p_renderData.frame_index, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, p_cmd);
     m_shading_renderpass->transitionColorAttachment(p_renderData.swapchain_index, VK_IMAGE_LAYOUT_GENERAL, p_cmd);
-
     m_shading_pipeline.bindPipeline(p_cmd);
 
-    std::vector<DescriptorSet*> descriptor_sets = {&m_deferred_descriptor_set[p_renderData.swapchain_index]};
+    std::vector<DescriptorSet*> descriptor_sets = {&m_deferred_descriptor_set[p_renderData.swapchain_index], &shadow_descriptor_sets[p_renderData.frame_index]};
     DescriptorSet::bindDescriptorSet(p_cmd, descriptor_sets, m_shading_pipeline.getPipelineLayout(), VK_PIPELINE_BIND_POINT_COMPUTE);
     PushConstantStruct tp{
         m_object_buffer.getBufferDeviceAddress(),
         material_buffer.getBufferDeviceAddress(),
         camera_buffer[p_renderData.frame_index].getBufferDeviceAddress(),
         m_light_buffer.getBufferDeviceAddress(),
-        0,
+        m_main_camera_id,
         static_cast<uint32_t>(m_light_objects.size())};
     p_renderData.push_constant = tp;
     // // set push_constant for cam_id
@@ -205,15 +186,74 @@ void Scene::renderShading(CommandBuffer& p_cmd, RenderData& p_renderData) {
 
     m_deffered_renderpass->transitionColorAttachment(p_renderData.swapchain_index, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, p_cmd);
     m_deffered_renderpass->transitionDepthAttachment(p_renderData.swapchain_index, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, p_cmd);
+    m_shadow_renderpass.transitionDepthAttachment(p_renderData.frame_index, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, p_cmd);
     m_shading_renderpass->transitionColorAttachment(p_renderData.swapchain_index, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, p_cmd);
-
+    
     m_shading_renderpass->setClearEnable(false);
     m_shading_renderpass->beginRenderPass(p_cmd, p_renderData.swapchain_index);
     for (auto& renderable : m_renderables) {
         renderable->render(p_cmd, p_renderData);
     }
+    
     m_shading_renderpass->endRenderPass(p_cmd);
     m_shading_renderpass->setClearEnable(true);
+}
+
+void Scene::renderShadowMaps(CommandBuffer& p_cmd, RenderData& p_render_data) {
+    p_render_data.basic_meshes = m_basic_meshes;
+    p_render_data.cameras = &m_cameras;
+    
+    for (size_t i = 0; i < m_light_objects.size(); i++) {
+        auto light = m_light_objects[i];
+        if (!light->shadows_enabled) continue;
+        p_render_data.camera_id = light->cam_id;
+        light->updateMatrixFromPos(m_main_camera->transform.pos.value);
+        updateCameraBuffer(p_render_data.frame_index);
+
+        uint32_t draw_count_init = 0;
+        m_count_indirect_buffers[light->cam_id][p_render_data.frame_index].writeToBuffer(&draw_count_init, sizeof(uint32_t), 0);
+        PushConstantCullStruct pc_cull;
+        pc_cull.cam_buffer = camera_buffer[p_render_data.frame_index].getBufferDeviceAddress();
+        pc_cull.obj_buffer = m_object_buffer.getBufferDeviceAddress();
+        pc_cull.mesh_blocks_buffer = m_mesh_block_buffer.getBufferDeviceAddress();
+        pc_cull.draw_cmds_buffer = m_draw_indirect_buffers[light->cam_id][p_render_data.frame_index].getBufferDeviceAddress();
+        pc_cull.draw_count_buffer = m_count_indirect_buffers[light->cam_id][p_render_data.frame_index].getBufferDeviceAddress();
+        pc_cull.camid = light->cam_id;
+        pc_cull.numberOfmesh_block = m_total_mesh_block;
+
+        m_cull_pipeline.bindPipeline(p_cmd);
+        vkCmdPushConstants(p_cmd, m_cull_pipeline.getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pc_cull), &pc_cull);
+
+        m_cull_pipeline.dispatch(p_cmd, m_total_mesh_block, 1, 1);
+        m_mesh_block_buffer.addBufferMemoryBarrier(p_cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT);
+
+        m_shadow_renderpass.beginRenderPass(p_cmd, p_render_data.frame_index);
+
+        std::vector<DescriptorSet*> descriptor_sets = {&scene_descriptor_set};
+        m_shadow_pipeline.bindPipeline(p_cmd);
+        DescriptorSet::bindDescriptorSet(p_cmd, descriptor_sets, m_shadow_pipeline.getPipelineLayout(), VK_PIPELINE_BIND_POINT_GRAPHICS);
+
+        ShadowPushConstantStruct tp{
+            m_object_buffer.getBufferDeviceAddress(),
+            material_buffer.getBufferDeviceAddress(),
+            camera_buffer[p_render_data.frame_index].getBufferDeviceAddress(),
+    
+            light->cam_id};
+        // p_render_data.push_constant = tp;
+        // // set push_constant for cam_id
+        vkCmdPushConstants(
+            p_cmd, m_shadow_pipeline.getPipelineLayout(), m_shadow_pipeline.getPushConstantStage(), 0, sizeof(tp), &tp);
+
+        vkCmdDrawIndexedIndirectCount(
+            p_cmd, m_draw_indirect_buffers[light->cam_id][p_render_data.frame_index], 0, m_count_indirect_buffers[light->cam_id][p_render_data.frame_index], 0,
+            100000, sizeof(VkDrawIndexedIndirectCommand));
+
+        // for (auto& renderable : m_renderables) {
+        //     renderable->render(p_cmd, p_render_data);
+        // }
+        m_deffered_renderpass->endRenderPass(p_cmd);
+    
+    }
 }
 
 uint32_t Scene::getNewID() {
@@ -234,9 +274,18 @@ uint32_t Scene::addNode(uint32_t p_parent_id, std::shared_ptr<Node> p_node) {
     }
 
     if (dynamic_cast<CameraV2*>(p_node.get())) {
-        m_cameras.push_back(std::dynamic_pointer_cast<CameraV2>(p_node));
-        if (m_cameras.size() == 1) {
-            m_main_camera = m_cameras[0];
+        if (dynamic_cast<Light*>(p_node.get())) {
+            auto light = std::dynamic_pointer_cast<Light>(p_node);
+            if (light->shadows_enabled) {
+                m_cameras.push_back(std::dynamic_pointer_cast<CameraV2>(p_node));
+                light->cam_id = m_cameras.size() - 1;
+            }
+        } else {
+            m_cameras.push_back(std::dynamic_pointer_cast<CameraV2>(p_node));
+            if (m_main_camera == nullptr) {
+                m_main_camera = m_cameras[m_cameras.size() - 1];
+                m_main_camera_id = m_cameras.size() - 1;
+            }
         }
     }
 
@@ -313,14 +362,20 @@ uint32_t Scene::addImage(Image& p_image) {
 }
 
 void Scene::createDrawIndirectBuffers() {
-    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        m_draw_indirect_buffers[i] = Buffer(
-            m_device, sizeof(VkDrawIndexedIndirectCommand), 300000,
-            VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
+    for (size_t i = 0; i < m_cameras.size(); i++) {
+        std::array<Buffer, MAX_FRAMES_IN_FLIGHT> draw_buffers;
+        std::array<Buffer, MAX_FRAMES_IN_FLIGHT> count_buffers;
+        for (int j = 0; j < MAX_FRAMES_IN_FLIGHT; j++) {
+            draw_buffers[j] = Buffer(
+                m_device, sizeof(VkDrawIndexedIndirectCommand), 300000,
+                VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, Buffer::BufferType::GPU_ONLY);
 
-        m_count_indirect_buffers[i] = Buffer(
-            m_device, sizeof(uint32_t), 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-            Buffer::BufferType::DYNAMIC);
+            count_buffers[j] = Buffer(
+                m_device, sizeof(uint32_t), 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                Buffer::BufferType::DYNAMIC);
+        }
+        m_draw_indirect_buffers.push_back(draw_buffers);
+        m_count_indirect_buffers.push_back(count_buffers);
     }
 }
 
@@ -340,15 +395,16 @@ void Scene::updateCameraBuffer(uint32_t p_frame_index) {
     if (m_cameras.size() == 0) return;
 
     if (camera_buffer[p_frame_index].getInstancesCount() < m_cameras.size()) {
-        camera_buffer[p_frame_index] = Buffer(m_device, sizeof(Ubo), 20, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
+        camera_buffer[p_frame_index] =
+            Buffer(m_device, sizeof(Ubo), m_cameras.size(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, Buffer::BufferType::DYNAMIC);
     }
     std::vector<Ubo> ubos;
 
     for (auto cam : m_cameras) {
         Ubo ubo;
-        ubo.projection = m_main_camera->getProjectionMatrix();
-        ubo.view = m_main_camera->getViewMatrix();
-        ubo.invView = glm::inverse(m_main_camera->getViewMatrix());
+        ubo.projection = cam->getProjectionMatrix();
+        ubo.view = cam->getViewMatrix();
+        ubo.invView = glm::inverse(cam->getViewMatrix());
         ubos.push_back(ubo);
     }
 
@@ -450,7 +506,13 @@ void Scene::updateMaterialBuffer() {
     material_buffer.writeToBuffer(materials_GPU.data(), sizeof(MaterialGPU) * materials_GPU.size(), 0);
 }
 
-void Scene::createDescriptorSets() { scene_descriptor_set = DescriptorSet(m_device, m_mesh_pipeline.getDescriptorSetLayout(0)); }
+void Scene::createDescriptorSets() { 
+    scene_descriptor_set = DescriptorSet(m_device, m_mesh_pipeline.getDescriptorSetLayout(0)); 
+
+    for(int i =0; i<MAX_FRAMES_IN_FLIGHT; i++) {
+        shadow_descriptor_sets[i] = DescriptorSet(m_device, m_shading_pipeline.getDescriptorsSetLayout()[1]);
+    }
+}
 
 void Scene::updateDescriptorSets() {
     if (images.size() == 0) {
@@ -502,6 +564,10 @@ void Scene::updateRenderPassDescriptorSets() {
         image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
         m_deferred_descriptor_set[i].writeImageDescriptor(3, image_info);
     }
+
+    for(int i = 0; i<MAX_FRAMES_IN_FLIGHT; i++) {
+        shadow_descriptor_sets[i].writeImageDescriptor(0, m_shadow_renderpass.getDepthAndStencilAttachement()[i].getDescriptorImageInfo(samplerType::LINEAR));
+    }
 }
 
 void Scene::createPipelines() {
@@ -544,7 +610,6 @@ void Scene::createPipelines() {
     pipeline_create_info.vexter_shader_file = "TTengine-2/shaders/shadow.vert";
 #endif
     m_shadow_pipeline = GraphicPipeline(m_device, pipeline_create_info);
-
 }
 
 }  // namespace TTe
