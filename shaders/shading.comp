@@ -179,7 +179,7 @@ vec3 reconstructWorldPos(vec2 fragCoord, float depth, mat4 projection, mat4 view
     return world.xyz;
 }
 
-vec2 reconstructUV(vec3 wpos, mat4 projection, mat4 view) {
+vec3 reconstructUV(vec3 wpos, mat4 projection, mat4 view) {
     vec4 clip = projection * view * vec4(wpos, 1.0);
     clip /= clip.w;
 
@@ -187,10 +187,17 @@ vec2 reconstructUV(vec3 wpos, mat4 projection, mat4 view) {
     ndc.x = clip.x;
     ndc.y = clip.y;
 
-    vec2 uv;
+    float distFromPlayer= length(ndc);
+    ndc.x = ndc.x / (0.1+distFromPlayer);
+    ndc.y = ndc.y / (0.1+distFromPlayer);
+
+    vec3 uv;
     uv.x = (ndc.x + 1.0) * 0.5;
     uv.y = (1.0 - ndc.y) * 0.5; // Invert Y for Vulkan
-
+    uv.z =  clip.z;
+    if(distFromPlayer > 2.0) {
+        uv = vec3(-1.0, -1.0, -1.0);
+    }
     return uv;
 }
 
@@ -232,12 +239,10 @@ void main() {
         Light l = pc.lightBuffer.data[i];
 
         if (l.Type == 0) {
-            vec2 uv = reconstructUV(wpos, pc.camBuffer.data[0].projection, pc.camBuffer.data[0].view);
-            float dist = texture(shadow_Texture[0], uv).r;
-            vec3 sample_pos = reconstructWorldPos(uv, dist, pc.camBuffer.data[0].projection, pc.camBuffer.data[0].view);
-            float sun_dist_sample = distance(sample_pos, l.orienation * 65.0);
-            float current_dist = distance(wpos, l.orienation * 65.0);
-            if(current_dist - 0.005 > sun_dist_sample) {
+
+            vec3 uv = reconstructUV(wpos + normal * 0.0001 , pc.camBuffer.data[0].projection, pc.camBuffer.data[0].view);
+            float dist = texture(shadow_Texture[0], uv.xy).r;
+            if( (  uv.z - dist)  > 0.0001 && uv.x > 0.0 && uv.x < 1.0 && uv.y > 0.0 && uv.y < 1.0 && uv.z > 0.0 && uv.z < 1.0) {
                 continue;
             }
             lightDir = normalize(l.orienation);
@@ -253,7 +258,8 @@ void main() {
 
     vec3 final_color;
 
-    final_color = color_difuse + vec3(0.03) * albedo;
-
+    final_color = color_difuse;
+    //  float dist = texture(shadow_Texture[0], sample_uv).r;
+    // final_color = vec3(dist);
     imageStore(output_texture, pixel_pos, fromLinear(vec4(final_color.rgb, 1)));
 }

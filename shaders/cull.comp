@@ -186,7 +186,7 @@ void main() {
 
     Mesh_block m = pc.meshBlocks.data[gl_GlobalInvocationID.x];
     
-    mat4 MVP = pc.cams.data[0].projection * pc.cams.data[0].view * pc.objects.data[m.instancesID].world_matrix;
+    mat4 MVP = pc.cams.data[pc.camid].projection * pc.cams.data[pc.camid].view * pc.objects.data[m.instancesID].world_matrix;
     mat4 IVPWmatrix = inverse(MVP);
     vec4 frustrumBoxPointW[8];
     frustrumBoxPointW[0] = (IVPWmatrix * vec4(1, 1, 1, 1));

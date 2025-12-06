@@ -53,9 +53,14 @@ layout(push_constant) uniform constants {
 
 void main() {
     vec4 positionWorld = pc.objBuffer.data[gl_InstanceIndex].world_matrix * vec4(position, 1.0);
+
+    // 
+
     Camera_data c = pc.camBuffer.data[pc.camera_id];
     gl_Position = c.projection * c.view * positionWorld;
-
+    
+    float dist_to_player = length(gl_Position.xy);
+    gl_Position.xy =  gl_Position.xy / (0.1+dist_to_player);
     alphaTextureID = pc.matBuffer.data[material].albedo_tex_id;
     fraguv = uv;
 }

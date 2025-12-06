@@ -24,7 +24,7 @@ Device::Device(Window &p_window) {
 
 void Device::createInstance() {
     vkb::InstanceBuilder instance_builder;
-    instance_builder.set_app_name("TTEngine 2.0").set_engine_name("TTEngine 2.0").require_api_version(1, 4, 0);
+    instance_builder.set_app_name("TTEngine 2.0").set_engine_name("TTEngine 2.0").require_api_version(1, 3, 0);
 
     if (enableValidationLayers) {
         instance_builder.request_validation_layers()

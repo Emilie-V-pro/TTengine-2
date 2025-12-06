@@ -46,12 +46,12 @@ void Scene::initSceneData(
     this->m_deffered_renderpass = p_deffered_renderpass;
     this->m_shading_renderpass = p_shading_renderpass;
     ImageCreateInfo skybox_image_create_info;
-    skybox_image_create_info.filename.push_back(p_skybox_path / "posx.jpg");
-    skybox_image_create_info.filename.push_back(p_skybox_path / "negx.jpg");
-    skybox_image_create_info.filename.push_back(p_skybox_path / "posy.jpg");
-    skybox_image_create_info.filename.push_back(p_skybox_path / "negy.jpg");
-    skybox_image_create_info.filename.push_back(p_skybox_path / "posz.jpg");
-    skybox_image_create_info.filename.push_back(p_skybox_path / "negz.jpg");
+    skybox_image_create_info.filename.push_back(p_skybox_path / "posx.png");
+    skybox_image_create_info.filename.push_back(p_skybox_path / "negx.png");
+    skybox_image_create_info.filename.push_back(p_skybox_path / "posy.png");
+    skybox_image_create_info.filename.push_back(p_skybox_path / "negy.png");
+    skybox_image_create_info.filename.push_back(p_skybox_path / "posz.png");
+    skybox_image_create_info.filename.push_back(p_skybox_path / "negz.png");
     skybox_image_create_info.usage_flags = VK_IMAGE_USAGE_SAMPLED_BIT;
     skybox_image_create_info.is_cube_texture = true;
     skybox_image_create_info.enable_mipmap = true;
@@ -108,7 +108,7 @@ void Scene::renderDeffered(CommandBuffer& p_cmd, RenderData& p_render_data) {
     vkCmdPushConstants(p_cmd, m_cull_pipeline.getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pc_cull), &pc_cull);
 
     m_cull_pipeline.dispatch(p_cmd, m_total_mesh_block, 1, 1);
-    m_mesh_block_buffer.addBufferMemoryBarrier(p_cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT);
+    m_draw_indirect_buffers[m_main_camera_id][p_render_data.frame_index].addBufferMemoryBarrier(p_cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT);
 
     m_deffered_renderpass->beginRenderPass(p_cmd, p_render_data.swapchain_index);
 

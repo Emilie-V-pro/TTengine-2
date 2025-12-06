@@ -22,6 +22,36 @@
 
 namespace TTe {
 
+
+glm::vec3 HSVtoRGB(const glm::vec3& hsv)
+{
+    float H = hsv.x;
+    float S = hsv.y;
+    float V = hsv.z;
+
+    float C = V * S;
+    float X = C * (1.0f - std::fabs(std::fmod(H / 60.0f, 2.0f) - 1.0f));
+    float m = V - C;
+
+    float r, g, b;
+
+    if (H < 60.0f) {
+        r = C; g = X; b = 0.0f;
+    } else if (H < 120.0f) {
+        r = X; g = C; b = 0.0f;
+    } else if (H < 180.0f) {
+        r = 0.0f; g = C; b = X;
+    } else if (H < 240.0f) {
+        r = 0.0f; g = X; b = C;
+    } else if (H < 300.0f) {
+        r = X; g = 0.0f; b = C;
+    } else {
+        r = C; g = 0.0f; b = X;
+    }
+
+    return glm::vec3(r + m, g + m, b + m);
+}
+
 void App::init(Device *p_device, DynamicRenderPass *p_deferred_renderpass, DynamicRenderPass *p_shading_renderpass, Window *p_window) {
     this->m_device = p_device;
     this->m_deferred_renderpass = p_deferred_renderpass;
@@ -31,25 +61,25 @@ void App::init(Device *p_device, DynamicRenderPass *p_deferred_renderpass, Dynam
     GLTFLoader gltf_loader(m_device);
     // gltfLoader.load("gltf/ABeautifulGame/glTF/ABeautifulGame.gltf");
     auto start = std::chrono::high_resolution_clock::now();
-    gltf_loader.load("gltf/Sponza/glTF/Sponza.gltf");
+    // gltf_loader.load("gltf/Sponza/glTF/Sponza.gltf");
 
     // gltfLoader.load("gltf/mc2/mc.gltf");
 
-    // gltf_loader.load("gltf/mc/mc.gltf");
+    gltf_loader.load("gltf/mc/mc.gltf");
     s = gltf_loader.getScene();
     // s = new Scene(device);
 
 
     auto sun = std::make_shared<Light>();
     sun->m_type = Light::DIRECTIONAL;
-    sun->transform.rot = glm::normalize(glm::vec3(1.0f,1.0f,0.0f));
+    sun->transform.rot = glm::normalize(glm::vec3(-0.432518, 0.895698, -0.10321));
     sun->color = glm::vec3(1.0f, 1.0f, 0.9f);
     sun->intensity = 1.0f;
     sun->shadows_enabled = true;
     s->addNode(-1, sun);
 
 
-    s->initSceneData(m_deferred_renderpass, m_shading_renderpass);
+    s->initSceneData(m_deferred_renderpass, m_shading_renderpass, "textures/nightskybox");
     s->computeBoundingBox();
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
@@ -64,8 +94,8 @@ void App::init(Device *p_device, DynamicRenderPass *p_deferred_renderpass, Dynam
         auto l = std::make_shared<Light>();
         l->m_type = Light::POINT;
         l->transform.pos = glm::vec3{distribution(gen), distribution2(gen), distribution(gen)};
-        l->color = glm::vec3{distribution3(gen), distribution3(gen), distribution3(gen)};
-        l->intensity = 100.f;
+        l->color = HSVtoRGB(glm::vec3(distribution3(gen) * 360., 1.0f, 1.0f));
+        l->intensity = 50.f;
         s->addNode(-1, l);
         m_light_accelerations.push_back(glm::vec3(0, 0, 0));
         m_light_speeds.push_back(glm::vec3(0, 0, 0));
@@ -97,7 +127,7 @@ void App::resize(int p_width, int p_height) {
 void App::update(float p_delta_time, CommandBuffer &p_cmd_buffer, Window &p_window_obj) {
     m_movement_controller.moveInPlaneXZ(&p_window_obj, p_delta_time, s->getMainCamera());
     std::default_random_engine gen;
-    std::uniform_real_distribution<double> distribution3(-0.1, 0.1);
+    std::uniform_real_distribution<double> distribution3(-0.5, 0.5);
 
     std::vector<std::shared_ptr<Light>> &P = s->getLights();
     for (int i = 0; i < MAX_LIGHTS; ++i) {
@@ -127,7 +157,7 @@ void App::update(float p_delta_time, CommandBuffer &p_cmd_buffer, Window &p_wind
         render_cmd_buffer.beginCommandBuffer();
 
         DynamicRenderPass temp =
-            DynamicRenderPass(m_device, {4096, 4096}, {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM}, 1, DEPTH, nullptr, nullptr);
+            DynamicRenderPass(m_device, {8192, 8192}, {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM}, 1, DEPTH, nullptr, nullptr);
         RenderData r;
         r.frame_index = 0;
         r.camera_id = 0;
